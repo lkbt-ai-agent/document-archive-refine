@@ -97,6 +97,7 @@ SELECT EXISTS(SELECT 1 FROM descendants WHERE id = :new_parent_id);  -- FALSE �
 > **Docker 함정:** presigned URL에 MinIO 엔드포인트 호스트가 박힘. 컨테이너 내부명(`minio:9000`)은 브라우저에서 해석 불가 → **브라우저 도달 가능 엔드포인트(`localhost:9000`)로 서명**, 서버측 SDK 호출은 내부명.
 
 ### object key 설계 — 폴더 경로와 분리
+
 - key는 `docs/{document_id}`(무마찰) 또는 content-addressable `docs/{sha256[:2]}/{sha256}`(무료 dedup+무결성). 폴더 멤버십·표시명은 Postgres → **폴더 MOVE/rename이 MinIO를 건드리지 않음**.
 - MVP는 `docs/{uuid}`, 추후 UI 변경 없이 CA로 전환.
 

@@ -34,17 +34,17 @@
 
 | # | 아키텍처 문서(`architecture/`) | 플랜 파일(`plan/`) | 근거 research | 상태 |
 |---|---|---|---|---|
-| 01 | `01-system-overview.md` | [`01-system-overview.md`](./01-system-overview.md) | 00, 04, README | ⬜ |
-| 02 | `02-infrastructure-and-environment.md` | [`02-infrastructure-and-environment.md`](./02-infrastructure-and-environment.md) | 00 §0, 04 §6 | ⬜ |
-| 03 | `03-data-model-and-migrations.md` | [`03-data-model-and-migrations.md`](./03-data-model-and-migrations.md) | 01 §5.4, 03 §4, 04 §1·4b | ⬜ |
-| 04 | `04-backend-application.md` | [`04-backend-application.md`](./04-backend-application.md) | 04 §0·3, 02 전반 | ⬜ |
-| 05 | `05-folder-management.md` | [`05-folder-management.md`](./05-folder-management.md) | 04 §1 | ⬜ |
-| 06 | `06-document-storage.md` | [`06-document-storage.md`](./06-document-storage.md) | 04 §2 | ⬜ |
-| 07 | `07-document-processing-pipeline.md` | [`07-document-processing-pipeline.md`](./07-document-processing-pipeline.md) | 01 전반, 04 §4 | ⬜ |
-| 08 | `08-search-and-rag.md` | [`08-search-and-rag.md`](./08-search-and-rag.md) | 02 전반 | ⬜ |
-| 09 | `09-ai-outputs-and-lineage.md` | [`09-ai-outputs-and-lineage.md`](./09-ai-outputs-and-lineage.md) | 03 전반 | ⬜ |
-| 10 | `10-frontend-drive-ui.md` | [`10-frontend-drive-ui.md`](./10-frontend-drive-ui.md) | 04 §5 | ⬜ |
-| — | `00-README.md`(색인) | (본 마스터 플랜 §4 최종 단계) | README | ⬜ |
+| 01 | `01-system-overview.md` | [`01-system-overview.md`](./01-system-overview.md) | 00, 04, README | ✅ |
+| 02 | `02-infrastructure-and-environment.md` | [`02-infrastructure-and-environment.md`](./02-infrastructure-and-environment.md) | 00 §0, 04 §6 | ✅ |
+| 03 | `03-data-model-and-migrations.md` | [`03-data-model-and-migrations.md`](./03-data-model-and-migrations.md) | 01 §5.4, 03 §4, 04 §1·4b | ✅ |
+| 04 | `04-backend-application.md` | [`04-backend-application.md`](./04-backend-application.md) | 04 §0·3, 02 전반 | ✅ |
+| 05 | `05-folder-management.md` | [`05-folder-management.md`](./05-folder-management.md) | 04 §1 | ✅ |
+| 06 | `06-document-storage.md` | [`06-document-storage.md`](./06-document-storage.md) | 04 §2 | ✅ |
+| 07 | `07-document-processing-pipeline.md` | [`07-document-processing-pipeline.md`](./07-document-processing-pipeline.md) | 01 전반, 04 §4 | ✅ |
+| 08 | `08-search-and-rag.md` | [`08-search-and-rag.md`](./08-search-and-rag.md) | 02 전반 | ✅ |
+| 09 | `09-ai-outputs-and-lineage.md` | [`09-ai-outputs-and-lineage.md`](./09-ai-outputs-and-lineage.md) | 03 전반 | ✅ |
+| 10 | `10-frontend-drive-ui.md` | [`10-frontend-drive-ui.md`](./10-frontend-drive-ui.md) | 04 §5 | ✅ |
+| — | `00-README.md`(색인) | (본 마스터 플랜 §4 최종 단계) | README | ✅ |
 
 > 진행 시 상태 칸을 ⬜ → 🟡(작성 중) → ✅(완료)로 갱신한다.
 
@@ -98,11 +98,11 @@
 
 ## 4. 전역 완료 기준 (Definition of Done)
 
-- [ ] `plan/01`~`plan/10` 플랜 파일이 모두 존재한다. *(본 작업의 1차 산출물)*
-- [ ] `architecture/01`~`architecture/10` 문서가 각 플랜의 단계·완료 기준을 충족한다.
-- [ ] 모든 문서가 §3 공통 규약 골격을 따른다.
-- [ ] **로컬 PostgreSQL/MinIO를 신규로 정의한 곳이 한 군데도 없다**(원격 연결만).
-- [ ] `pgvector`/`PGroonga` 확장 가용성, Redis provisioning, 드라이버(psycopg3) 결정이 인프라·데이터모델 문서에 명시된다.
-- [ ] 최종 단계로 `architecture/00-README.md`(문서 색인 + TL;DR 결정표)를 작성한다.
-- [ ] 마스터 플랜 §1 진행 표가 모두 ✅로 갱신된다.
+- [x] `plan/01`~`plan/10` 플랜 파일이 모두 존재한다. *(본 작업의 1차 산출물)*
+- [x] `architecture/01`~`architecture/10` 문서가 각 플랜의 단계·완료 기준을 충족한다.
+- [x] 모든 문서가 §3 공통 규약 골격을 따른다.
+- [x] **로컬 PostgreSQL/MinIO를 신규로 정의한 곳이 한 군데도 없다**(원격 연결만).
+- [x] `pgvector`/`PGroonga` 확장 가용성, Redis provisioning, 드라이버(psycopg3) 결정이 인프라·데이터모델 문서에 명시된다.
+- [x] 최종 단계로 `architecture/00-README.md`(문서 색인 + TL;DR 결정표)를 작성한다.
+- [x] 마스터 플랜 §1 진행 표가 모두 ✅로 갱신된다.
 ```
