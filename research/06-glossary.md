@@ -75,7 +75,10 @@ LLM이 **사실이 아닌 내용을 그럴듯하게 지어내는** 현상. RAG�
 
 ### BM25 / tsvector
 - **tsvector**: PostgreSQL 기본 전문 검색용 자료형(단어 색인).
-- **BM25**: 검색 랭킹 표준 알고리즘. 흔한 단어는 덜, 희귀 단어는 더 중요하게 쳐서 순위를 매긴다. (기본 `tsvector`엔 이 IDF 개념이 약하다.)
+- **BM25**: 검색 랭킹 표준 알고리즘. 단어의 빈도(**TF**, Term Frequency)와 문서 집합 내 희귀도(**IDF**, Inverse Document Frequency)를 조합해 순위를 매긴다. 흔한 단어(IDF 낮음)는 덜 중요하게, 희귀 단어(IDF 높음)는 더 중요하게 가중치를 준다. (기본 `tsvector`엔 이 IDF 개념이 약하므로 BM25만큼 정확하지 않다.)
+
+### IDF (Inverse Document Frequency, 역문서빈도)
+**특정 단어가 전체 문서 집합에서 얼마나 드문지**를 수치화하는 척도. 공식: `log(전체문서수 / 단어가포함된문서수)`. 예: "의", "이"처럼 많은 문서에 나오는 단어는 IDF 낮음 (낮은 가중치) ↔ "연봉"처럼 소수 문서에만 나오는 단어는 IDF 높음 (높은 가중치). **TF-IDF**와 **BM25**는 모두 IDF를 핵심으로 써서 희귀어를 강조한다. 차이점: **TF-IDF**는 IDF × TF의 단순 곱셈이고, **BM25**는 포화도·문서길이정규화 등을 추가로 고려해 더 정교하다.
 
 ### 의미 검색 (Semantic Search) / 벡터 검색
 질문을 임베딩해 **벡터가 가까운 청크**를 찾는 검색. 표현이 달라도 의미로 찾는다. 키워드 검색의 약점을 보완.
@@ -148,7 +151,7 @@ llama.cpp가 쓰는 **모델 파일 포맷**. HuggingFace의 원본(safetensors)
 - **Provider**: AI 모델을 **어디서 실행하는지**(로컬 llama.cpp인지, 클라우드 API인지). 계보에 이 정보를 남긴다.
 - **AWS Bedrock**: 아마존의 관리형 AI 서비스. Claude·Titan 등 모델을 **API로** 쓴다(직접 서버 운영 불필요). 이 프로젝트는 추후 무거운 모델을 Bedrock으로 돌릴 수 있도록 **Provider 추상화**(로컬↔Bedrock 교체 가능한 인터페이스)를 둔다.
 
-### GBNF / 제약 디코딩 (Constrained Decoding) / JSON Schema
+### GBNF(GGML Backus-Naur Form) / 제약 디코딩 (Constrained Decoding) / JSON Schema
 LLM이 **반드시 정해진 형식(예: 올바른 JSON)으로만 출력**하도록 강제하는 기법. llama.cpp의 `--json-schema`/GBNF 문법으로, 소형 로컬 모델도 깨지지 않는 JSON을 내게 한다(메타데이터 추출·쿼리 파싱에 사용).
 
 ### 풀링 (Pooling)
@@ -253,6 +256,7 @@ LLM이 **반드시 정해진 형식(예: 올바른 JSON)으로만 출력**하도
 | MRL | Matryoshka Representation Learning | 임베딩 차원 가변 기법 |
 | KV cache | Key-Value cache | LLM이 대화 중 재사용하는 임시 메모리 |
 | BM25 | — | 키워드 검색 랭킹 알고리즘 |
+| IDF | Inverse Document Frequency | 검색의 단어 중요도 가중치(드문 단어 높음) |
 | CTE | Common Table Expression | SQL 임시 결과 집합 |
 | RSC | React Server Component | 서버 렌더 컴포넌트 |
 | DMS | Document Management System | 문서 관리 시스템 |

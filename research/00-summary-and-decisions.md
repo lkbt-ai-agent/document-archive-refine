@@ -78,7 +78,7 @@ requirement.md의 `Models` 섹션 3개 TODO(OCR / Embedding / Generation)에 대
 | 계층 | 모델 | 용도 | 비고 |
 |---|---|---|---|
 | 기본 | **PaddleOCR PP-OCRv5(한국어)** | 이미지·스캔 PDF 페이지 | Apache 2.0, 한국어 정확도/속도 균형 최상. **v4는 한국어 rec 모델 없음 → v5 사용** |
-| 폴백 | **Tesseract `kor`** | 단순/깨끗한 스캔 | PyMuPDF에 이미 연동됨, 무마찰 |
+| 폴백 | **Tesseract `kor`** | 단순/깨끗한 스캔 | Apache-2.0, 설치 간단·무마찰 |
 | 선택 | **Qwen2.5-VL-7B GGUF + mmproj** | 복잡 레이아웃·표·혼합 페이지 | llama.cpp 공식 지원. 한국어 OCR 7B≈78%(PM4Bench) — 정밀 전사가 아닌 "이해" 수준 |
 
 - **제외:** GOT-OCR2.0(`GOTQwenForCausalLM` 아키텍처 llama.cpp 미지원, 로드 불가), docTR(한국어 모델 없음), Llama 3.2 Vision(한국어 약함·무거움).
@@ -143,7 +143,7 @@ requirement의 Preview 완료 기준 ↔ 설계 문서:
 |---|---|---|
 | 폴더 CRUD | [04](./04-architecture.md) | 인접 리스트 + 재귀 CTE |
 | 문서 업로드 | [04](./04-architecture.md) | presigned PUT 3단계 |
-| 텍스트 추출 | [01](./01-document-processing.md) | PyMuPDF + PaddleOCR |
+| 텍스트 추출 | [01](./01-document-processing.md) | pypdf(BSD) + pdfplumber + PaddleOCR |
 | 메타데이터 생성 | [01](./01-document-processing.md) | intrinsic+NLP+LLM |
 | 임베딩 생성 | [01](./01-document-processing.md) | KURE-v1 / 청킹 512 |
 | 키워드 검색 | [02](./02-search-and-rag.md) | PGroonga TokenBigram |
@@ -158,14 +158,10 @@ requirement의 Preview 완료 기준 ↔ 설계 문서:
 
 ## 5. 2주 개발 일정 (권장 순서)
 
-FIXME: PyMuPDF 는 라이선스 문제가 있으므로 pypdf 로 변경.
-FIXME: 
-
-
 **Week 1 — 기반 + 인제스트 + 검색**
 1. (D1-2) Docker Compose(pgvector/PGroonga/MinIO/Redis/llama×2), 백엔드 스캐폴드(도메인 모듈, async SA2, Alembic), 폴더/문서 스키마.
 2. (D2-3) 폴더 CRUD(+MOVE 사이클 검증), 문서 업로드 presigned 3단계.
-3. (D3-5) arq 파이프라인: 추출(PyMuPDF/PaddleOCR) → 메타 → 청킹 → 임베딩(KURE-v1) → pgvector.
+3. (D3-5) arq 파이프라인: 추출(pypdf/pdfplumber/PaddleOCR) → 메타 → 청킹 → 임베딩(KURE-v1) → pgvector.
 4. (D5-6) 키워드(PGroonga) + 의미(pgvector) + 하이브리드 `hybrid_search()` SQL.
 
 **Week 2 — RAG + AI 산출물 + UI**

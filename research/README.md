@@ -30,7 +30,7 @@
 | **생성 모델** | **SKT A.X 4.0 Light 7B** (GGUF, **Mac 24GB 동시운용 시 Q4_K_M** / 단독 Q5_K_M) | Apache 2.0, 한국어 KMMLU에서 EXAONE 3.5 7.8B 상회. EXAONE은 전 버전 **비상업(NC)** 이라 제외 |
 | **임베딩 모델** | **KURE-v1** (bge-m3 한국어 파인튜닝, 1024-dim, 8192 ctx) | Ko-MTEB 1위. 대안 BAAI/bge-m3 |
 | **OCR** | **PaddleOCR PP-OCRv5(한국어)** 기본 + **Tesseract `kor`** 폴백 + **Qwen2.5-VL-7B**(난이도 높은 페이지, llama.cpp) | GOT-OCR2.0(llama.cpp 미지원)·docTR(한국어 없음) 제외 |
-| **PDF 추출** | PyMuPDF(`pymupdf4llm`) → Markdown, 페이지별 OCR 폴백 | AGPL-3.0 라이선스 유의 |
+| **PDF 추출** | **pypdf(BSD)** 텍스트 + pdfplumber(MIT) 표 보강, 페이지별 OCR 폴백 | PyMuPDF는 AGPL-3.0이라 제외(허용형 라이선스만 사용) |
 | **키워드 검색** | **PGroonga (TokenBigram)** | Postgres 기본 FTS는 한국어 형태소 미지원 |
 | **하이브리드 검색** | PGroonga + pgvector, **RRF(k=50)** 단일 SQL | 리랭커는 토글로 후순위(bge-reranker-v2-m3) |
 | **벡터 인덱스** | pgvector **HNSW**, `vector_cosine_ops`, dim **1024** | `m=16, ef_construction=200` |

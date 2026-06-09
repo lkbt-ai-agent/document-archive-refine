@@ -26,28 +26,32 @@ requirement TODO 해소: **텍스트 추출 방식 / 메타데이터 생성 / �
 
 ## 2. 타입별 텍스트 추출
 
-### 2.1 PDF — PyMuPDF(`pymupdf4llm`) + 페이지별 OCR 폴백
+### 2.1 PDF — pypdf(BSD) + 페이지별 OCR 폴백
 
 | 라이브러리 | 속도 | 레이아웃 | 표 | 한국어(네이티브) | 라이선스 | 판정 |
 |---|---|---|---|---|---|---|
-| **PyMuPDF / `pymupdf4llm`** | 최속(~0.01–0.12s/p) | 양호, MD 출력 | `find_tables()` | 우수(유니코드) | **AGPL-3.0** ⚠️ | **기본 추출기** |
-| pdfplumber | ~0.1s/p | 좌표/디버그 | **규칙기반 표 최강** | 양호 | MIT | 표 많은 PDF 보조 |
-| pypdf | 빠름 | 약함 | 약함 | 보통 | BSD | 라이선스 회피용 폴백 |
+| **pypdf** | 빠름 | 약함 | 약함 | 보통(유니코드) | **BSD** ✅ | **기본 추출기(라이선스 안전)** |
+| **pdfplumber** | ~0.1s/p | 좌표/디버그 | **규칙기반 표 최강** | 양호 | **MIT** ✅ | **표·레이아웃 보조(권장 병용)** |
+| PyMuPDF / `pymupdf4llm` | 최속(~0.01–0.12s/p) | 양호, MD 출력 | `find_tables()` | 우수(유니코드) | **AGPL-3.0** ⚠️ | **라이선스 회피로 제외**(상업 라이선스 구매 시에만) |
 | Docling(IBM) | 0.3–3s/p | ML 레이아웃 | **표 최강(TEDS 0.887)** | 양호 | MIT | phase-2 품질 업그레이드 |
 | Marker | 5–11s/p(CPU) | 우수(PDF→MD) | 양호 | Surya 기반 | GPL성/상업 | 무거움, MVP 제외 |
 
-- **결정:** `pymupdf4llm.to_markdown()` 단일 경로. 최速, 한국어 유니코드 OK, Markdown 출력(하위 청킹에 유리), **빈 텍스트 페이지 자동 OCR 폴백** 내장.
-- **⚠️ 라이선스:** PyMuPDF는 **AGPL-3.0**. 네트워크 서비스로 배포 시 소스 공개 의무가 발생할 수 있다. 내부/로컬 MVP는 무방하나, 외부 배포 계획이 있으면 (a) Artifex 상업 라이선스 구매 또는 (b) 네이티브 추출을 pypdf(BSD)/pdfplumber(MIT)로 교체. **설계 결정 포인트로 명시.**
+- **결정(라이선스 우선): `pypdf`(BSD)를 기본 텍스트 추출기로 쓰고, 표/복잡 레이아웃 페이지는 `pdfplumber`(MIT)로 보강한다.** 둘 다 배포 제약이 없는 허용형(permissive) 라이선스라 외부 서비스 배포에 안전하다.
+- **⚠️ 왜 PyMuPDF를 빼는가:** PyMuPDF/`pymupdf4llm`는 **가장 빠르고 품질도 좋지만 AGPL-3.0**이다. 네트워크 서비스로 배포하면 **전체 서버 소스 공개 의무**가 발생할 수 있어, 상업/비공개 배포 계획이 있으면 리스크가 크다. Artifex 상업 라이선스를 구매하지 않는 한 **기본 스택에서 제외**한다.
+- **트레이드오프(인지하고 보완):**
+  - PyMuPDF가 주던 **Markdown 직접 출력이 없다** → pypdf는 평문 텍스트를 내므로, 구조 보존은 (a) pdfplumber로 표를 Markdown 표로 직렬화하고 (b) 청킹을 재귀 분할(§5.2)로 처리해 보완한다. 헤딩 계층 추정이 약해지는 점은 감수.
+  - **pypdf는 페이지를 이미지로 렌더(래스터화)하지 못한다** → 스캔/이미지 PDF의 OCR 입력이 필요할 때는 `page.images`로 **임베드된 이미지를 추출**하거나, 풀페이지 래스터가 필요하면 `pdf2image`(Poppler)로 렌더해 OCR(§3)에 넘긴다. (Poppler는 별도 프로세스 호출이라 라이선스 결합 이슈 없음.)
+  - 속도는 PyMuPDF보다 느리지만 인제스트는 비동기 백그라운드(§6)라 사용자 체감에 무관.
 
 #### 스캔/이미지 PDF 판별 (페이지 단위)
 혼합 PDF가 흔하므로 **페이지별**로 판정:
-1. `len(page.get_text("text").strip()) < THRESHOLD`(≈20–50자) → OCR 후보.
-2. 이미지 bbox 면적이 페이지 대부분을 덮으면 스캔으로 강한 신호.
-3. 폰트가 `GlyphlessFont`이면 이미 Tesseract OCR된 PDF.
+1. `len(page.extract_text().strip()) < THRESHOLD`(≈20–50자) → OCR 후보(pypdf).
+2. `page.images`가 있고 추출 텍스트가 거의 없으면 스캔 페이지로 강한 신호.
+3. 추출 텍스트가 공백/깨진 글자뿐이면 이미 래스터화된 스캔으로 간주.
 
 > **왜?(초보자 설명)** 한 PDF 안에 디지털 텍스트 페이지와 스캔 이미지 페이지가 섞여 있는 경우가 흔하다. 그래서 문서 전체가 아니라 **페이지마다** OCR이 필요한지 따로 판정한다(필요 없는 페이지에 OCR을 돌리면 느리고 품질도 나빠짐).
 
-→ `List[(page_no, needs_ocr)]` 반환해 혼합 문서 처리.
+→ `List[(page_no, needs_ocr)]` 반환해 혼합 문서 처리. OCR이 필요한 페이지는 `page.images` 추출 또는 `pdf2image` 렌더로 이미지를 얻어 §3 OCR에 넘긴다.
 
 ### 2.2 이미지(PNG/JPG/JPEG/WEBP) — OCR 경로 (§3)
 
@@ -239,8 +243,8 @@ CREATE INDEX ON document_chunks USING gin (metadata);
 | 관심사 | 결정 |
 |---|---|
 | 타입 감지 | `filetype`/`python-magic` (magic bytes) |
-| PDF | `pymupdf4llm`→Markdown, 페이지별 OCR 폴백 (AGPL 유의) |
-| 스캔 판별 | 페이지별 `len(text)<threshold` + 이미지 커버리지 |
+| PDF | **pypdf(BSD)** 텍스트 + pdfplumber(MIT) 표 보강, 페이지별 OCR 폴백 (PyMuPDF는 AGPL로 제외) |
+| 스캔 판별 | 페이지별 `len(extract_text())<threshold` + `page.images` 유무 |
 | OCR | PaddleOCR PP-OCRv5(ko) 기본 + Tesseract ko 폴백 + (선택)Qwen2.5-VL-7B |
 | TXT 인코딩 | charset-normalizer, EUC-KR→**CP949 디코딩** |
 | MD | Markdown 유지, 헤더 인지 청킹 |

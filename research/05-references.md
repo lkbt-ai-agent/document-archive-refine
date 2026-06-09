@@ -11,8 +11,11 @@
 - PaddleOCR 한국어(v5) — https://github.com/PaddlePaddle/PaddleOCR/discussions/15712 · (v4 미지원) https://github.com/PaddlePaddle/PaddleOCR/discussions/14367
 - Surya(90+ 언어) — https://github.com/datalab-to/surya
 - GOT-OCR2.0 아키텍처 미지원 — https://huggingface.co/stepfun-ai/GOT-OCR2_0/discussions/35
-- PyMuPDF4LLM docs — https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/ · OCR 레시피 https://pymupdf.readthedocs.io/en/latest/recipes-ocr.html
-- 스캔 PDF 판별 — https://github.com/pymupdf/PyMuPDF/discussions/1653
+- pypdf(BSD) docs — https://pypdf.readthedocs.io/en/stable/ · 텍스트/이미지 추출 https://pypdf.readthedocs.io/en/stable/user/extract-text.html
+- pdfplumber(MIT) — https://github.com/jsvine/pdfplumber (표·좌표 추출)
+- pdf2image(Poppler 래스터화) — https://github.com/Belval/pdf2image
+- PyMuPDF4LLM docs(참고·AGPL로 미채택) — https://pymupdf.readthedocs.io/en/latest/pymupdf4llm/ · OCR 레시피 https://pymupdf.readthedocs.io/en/latest/recipes-ocr.html · PyMuPDF 라이선스(AGPL) https://pymupdf.readthedocs.io/en/latest/about.html#license-and-copyright
+- 스캔 PDF 판별(개념 참고) — https://github.com/pymupdf/PyMuPDF/discussions/1653
 - PDF 파서 비교(arXiv) — https://arxiv.org/html/2410.09871v1
 - charset 감지 비교 — https://bytetunnels.com/posts/charset-detection-python-chardet-cchardet-charset-normalizer/ · chardet UHC 이슈 https://github.com/chardet/chardet/issues/164
 - 표 청킹 RAG 효과 — https://tatrasdata.com/portfolio/html-to-markdown-and-table-chunking-achieve-20-rag-accuracy-gain/
@@ -74,7 +77,7 @@
 ## 빌드 시점 재확인 권장 (Caveat)
 
 1. **PM4Bench 한국어 OCR 수치(7B 77.6% / 72B 94.8%)** — 검색 요약 단일 출처. 인용 전 원논문 표 재확인.
-2. **PyMuPDF AGPL-3.0** — 외부 서비스 배포 시 소스 공개 의무 가능. 상업 라이선스 또는 pypdf/pdfplumber 대체 결정 필요.
+2. **PDF 추출 라이선스 결정 = pypdf(BSD) + pdfplumber(MIT)** — PyMuPDF/`pymupdf4llm`는 최속·최고 품질이나 **AGPL-3.0**으로 외부 서비스 배포 시 소스 공개 의무가 생겨 **기본 스택에서 제외**한다. 허용형 라이선스인 pypdf(텍스트)+pdfplumber(표)를 채택하고, 스캔 페이지 래스터화는 `pdf2image`(Poppler, 별도 프로세스). PyMuPDF 품질이 꼭 필요하면 Artifex 상업 라이선스 구매를 별도 검토(→ [01 §2.1](./01-document-processing.md)).
 3. **llama.cpp OCR/멀티모달 지원**은 빠르게 변동. Qwen2-VL/2.5-VL은 공식 확인됐으나 신규 전용 OCR VLM 목록(PaddleOCR-VL "degraded" 등)은 빌드 시 `docs/multimodal.md` 재확인.
 4. **KURE-v1 공식 GGUF 부재** — 커뮤니티 `Bingsu/KURE-v1-Q8_0-GGUF` 사용. safetensors 원본 대비 출력 품질 검증 후 확정. 더 안전한 선택은 BAAI/bge-m3.
 5. **KURE 리더보드 점수는 저자 자체 벤치** — 방향성은 강하나 제3자 검증은 bge-m3가 더 확실.
