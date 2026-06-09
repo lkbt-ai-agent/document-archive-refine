@@ -11,7 +11,6 @@
 > - **seed / 디코딩 파라미터:** AI 생성의 무작위성·창의성을 조절하는 설정값들. seed를 고정하면 같은 입력에서 같은 결과가 재현된다.
 > - **작업 큐(arq):** 오래 걸리는 AI 생성을 줄 세워 백그라운드에서 처리하는 장치(사용자는 기다리지 않음).
 >
-> 더 자세한 정의는 [용어집](./06-glossary.md) 참고.
 
 requirement TODO 해소: **Summary/Draft/Report 워크플로우 / 계보 메타데이터 설계**.
 
@@ -22,9 +21,9 @@ requirement TODO 해소: **Summary/Draft/Report 워크플로우 / 계보 메타�
 
 ## 1. Summary — 장문 요약 워크플로우
 
-> 처음 보는 용어: **컨텍스트 윈도우**(AI가 한 번에 볼 수 있는 [토큰](./06-glossary.md#토큰-token) 양 → [용어집](./06-glossary.md#컨텍스트-윈도우-context-window)), **토큰**(AI가 글자를 세는 최소 단위), **청크**(긴 문서를 잘게 나눈 조각 → [용어집](./06-glossary.md#청크--청킹-chunk--chunking)). 아래 표의 4가지는 모두 **장문 요약 기법**이다 — **stuff**(문서를 통째로 한 번에), **map-reduce**(청크별로 요약한 뒤 그 요약들을 다시 합침 → [용어집](./06-glossary.md#map-reduce-요약-기법)), **refine**(청크를 순서대로 누적하며 요약을 다듬음), **hierarchical**(섹션을 그룹지어 재귀적으로 합치는 계층형).
+> 처음 보는 용어: **컨텍스트 윈도우**(AI가 한 번에 볼 수 있는 토큰 양), **토큰**(AI가 글자를 세는 최소 단위), **청크**(긴 문서를 잘게 나눈 조각). 아래 표의 4가지는 모두 **장문 요약 기법**이다 — **stuff**(문서를 통째로 한 번에), **map-reduce**(청크별로 요약한 뒤 그 요약들을 다시 합침), **refine**(청크를 순서대로 누적하며 요약을 다듬음), **hierarchical**(섹션을 그룹지어 재귀적으로 합치는 계층형).
 
-llama.cpp 모델은 보통 8K–32K [컨텍스트](./06-glossary.md#컨텍스트-윈도우-context-window)(=한 번에 볼 수 있는 토큰 양). 대부분 문서는 한 윈도우에 들어가나 계약서·보고서·스캔 PDF는 초과.
+llama.cpp 모델은 보통 8K–32K 컨텍스트(=한 번에 볼 수 있는 토큰 양). 대부분 문서는 한 윈도우에 들어가나 계약서·보고서·스캔 PDF는 초과.
 
 | 방법 | 컨텍스트 처리 | 지연 | 일관성 | 인용성 | 판정 |
 |---|---|---|---|---|---|
@@ -41,14 +40,14 @@ doc_tokens >  0.6 * ctx  → MAP-REDUCE (map: 청크별 요약+chunk_id / reduce
 ```
 - Refine는 순차 루프라 로컬 MVP엔 느리고 인용성 저하 → "서사형 요약" 명시 요청 시에만.
 - **한국어 프롬프트:** map은 청크별 핵심 ≤5개 번호 목록(전문용어 원형 유지)+`chunk_id` 태그. reduce는 "다음 요약들에서 핵심을 추출해 **한국어** 불릿으로 최종 요약 작성".
-- **인용성([citation](./06-glossary.md#인용--출처-추적-citation--grounding)/grounding = 답을 출처 자료에 "근거 지우기"):** LlamaIndex `CitationQueryEngine` 패턴 — 각 소스를 `Source [n]:` 단위(≈512토큰)로 번호화해 LLM에 주고 "문장 뒤 `[n]` 표기, 모든 답변 최소 1개 인용" 강제. `[n]↔chunk_id` 저장.
+- **인용성(citation/grounding = 답을 출처 자료에 "근거 지우기"):** LlamaIndex `CitationQueryEngine` 패턴 — 각 소스를 `Source [n]:` 단위(≈512토큰)로 번호화해 LLM에 주고 "문장 뒤 `[n]` 표기, 모든 답변 최소 1개 인용" 강제. `[n]↔chunk_id` 저장.
 - **2단계 모두 저장:** 청크 미니요약(재사용·미세 인용) + 문서 최종요약(감사 가능).
 
 ---
 
 ## 2. Draft — 문서 기반 초안 생성
 
-> **초안(draft)** = AI가 선택한 문서를 근거로 써 주는 1차 글(보고서·제안서·공문 등). 핵심 패턴인 **outline-then-expand**는 *개요(목차)를 먼저 쓰고 → 각 섹션을 확장*하는 방식으로, 글이 옆길로 새거나 [환각](./06-glossary.md#환각-hallucination)(사실이 아닌 내용을 지어냄)을 줄인다.
+> **초안(draft)** = AI가 선택한 문서를 근거로 써 주는 1차 글(보고서·제안서·공문 등). 핵심 패턴인 **outline-then-expand**는 *개요(목차)를 먼저 쓰고 → 각 섹션을 확장*하는 방식으로, 글이 옆길로 새거나 환각(사실이 아닌 내용을 지어냄)을 줄인다.
 
 | 패턴 | 강점 | 약점 | MVP |
 |---|---|---|---|
@@ -72,7 +71,7 @@ doc_tokens >  0.6 * ctx  → MAP-REDUCE (map: 청크별 요약+chunk_id / reduce
 
 ## 3. Report — 차트 포함 보고서
 
-> **보고서(Report)** = 표·그래프(차트)가 포함된 AI 산출물. 여기서 채택하는 **[Vega-Lite](./06-glossary.md#vega-lite)**는 *차트를 JSON으로 선언*하면 그려 주는 방식이라, 파이썬 코드를 실제로 실행하지 않아도 돼서 안전하다.
+> **보고서(Report)** = 표·그래프(차트)가 포함된 AI 산출물. 여기서 채택하는 **Vega-Lite**는 *차트를 JSON으로 선언*하면 그려 주는 방식이라, 파이썬 코드를 실제로 실행하지 않아도 돼서 안전하다.
 
 차트 생성 2방식:
 
@@ -100,13 +99,13 @@ doc_tokens >  0.6 * ctx  → MAP-REDUCE (map: 청크별 요약+chunk_id / reduce
 
 ## 4. 계보(Lineage) 데이터 모델
 
-> **계보(Lineage/Provenance)** = 이 AI 산출물이 "무엇으로·어떻게·언제 만들어졌는가"의 추적 기록 → [용어집](./06-glossary.md#계보--프로비넌스-lineage--provenance). 신뢰(출처 확인)와 재현(같은 조건 재실행)을 위해 남긴다.
+> **계보(Lineage/Provenance)** = 이 AI 산출물이 "무엇으로·어떻게·언제 만들어졌는가"의 추적 기록. 신뢰(출처 확인)와 재현(같은 조건 재실행)을 위해 남긴다.
 
 ### 개념 정렬
 - **[W3C PROV](https://www.w3.org/TR/prov-overview/):** 출처(provenance)를 기록하는 국제 표준 모델. 산출물·출처(Entity) ← 생성 실행(Activity) `used` 출처 / `wasAssociatedWith` Agent(사용자+모델), 산출물 `wasDerivedFrom` 출처. (아래 표들이 이 관계를 그대로 담는다.)
 - **Langfuse:** trace(작업) ⊃ generation 관측(prompt, model, params, token usage, latency, version, ts) + retriever 관측.
-- **재현성 핵심 = [seed](./06-glossary.md#provider-제공자--aws-bedrock).** seed는 AI 생성의 무작위성을 고정하는 값으로, 같은 입력에서 **같은 결과를 재현**하게 한다. llama.cpp는 동일 모델+seed+params+프롬프트+빌드에서 결정적. → `seed`+**디코딩 파라미터**(temperature/top_p 등 출력의 무작위성·창의성을 조절하는 설정)+렌더된 프롬프트+모델 파일 해시 저장 시 재실행 가능.
-- **Provider(제공자) = 모델을 어디서 실행했는지.** 이 프로젝트는 지금은 로컬 **llama.cpp**(Mac mini M4)로 돌리지만, 추후 무거운 모델은 **AWS Bedrock**(아마존의 관리형 클라우드 AI)에서 돌릴 수 있다 → [용어집](./06-glossary.md#provider-제공자--aws-bedrock). 아래 `generations.provider`/`models.provider` 컬럼이 `'llama.cpp'`(로컬)와 `'aws-bedrock'`(추후)을 구분해, **실행 위치가 바뀌어도 계보가 그대로 감사·재현 가능**하게 한다(자세한 사용법은 스키마 뒤 설명 참고).
+- **재현성 핵심 = seed.** seed는 AI 생성의 무작위성을 고정하는 값으로, 같은 입력에서 **같은 결과를 재현**하게 한다. llama.cpp는 동일 모델+seed+params+프롬프트+빌드에서 결정적. → `seed`+**디코딩 파라미터**(temperature/top_p 등 출력의 무작위성·창의성을 조절하는 설정)+렌더된 프롬프트+모델 파일 해시 저장 시 재실행 가능.
+- **Provider(제공자) = 모델을 어디서 실행했는지.** 이 프로젝트는 지금은 로컬 **llama.cpp**(Mac mini M4)로 돌리지만, 추후 무거운 모델은 **AWS Bedrock**(아마존의 관리형 클라우드 AI)에서 돌릴 수 있다. 아래 `generations.provider`/`models.provider` 컬럼이 `'llama.cpp'`(로컬)와 `'aws-bedrock'`(추후)을 구분해, **실행 위치가 바뀌어도 계보가 그대로 감사·재현 가능**하게 한다(자세한 사용법은 스키마 뒤 설명 참고).
 - **C2PA/Content Credentials:** 동일 사실을 기록해두면 추후 서명된 "AI 생성 매니페스트" 발행 가능.
 
 ### PostgreSQL 스키마
@@ -210,7 +209,7 @@ CREATE TABLE generation_charts (
 
 ## 5. 비동기 AI 작업 처리
 
-> AI 생성은 수십 초~수 분 걸리므로, 사용자를 기다리게 하지 않고 **[작업 큐](./06-glossary.md#비동기--async--작업-큐-arq-redis)**(무거운 작업을 줄 세워 백그라운드 워커가 처리하는 장치, 여기선 **arq**+Redis)에 넘긴다. 재시도 시 같은 결과가 중복 생성되지 않게 하는 성질이 **[멱등성](./06-glossary.md#멱등성-idempotency)**이다.
+> AI 생성은 수십 초~수 분 걸리므로, 사용자를 기다리게 하지 않고 **작업 큐**(무거운 작업을 줄 세워 백그라운드 워커가 처리하는 장치, 여기선 **arq**+Redis)에 넘긴다. 재시도 시 같은 결과가 중복 생성되지 않게 하는 성질이 **멱등성**이다.
 
 | 옵션 | 비동기 | 상태/결과 | 크래시 생존 | 별도 프로세스 | MVP |
 |---|---|---|---|---|---|
