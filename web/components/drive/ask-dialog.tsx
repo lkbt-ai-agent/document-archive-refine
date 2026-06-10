@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { useDriveStore } from "@/lib/store";
 import { mockAskAnswer } from "@/lib/mock-data";
+import { formatDuration } from "@/lib/format";
 
 export const AskDialog = ({
   open,
@@ -27,6 +28,7 @@ export const AskDialog = ({
   const [q, setQ] = React.useState("작년 내 연봉이 얼마였지?");
   const [loading, setLoading] = React.useState(false);
   const [answered, setAnswered] = React.useState(false);
+  const [elapsedMs, setElapsedMs] = React.useState<number | null>(null);
   const selectDocument = useDriveStore((s) => s.selectDocument);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
 
@@ -34,7 +36,10 @@ export const AskDialog = ({
     if (!q.trim()) return;
     setLoading(true);
     setAnswered(false);
+    // RAG 전체 소요 시간(성능 측정용) — 실제로는 /search/ask 응답의 elapsed_ms (arch 08 §12)
+    const start = Date.now();
     setTimeout(() => {
+      setElapsedMs(Date.now() - start);
       setLoading(false);
       setAnswered(true);
     }, 800);
@@ -72,7 +77,7 @@ export const AskDialog = ({
       <DialogContent className={cn(dialogMobileFullscreen, "sm:max-w-xl")}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" /> AI에게 질문 (RAG)
+            <Sparkles className="size-4 text-primary" /> RAG 질문
           </DialogTitle>
           <DialogDescription>
             제공된 문서에만 근거해 인용과 함께 답합니다.
@@ -117,6 +122,11 @@ export const AskDialog = ({
             <p className="rounded-md bg-muted/50 p-3 text-sm leading-relaxed">
               {renderAnswer(mockAskAnswer.answer)}
             </p>
+            {elapsedMs != null && (
+              <p className="text-[11px] text-muted-foreground tabular-nums">
+                RAG 소요 {formatDuration(elapsedMs)}
+              </p>
+            )}
             <div className="space-y-1.5">
               <p className="text-xs font-semibold text-muted-foreground">출처</p>
               {mockAskAnswer.citations.map((c) => (

@@ -18,8 +18,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useDriveStore } from "@/lib/store";
-import { formatDate, genKindLabel, genStatusLabel } from "@/lib/format";
-import type { GenKind, GenStatus } from "@/lib/types";
+import {
+  formatDate,
+  formatDuration,
+  genKindLabel,
+  genStatusLabel,
+} from "@/lib/format";
+import type { GenKind, GenStatus, Generation } from "@/lib/types";
 
 const KIND_OPTIONS: { kind: GenKind; icon: React.ElementType; desc: string }[] = [
   { kind: "summary", icon: FileText, desc: "STUFF / MAP-REDUCE 요약" },
@@ -38,8 +43,12 @@ export const GenerationPanel = () => {
   const doc = useDriveStore((s) =>
     s.documents.find((d) => d.id === s.selectedDocumentId),
   );
+  const documents = useDriveStore((s) => s.documents);
   const generations = useDriveStore((s) => s.generations);
   const startGeneration = useDriveStore((s) => s.startGeneration);
+  const selectFolder = useDriveStore((s) => s.selectFolder);
+  const selectDocument = useDriveStore((s) => s.selectDocument);
+  const setMobileRight = useDriveStore((s) => s.setMobileRight);
   const [open, setOpen] = React.useState(false);
   const [kind, setKind] = React.useState<GenKind>("summary");
 
@@ -50,6 +59,26 @@ export const GenerationPanel = () => {
     toast.success(
       `${genKindLabel[kind]} 생성 요청 (POST /generations → 202, 목업)`,
     );
+  };
+
+  // 산출물 내역 = 현재 원본 문서의 생성. 성공 건은 출력 문서가 존재할 때만(삭제 시 비노출, arch 09 §9a).
+  const items = generations.filter(
+    (g) =>
+      g.documentId === doc?.id &&
+      (g.status !== "succeeded" ||
+        (g.outputDocumentId != null &&
+          documents.some((d) => d.id === g.outputDocumentId))),
+  );
+
+  // 산출물 내역 row 클릭 → Center가 산출물 문서 폴더로 이동·선택 (plan 1.13.5)
+  const openArtifact = (g: Generation) => {
+    const out = g.outputDocumentId
+      ? documents.find((d) => d.id === g.outputDocumentId)
+      : undefined;
+    if (!out) return;
+    selectFolder(out.folderId);
+    selectDocument(out.id);
+    setMobileRight(true);
   };
 
   return (
@@ -106,34 +135,50 @@ export const GenerationPanel = () => {
       <Separator />
 
       <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        생성 이력
+        산출물 내역
       </div>
 
       <div className="flex-1 space-y-2 overflow-y-auto px-4 pb-4">
-        {generations.length === 0 && (
+        {items.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            생성 이력이 없습니다.
+            이 문서의 산출물이 없습니다.
           </p>
         )}
-        {generations.map((g) => (
-          <div key={g.id} className="rounded-md border p-2.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-medium">{genKindLabel[g.kind]}</span>
-              <span className={cn("text-xs", genStatusColor[g.status])}>
-                {genStatusLabel[g.status]}
-              </span>
-            </div>
-            <p className="truncate text-xs text-muted-foreground">
-              {g.documentName}
-            </p>
-            {g.status === "running" && (
-              <Progress value={g.progressPct} className="mt-2 h-1" />
-            )}
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {formatDate(g.createdAt)}
-            </p>
-          </div>
-        ))}
+        {items.map((g) => {
+          const navigable = g.status === "succeeded" && g.outputDocumentId != null;
+          return (
+            <button
+              key={g.id}
+              type="button"
+              disabled={!navigable}
+              onClick={() => navigable && openArtifact(g)}
+              className={cn(
+                "block w-full rounded-md border p-2.5 text-left",
+                navigable
+                  ? "cursor-pointer hover:bg-accent"
+                  : "cursor-default",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">{genKindLabel[g.kind]}</span>
+                <span className={cn("text-xs", genStatusColor[g.status])}>
+                  {genStatusLabel[g.status]}
+                </span>
+              </div>
+              {g.status === "running" && (
+                <Progress value={g.progressPct} className="mt-2 h-1" />
+              )}
+              <p className="mt-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                <span>{formatDate(g.createdAt)}</span>
+                {g.elapsedMs != null && (
+                  <span className="tabular-nums">
+                    생성 {formatDuration(g.elapsedMs)}
+                  </span>
+                )}
+              </p>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

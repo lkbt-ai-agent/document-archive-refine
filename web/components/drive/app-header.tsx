@@ -67,7 +67,7 @@ export const AppHeader = () => {
       <div className="ml-auto flex items-center gap-1">
         <Button variant="outline" size="sm" onClick={() => setAskOpen(true)}>
           <Sparkles className="size-4" />
-          <span className="hidden sm:inline">AI 질문</span>
+          <span className="hidden sm:inline">RAG 질문</span>
         </Button>
         <ThemeToggle />
       </div>

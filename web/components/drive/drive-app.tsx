@@ -25,8 +25,10 @@ export const DriveApp = () => {
   const mobileRightOpen = useDriveStore((s) => s.mobileRightOpen);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
   const selectDocument = useDriveStore((s) => s.selectDocument);
-  // 우측 인스펙터는 문서 선택 시에만 노출(토글) — arch 10 §8b
-  const inspectorOpen = useDriveStore((s) => s.selectedDocumentId != null);
+  // 우측 인스펙터는 문서 또는 폴더 인스펙터 대상이 있을 때 노출(토글) — arch 10 §8b·§7a
+  const inspectorOpen = useDriveStore(
+    (s) => s.selectedDocumentId != null || s.inspectedFolderId != null,
+  );
   // 좌측 패널 접힘(PC) — 헤더 토글 (arch 10 §8b)
   const leftCollapsed = useDriveStore((s) => s.leftCollapsed);
 

@@ -43,7 +43,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { StatusBadge } from "./status-badge";
+import {
+  useFolderActions,
+  FolderActionsMenu,
+  FolderContextMenu,
+} from "./folder-actions";
 import { useDriveStore } from "@/lib/store";
 import { formatBytes, formatDate } from "@/lib/format";
 import type { DocumentItem, Folder } from "@/lib/types";
@@ -60,10 +72,14 @@ export const DocumentList = () => {
   const folders = useDriveStore((s) => s.folders);
   const documents = useDriveStore((s) => s.documents);
   const selectedDocumentId = useDriveStore((s) => s.selectedDocumentId);
+  const inspectedFolderId = useDriveStore((s) => s.inspectedFolderId);
   const selectFolder = useDriveStore((s) => s.selectFolder);
   const selectDocument = useDriveStore((s) => s.selectDocument);
+  const inspectFolder = useDriveStore((s) => s.inspectFolder);
   const deleteDocument = useDriveStore((s) => s.deleteDocument);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
+
+  const { onAction, dialogs } = useFolderActions();
 
   const folderName = folders.find((f) => f.id === folderId)?.name ?? "폴더";
 
@@ -80,14 +96,12 @@ export const DocumentList = () => {
 
   const docCount = rows.filter((r) => r.kind === "doc").length;
 
-  // 서버사이드 페이지네이션 기준(manualPagination) — 프로토타입은 클라이언트 슬라이스로 흉내,
-  // 추후 GET /documents?folder_id=&limit=&cursor= 로 배선.
+  // 서버사이드 페이지네이션 기준(manualPagination) — 프로토타입은 클라이언트 슬라이스로 흉내.
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: PAGE_SIZE,
   });
 
-  // 폴더 전환 시 1페이지로 리셋
   React.useEffect(() => {
     setPagination((p) => ({ ...p, pageIndex: 0 }));
   }, [folderId]);
@@ -97,6 +111,31 @@ export const DocumentList = () => {
     const start = pagination.pageIndex * pagination.pageSize;
     return rows.slice(start, start + pagination.pageSize);
   }, [rows, pagination]);
+
+  // 폴더 row: 단일 클릭=인스펙터 토글 / 더블 클릭=진입 (plan 1.13.2)
+  const folderClickTimer = React.useRef<number | null>(null);
+  const onFolderClick = (id: string) => {
+    if (folderClickTimer.current) return; // 더블 클릭 진행 중
+    folderClickTimer.current = window.setTimeout(() => {
+      folderClickTimer.current = null;
+      const isOpen = inspectedFolderId === id;
+      inspectFolder(isOpen ? null : id);
+      setMobileRight(!isOpen);
+    }, 220);
+  };
+  const onFolderDoubleClick = (id: string) => {
+    if (folderClickTimer.current) {
+      clearTimeout(folderClickTimer.current);
+      folderClickTimer.current = null;
+    }
+    selectFolder(id); // 진입(인스펙터 해제)
+  };
+  // 문서 row: 클릭 토글 (같은 row 재클릭=닫힘)
+  const onDocClick = (id: string) => {
+    const isOpen = selectedDocumentId === id;
+    selectDocument(isOpen ? null : id);
+    setMobileRight(!isOpen);
+  };
 
   const columns = React.useMemo<ColumnDef<ListRow>[]>(
     () => [
@@ -158,7 +197,11 @@ export const DocumentList = () => {
         header: "등록일",
         cell: ({ row }) => {
           const r = row.original;
-          return r.kind === "doc" ? formatDate(r.doc.createdAt) : "—";
+          return r.kind === "doc"
+            ? formatDate(r.doc.createdAt)
+            : r.folder.createdAt
+              ? formatDate(r.folder.createdAt)
+              : "—";
         },
       },
       {
@@ -166,7 +209,15 @@ export const DocumentList = () => {
         header: "",
         cell: ({ row }) => {
           const r = row.original;
-          if (r.kind !== "doc") return null;
+          if (r.kind === "folder") {
+            return (
+              <FolderActionsMenu
+                folder={r.folder}
+                onAction={onAction}
+                className="size-7"
+              />
+            );
+          }
           const d = r.doc;
           return (
             <DropdownMenu>
@@ -205,7 +256,7 @@ export const DocumentList = () => {
         },
       },
     ],
-    [selectDocument, deleteDocument],
+    [selectDocument, deleteDocument, onAction],
   );
 
   const table = useReactTable({
@@ -219,23 +270,11 @@ export const DocumentList = () => {
     getRowId: (row) => row.id,
   });
 
-  // 컬럼별 반응형 노출(상태/크기/등록일은 좁은 화면에서 숨김)
   const cellHiddenClass: Record<string, string> = {
     status: "hidden sm:table-cell",
     size: "hidden md:table-cell text-muted-foreground tabular-nums",
     createdAt: "hidden lg:table-cell text-muted-foreground tabular-nums",
     actions: "w-10",
-  };
-
-  const onRowActivate = (r: ListRow) => {
-    if (r.kind === "folder") {
-      selectFolder(r.folder.id); // 폴더 진입(selectedDocumentId 초기화 → 인스펙터 접힘)
-    } else {
-      // 같은 row 재클릭 시 토글로 닫힘 (없으면 PC에서 닫히지 않음)
-      const isOpen = selectedDocumentId === r.doc.id;
-      selectDocument(isOpen ? null : r.doc.id);
-      setMobileRight(!isOpen);
-    }
   };
 
   return (
@@ -284,15 +323,25 @@ export const DocumentList = () => {
               <TableBody>
                 {table.getRowModel().rows.map((row) => {
                   const r = row.original;
-                  const isSelectedDoc =
-                    r.kind === "doc" && selectedDocumentId === r.doc.id;
-                  return (
+                  const isActive =
+                    r.kind === "doc"
+                      ? selectedDocumentId === r.doc.id
+                      : inspectedFolderId === r.folder.id;
+                  const tableRow = (
                     <TableRow
-                      key={row.id}
-                      onClick={() => onRowActivate(r)}
+                      onClick={() =>
+                        r.kind === "folder"
+                          ? onFolderClick(r.folder.id)
+                          : onDocClick(r.doc.id)
+                      }
+                      onDoubleClick={
+                        r.kind === "folder"
+                          ? () => onFolderDoubleClick(r.folder.id)
+                          : undefined
+                      }
                       className={cn(
-                        "cursor-pointer",
-                        isSelectedDoc && "bg-accent/60",
+                        "cursor-pointer select-none",
+                        isActive && "bg-accent/60",
                       )}
                     >
                       {row.getVisibleCells().map((cell) => (
@@ -316,6 +365,46 @@ export const DocumentList = () => {
                       ))}
                     </TableRow>
                   );
+
+                  if (r.kind === "folder") {
+                    return (
+                      <FolderContextMenu
+                        key={row.id}
+                        folder={r.folder}
+                        onAction={onAction}
+                      >
+                        {tableRow}
+                      </FolderContextMenu>
+                    );
+                  }
+                  const d = r.doc;
+                  return (
+                    <ContextMenu key={row.id}>
+                      <ContextMenuTrigger asChild>{tableRow}</ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem onClick={() => selectDocument(d.id)}>
+                          <Eye className="size-4" /> 상세 보기
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          onClick={() =>
+                            toast.info("presigned GET 다운로드 (목업)")
+                          }
+                        >
+                          <Download className="size-4" /> 다운로드
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem
+                          variant="destructive"
+                          onClick={() => {
+                            deleteDocument(d.id);
+                            toast.warning(`"${d.name}" 삭제 (목업)`);
+                          }}
+                        >
+                          <Trash2 className="size-4" /> 삭제
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  );
                 })}
               </TableBody>
             </Table>
@@ -323,7 +412,6 @@ export const DocumentList = () => {
         )}
       </ScrollArea>
 
-      {/* 서버 페이지네이션 컨트롤(흉내) — 1페이지면 숨김 */}
       {table.getPageCount() > 1 && (
         <div className="flex items-center justify-between gap-2 border-t px-4 py-2 text-xs text-muted-foreground sm:px-6">
           <span className="tabular-nums">
@@ -349,6 +437,9 @@ export const DocumentList = () => {
           </div>
         </div>
       )}
+
+      {/* 폴더 이동/이름변경/삭제 다이얼로그(공용) */}
+      {dialogs}
     </div>
   );
 };

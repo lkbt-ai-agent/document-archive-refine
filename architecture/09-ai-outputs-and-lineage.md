@@ -78,7 +78,7 @@ AI 산출물(요약/초안/보고서)은 `generations.output_text`로만 두지 
 |---|---|---|
 | POST | `/generations` | `{kind, document_ids, options}` → 202 `{id}` |
 | GET | `/generations/{id}` | 상태·진행·결과(`output_document_id`·`latency_ms` 포함) |
-| GET | `/generations/{id}/lineage` | 출처/프롬프트/차트 전체 |
+| GET | `/generations/{id}/lineage` | 출처/프롬프트/차트 전체 — **산출물 문서 인스펙터의 계보 섹션**에 표시(부모 문서 링크·프롬프트·모델/seed·인용, 10 §7a) |
 | GET | `/generations?source_document_id=&kind=&user=` | **"산출물 내역"** — 원본 문서 기준, `output_document_id` 존재 건만(§9a) |
 
 ## 11. 제약·리스크

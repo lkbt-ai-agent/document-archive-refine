@@ -53,7 +53,8 @@ interface DriveState {
 
   // UI 상태
   selectedFolderId: string;
-  selectedDocumentId: string | null; // != null 이면 우측 인스펙터 노출(arch 10 §8b)
+  selectedDocumentId: string | null; // 문서 인스펙터 대상(arch 10 §8b)
+  inspectedFolderId: string | null; // 폴더 인스펙터 대상(폴더 단일클릭, arch 10 §7a). selectedDocumentId 와 상호배타
   expandedFolderIds: string[];
   leftCollapsed: boolean; // PC(≥md) 좌측 패널 접힘(헤더 토글, arch 10 §8b)
   mobileLeftOpen: boolean;
@@ -63,6 +64,7 @@ interface DriveState {
   // actions — UI
   selectFolder: (id: string) => void;
   selectDocument: (id: string | null) => void;
+  inspectFolder: (id: string | null) => void;
   toggleFolder: (id: string) => void;
   toggleLeftCollapsed: () => void;
   setLeftCollapsed: (v: boolean) => void;
@@ -89,14 +91,20 @@ export const useDriveStore = create<DriveState>((set, get) => ({
 
   selectedFolderId: "hr-salary",
   selectedDocumentId: null,
+  inspectedFolderId: null,
   expandedFolderIds: ["root", "hr", "hr-salary", "reports"],
   leftCollapsed: false,
   mobileLeftOpen: false,
   mobileRightOpen: false,
   searchQuery: "",
 
-  selectFolder: (id) => set({ selectedFolderId: id, selectedDocumentId: null }),
-  selectDocument: (id) => set({ selectedDocumentId: id }),
+  // 폴더 진입(네비게이션) — 인스펙터(문서/폴더) 모두 해제
+  selectFolder: (id) =>
+    set({ selectedFolderId: id, selectedDocumentId: null, inspectedFolderId: null }),
+  // 문서 인스펙터 — 폴더 인스펙터와 상호배타
+  selectDocument: (id) => set({ selectedDocumentId: id, inspectedFolderId: null }),
+  // 폴더 인스펙터 — 문서 인스펙터와 상호배타
+  inspectFolder: (id) => set({ inspectedFolderId: id, selectedDocumentId: null }),
   toggleFolder: (id) =>
     set((s) => ({
       expandedFolderIds: s.expandedFolderIds.includes(id)
@@ -114,7 +122,10 @@ export const useDriveStore = create<DriveState>((set, get) => ({
     set((s) => {
       const id = nextId();
       return {
-        folders: [...s.folders, { id, parentId, name }],
+        folders: [
+          ...s.folders,
+          { id, parentId, name, createdAt: new Date().toISOString() },
+        ],
         // 부모를 펼쳐 새 폴더가 보이도록
         expandedFolderIds:
           parentId && !s.expandedFolderIds.includes(parentId)
@@ -144,13 +155,24 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   deleteFolder: (id) =>
     set((s) => {
       const removed = collectSubtree(s.folders, id);
+      const remainingDocs = s.documents.filter((d) => !removed.has(d.folderId));
+      const liveDocIds = new Set(remainingDocs.map((d) => d.id));
       return {
         folders: s.folders.filter((f) => !removed.has(f.id)),
-        documents: s.documents.filter((d) => !removed.has(d.folderId)),
+        documents: remainingDocs,
+        // 삭제된 폴더 내 산출물 문서를 가리키던 생성의 링크 해제 → 산출물 내역 비노출
+        generations: s.generations.map((g) =>
+          g.outputDocumentId && !liveDocIds.has(g.outputDocumentId)
+            ? { ...g, outputDocumentId: undefined }
+            : g,
+        ),
         selectedFolderId: removed.has(s.selectedFolderId)
           ? "root"
           : s.selectedFolderId,
         selectedDocumentId: null,
+        inspectedFolderId: removed.has(s.inspectedFolderId ?? "")
+          ? null
+          : s.inspectedFolderId,
       };
     }),
 
@@ -202,6 +224,7 @@ export const useDriveStore = create<DriveState>((set, get) => ({
                       status: "ready",
                       stage: undefined,
                       progress: undefined,
+                      ingestMs: STAGES.length * 900,
                       llmTitle: fileName.replace(/\.[^.]+$/, ""),
                       llmSummary: "(자동 생성된 요약 — 목업)",
                       topics: ["자동분류"],
@@ -227,6 +250,10 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   deleteDocument: (id) =>
     set((s) => ({
       documents: s.documents.filter((d) => d.id !== id),
+      // 이 문서가 어떤 생성의 산출물이었다면 링크 해제 → 원본의 산출물 내역에서 사라짐
+      generations: s.generations.map((g) =>
+        g.outputDocumentId === id ? { ...g, outputDocumentId: undefined } : g,
+      ),
       selectedDocumentId:
         s.selectedDocumentId === id ? null : s.selectedDocumentId,
     })),
@@ -257,11 +284,46 @@ export const useDriveStore = create<DriveState>((set, get) => ({
         pct += 20;
         if (pct >= 100) {
           clearInterval(t);
-          set((s) => ({
-            generations: s.generations.map((g) =>
-              g.id === id ? { ...g, status: "succeeded", progressPct: 100 } : g,
-            ),
-          }));
+          // 성공 시 산출물을 1급 문서로 materialize(원본과 같은 폴더) — arch 09 §9a
+          set((s) => {
+            const src = s.documents.find((d) => d.id === documentId);
+            const outId = nextId();
+            const kindLabel = { summary: "요약", draft: "초안", report: "보고서" }[
+              kind
+            ];
+            const baseName = (src?.llmTitle ?? src?.name ?? "문서").replace(
+              /\.[^.]+$/,
+              "",
+            );
+            const outDoc: DocumentItem = {
+              id: outId,
+              folderId: src?.folderId ?? s.selectedFolderId,
+              name: `[${kindLabel}] ${baseName}.md`,
+              mime: "text/markdown",
+              sizeBytes: 2_048,
+              status: "ready",
+              topics: [kindLabel],
+              keywords: [kindLabel],
+              llmTitle: `${baseName} — ${kindLabel}`,
+              llmSummary: `AI가 생성한 ${kindLabel} 산출물 (목업).`,
+              createdAt: new Date().toISOString(),
+              ingestMs: 1_000,
+            };
+            return {
+              documents: [outDoc, ...s.documents],
+              generations: s.generations.map((g) =>
+                g.id === id
+                  ? {
+                      ...g,
+                      status: "succeeded",
+                      progressPct: 100,
+                      outputDocumentId: outId,
+                      elapsedMs: 7_000,
+                    }
+                  : g,
+              ),
+            };
+          });
         } else {
           set((s) => ({
             generations: s.generations.map((g) =>

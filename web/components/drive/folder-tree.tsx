@@ -1,43 +1,20 @@
 "use client";
 
 import * as React from "react";
-import {
-  ChevronRight,
-  Folder as FolderIcon,
-  FolderOpen,
-  Plus,
-  Pencil,
-  Trash2,
-  MoveRight,
-  MoreHorizontal,
-} from "lucide-react";
+import { ChevronRight, Folder as FolderIcon, FolderOpen, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { FolderNameDialog } from "./folder-name-dialog";
-import { MoveFolderDialog } from "./move-folder-dialog";
+import {
+  useFolderActions,
+  FolderActionsMenu,
+  FolderContextMenu,
+  type FolderAction,
+} from "./folder-actions";
 import { useDriveStore } from "@/lib/store";
 import type { Folder } from "@/lib/types";
-
-type FolderAction = "rename" | "move" | "delete";
 
 const buildChildrenMap = (folders: Folder[]) => {
   const map = new Map<string | null, Folder[]>();
@@ -72,73 +49,52 @@ const FolderNode = ({
 
   return (
     <div>
-      <div
-        className={cn(
-          "group flex w-full items-center gap-1 rounded-md pr-1 text-sm transition-colors",
-          "hover:bg-accent hover:text-accent-foreground",
-          isSelected && "bg-accent text-accent-foreground font-medium",
-        )}
-        style={{ paddingLeft: depth * 14 + 4 }}
-      >
-        <button
-          type="button"
-          aria-label={hasChildren ? "펼치기/접기" : undefined}
-          onClick={() => hasChildren && toggleFolder(folder.id)}
+      <FolderContextMenu folder={folder} onAction={onAction}>
+        <div
           className={cn(
-            "flex size-4 shrink-0 items-center justify-center rounded",
-            !hasChildren && "invisible",
+            "group flex w-full items-center gap-1 rounded-md pr-1 text-sm transition-colors",
+            "hover:bg-accent hover:text-accent-foreground",
+            isSelected && "bg-accent text-accent-foreground font-medium",
           )}
+          style={{ paddingLeft: depth * 14 + 4 }}
         >
-          <ChevronRight
-            className={cn("size-3.5 transition-transform", expanded && "rotate-90")}
+          <button
+            type="button"
+            aria-label={hasChildren ? "펼치기/접기" : undefined}
+            onClick={() => hasChildren && toggleFolder(folder.id)}
+            className={cn(
+              "flex size-4 shrink-0 items-center justify-center rounded",
+              !hasChildren && "invisible",
+            )}
+          >
+            <ChevronRight
+              className={cn("size-3.5 transition-transform", expanded && "rotate-90")}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              selectFolder(folder.id);
+              setMobileLeft(false);
+            }}
+            className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left"
+          >
+            {expanded && hasChildren ? (
+              <FolderOpen className="size-4 shrink-0 text-primary" />
+            ) : (
+              <FolderIcon className="size-4 shrink-0 text-muted-foreground" />
+            )}
+            <span className="truncate">{folder.name}</span>
+          </button>
+
+          <FolderActionsMenu
+            folder={folder}
+            onAction={onAction}
+            className="size-6 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
           />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            selectFolder(folder.id);
-            setMobileLeft(false);
-          }}
-          className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left"
-        >
-          {expanded && hasChildren ? (
-            <FolderOpen className="size-4 shrink-0 text-primary" />
-          ) : (
-            <FolderIcon className="size-4 shrink-0 text-muted-foreground" />
-          )}
-          <span className="truncate">{folder.name}</span>
-        </button>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-6 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
-              aria-label="폴더 작업"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onAction("move", folder)}>
-              <MoveRight className="size-4" /> 이동
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAction("rename", folder)}>
-              <Pencil className="size-4" /> 이름 변경
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => onAction("delete", folder)}
-            >
-              <Trash2 className="size-4" /> 삭제
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        </div>
+      </FolderContextMenu>
 
       {expanded &&
         children.map((c) => (
@@ -158,23 +114,12 @@ export const FolderTree = () => {
   const folders = useDriveStore((s) => s.folders);
   const selectedFolderId = useDriveStore((s) => s.selectedFolderId);
   const addFolder = useDriveStore((s) => s.addFolder);
-  const renameFolder = useDriveStore((s) => s.renameFolder);
-  const deleteFolder = useDriveStore((s) => s.deleteFolder);
 
   const childrenMap = React.useMemo(() => buildChildrenMap(folders), [folders]);
   const roots = childrenMap.get(null) ?? [];
 
-  // 다이얼로그 상태 (트리 루트에서 단일 관리)
+  const { onAction, dialogs } = useFolderActions();
   const [newOpen, setNewOpen] = React.useState(false);
-  const [renameTarget, setRenameTarget] = React.useState<Folder | null>(null);
-  const [moveTarget, setMoveTarget] = React.useState<Folder | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<Folder | null>(null);
-
-  const onAction = (action: FolderAction, folder: Folder) => {
-    if (action === "rename") setRenameTarget(folder);
-    else if (action === "move") setMoveTarget(folder);
-    else if (action === "delete") setDeleteTarget(folder);
-  };
 
   const newParentName =
     folders.find((f) => f.id === selectedFolderId)?.name ?? "내 보관함";
@@ -225,56 +170,8 @@ export const FolderTree = () => {
         />
       )}
 
-      {/* 이름 변경 */}
-      {renameTarget && (
-        <FolderNameDialog
-          key={`rename-${renameTarget.id}`}
-          open
-          onOpenChange={(v) => !v && setRenameTarget(null)}
-          title="폴더 이름 변경"
-          initialName={renameTarget.name}
-          submitLabel="변경"
-          onSubmit={(name) => {
-            renameFolder(renameTarget.id, name);
-            toast.success("이름 변경 (PATCH /folders/{id} — 목업)");
-          }}
-        />
-      )}
-
-      {/* 이동 */}
-      <MoveFolderDialog
-        folder={moveTarget}
-        open={moveTarget != null}
-        onOpenChange={(v) => !v && setMoveTarget(null)}
-      />
-
-      {/* 삭제 확인 */}
-      <AlertDialog
-        open={deleteTarget != null}
-        onOpenChange={(v) => !v && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>폴더를 삭제할까요?</AlertDialogTitle>
-            <AlertDialogDescription>
-              &quot;{deleteTarget?.name}&quot; 및 하위 폴더·문서가 모두 삭제됩니다. 되돌릴 수 없습니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deleteTarget) {
-                  deleteFolder(deleteTarget.id);
-                  toast.warning(`"${deleteTarget.name}" 삭제 (DELETE /folders/{id} — 목업)`);
-                }
-              }}
-            >
-              삭제
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* 이동/이름변경/삭제 다이얼로그(공용) */}
+      {dialogs}
     </div>
   );
 };

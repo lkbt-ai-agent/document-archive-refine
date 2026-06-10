@@ -5,10 +5,29 @@ import { Separator } from "@/components/ui/separator";
 import { DocumentDetail } from "./document-detail";
 import { MetadataView } from "./metadata-view";
 import { GenerationPanel } from "./generation-panel";
+import { FolderDetail } from "./folder-detail";
+import { useDriveStore } from "@/lib/store";
 
-// DetailInspector(토글형) = 문서 상세 + 메타데이터(읽기 전용) + 생성 (arch 10 §8b)
-// 패널 자체 닫기 버튼 없음 — PC는 row 재클릭 토글, 모바일은 Sheet 닫기로 닫는다.
+// DetailInspector(토글형) — 문서/폴더 양쪽 (arch 10 §8b)
+// 패널 자체 닫기 버튼 없음: PC=row 재클릭 토글, 모바일=Sheet 닫기.
 export const RightPanel = () => {
+  const inspectedFolderId = useDriveStore((s) => s.inspectedFolderId);
+
+  // 폴더 인스펙터 (단일 클릭)
+  if (inspectedFolderId) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex shrink-0 items-center border-b px-3 py-2">
+          <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            폴더 정보
+          </span>
+        </div>
+        <FolderDetail />
+      </div>
+    );
+  }
+
+  // 문서 인스펙터
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center border-b px-3 py-2">
@@ -30,7 +49,7 @@ export const RightPanel = () => {
               메타데이터
             </TabsTrigger>
             <TabsTrigger value="gen" className="flex-1">
-              생성
+              산출물
             </TabsTrigger>
           </TabsList>
         </div>

@@ -9,13 +9,13 @@ import type {
 // 백엔드 미연동 — 모든 데이터는 목업. 추후 실 API(react-query)로 교체.
 
 export const mockFolders: Folder[] = [
-  { id: "root", parentId: null, name: "내 보관함" },
-  { id: "hr", parentId: "root", name: "인사" },
-  { id: "hr-salary", parentId: "hr", name: "급여" },
-  { id: "hr-contract", parentId: "hr", name: "계약" },
-  { id: "acct", parentId: "root", name: "회계" },
-  { id: "reports", parentId: "root", name: "보고서" },
-  { id: "reports-2025", parentId: "reports", name: "2025" },
+  { id: "root", parentId: null, name: "내 보관함", createdAt: "2026-01-02T00:00:00Z" },
+  { id: "hr", parentId: "root", name: "인사", createdAt: "2026-01-05T00:00:00Z" },
+  { id: "hr-salary", parentId: "hr", name: "급여", createdAt: "2026-01-06T00:00:00Z" },
+  { id: "hr-contract", parentId: "hr", name: "계약", createdAt: "2026-01-06T00:00:00Z" },
+  { id: "acct", parentId: "root", name: "회계", createdAt: "2026-02-01T00:00:00Z" },
+  { id: "reports", parentId: "root", name: "보고서", createdAt: "2026-03-01T00:00:00Z" },
+  { id: "reports-2025", parentId: "reports", name: "2025", createdAt: "2026-03-02T00:00:00Z" },
 ];
 
 export const mockDocuments: DocumentItem[] = [
@@ -34,6 +34,7 @@ export const mockDocuments: DocumentItem[] = [
     llmSummary:
       "2025년 기본급 및 성과급 구성, 지급 일정과 복리후생 항목을 정리한 연봉계약서.",
     createdAt: "2026-06-08T09:12:00Z",
+    ingestMs: 4200,
   },
   {
     id: "d2",
@@ -49,6 +50,7 @@ export const mockDocuments: DocumentItem[] = [
     llmTitle: "2024년도 연봉계약서",
     llmSummary: "2024년 연봉 구성 및 지급 조건.",
     createdAt: "2025-06-07T03:20:00Z",
+    ingestMs: 3800,
   },
   {
     id: "d3",
@@ -100,6 +102,22 @@ export const mockDocuments: DocumentItem[] = [
     llmTitle: "표준근로계약서",
     llmSummary: "근로조건·임금·근로시간을 규정한 표준 근로계약서 양식.",
     createdAt: "2026-05-30T11:10:00Z",
+    ingestMs: 900,
+  },
+  {
+    // AI 산출물 = 1급 문서(materialize). 원본 d1과 같은 폴더(hr-salary)에 저장 — g1의 출력.
+    id: "d7",
+    folderId: "hr-salary",
+    name: "[요약] 2025년도 연봉계약서.md",
+    mime: "text/markdown",
+    sizeBytes: 2_480,
+    status: "ready",
+    topics: ["연봉", "요약"],
+    keywords: ["요약", "연봉", "2025"],
+    llmTitle: "2025년도 연봉계약서 — 요약",
+    llmSummary: "AI가 생성한 2025 연봉계약서 요약본(산출물).",
+    createdAt: "2026-06-09T10:00:18Z",
+    ingestMs: 1100,
   },
 ];
 
@@ -112,6 +130,8 @@ export const mockGenerations: Generation[] = [
     documentId: "d1",
     documentName: "2025_연봉계약서.pdf",
     createdAt: "2026-06-09T10:00:00Z",
+    outputDocumentId: "d7",
+    elapsedMs: 18_400,
   },
   {
     id: "g2",
@@ -180,6 +200,14 @@ export const mockOriginalText: Record<string, string> = {
 | 지급방법 | 근로자 명의 계좌 이체 |
 
 > 본 양식은 표준근로계약서 예시이며, 실제 계약 시 법령을 확인한다.
+`,
+  d7: `# 2025년도 연봉계약서 — 요약 (AI 산출물)
+
+- **기본급**: 전년 대비 5% 인상.
+- **성과급**: 분기별 평가 결과에 따라 차등 지급.
+- **지급 일정**: 매월 25일.
+
+> 본 문서는 AI가 생성한 산출물이며, 원본 문서를 근거로 합니다[1].
 `,
 };
 

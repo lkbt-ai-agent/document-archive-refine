@@ -21,6 +21,12 @@ export const formatDate = (iso: string): string => {
   return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
 };
 
+// 소요 시간(ms) → 초 표기. AI 성능 측정 표시용(arch 10 §11).
+export const formatDuration = (ms: number): string => {
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(ms < 10_000 ? 2 : 1)}초`;
+};
+
 export const statusLabel: Record<DocStatus, string> = {
   uploaded: "업로드됨",
   processing: "처리 중",

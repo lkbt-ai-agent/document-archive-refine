@@ -11,6 +11,7 @@ export interface Folder {
   id: string;
   parentId: string | null; // root = null
   name: string;
+  createdAt?: string; // ISO — 등록일(폴더 인스펙터 표시용)
 }
 
 export interface DocumentItem {
@@ -30,6 +31,7 @@ export interface DocumentItem {
   pageCount?: number;
   author?: string;
   createdAt: string; // ISO — 등록일(문서는 인앱 편집 없음, 수정일 미사용; arch 10 §10)
+  ingestMs?: number; // 인제스트(추출~임베딩) 소요 ms — 성능 측정 표시용(arch 10 §11)
 }
 
 export type GenKind = "summary" | "draft" | "report";
@@ -40,9 +42,11 @@ export interface Generation {
   kind: GenKind;
   status: GenStatus;
   progressPct: number;
-  documentId: string;
+  documentId: string; // 원본(source) 문서 id
   documentName: string;
   createdAt: string; // ISO
+  outputDocumentId?: string; // 산출물이 materialize된 문서 id(succeeded). 문서 삭제 시 해제 → 내역 비노출
+  elapsedMs?: number; // 생성 소요 ms — 성능 측정 표시용(arch 10 §11)
 }
 
 export interface SearchResultItem {

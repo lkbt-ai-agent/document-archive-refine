@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "./status-badge";
 import { OriginalViewerDialog } from "./original-viewer-dialog";
 import { useDriveStore } from "@/lib/store";
-import { formatBytes, formatDate } from "@/lib/format";
+import { formatBytes, formatDate, formatDuration } from "@/lib/format";
 import { isTextLike } from "@/lib/ui";
 
 const MetaRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
@@ -80,6 +80,9 @@ export const DocumentDetail = () => {
         )}
         {doc.author && <MetaRow label="작성자" value={doc.author} />}
         <MetaRow label="등록일" value={formatDate(doc.createdAt)} />
+        {doc.ingestMs != null && (
+          <MetaRow label="처리 시간" value={formatDuration(doc.ingestMs)} />
+        )}
       </div>
 
       <OriginalViewerDialog doc={doc} open={viewerOpen} onOpenChange={setViewerOpen} />

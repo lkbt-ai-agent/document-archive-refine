@@ -18,6 +18,7 @@ import {
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { useDriveStore } from "@/lib/store";
 import { mockSearchResults } from "@/lib/mock-data";
+import { formatDuration } from "@/lib/format";
 
 // 검색 = retrieval 결과 리스트 전용. 모드 선택 UI 없이 항상 하이브리드(RRF)로 호출한다(arch 10 §11 / 08 §6·§12).
 // RAG 생성 답변은 "AI 질문"(/search/ask)으로 분리.
@@ -44,6 +45,12 @@ export const SearchDialog = ({
     );
   }, [query]);
 
+  // 검색 소요 시간(성능 측정용 목업) — 실제로는 /search 응답의 elapsed_ms (arch 08 §12)
+  const elapsedMs = React.useMemo(
+    () => 80 + query.trim().length * 6 + results.length * 5,
+    [query, results.length],
+  );
+
   const open_ = (documentId: string) => {
     selectDocument(documentId);
     setMobileRight(true);
@@ -68,6 +75,10 @@ export const SearchDialog = ({
             placeholder="키워드 또는 자연어로 검색"
           />
         </InputGroup>
+
+        <p className="text-[11px] text-muted-foreground tabular-nums">
+          검색 소요 {formatDuration(elapsedMs)} · {results.length}건
+        </p>
 
         <div className="max-h-80 space-y-1.5 overflow-y-auto">
           {results.length === 0 ? (
