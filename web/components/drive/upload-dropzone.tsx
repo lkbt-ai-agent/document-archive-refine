@@ -6,13 +6,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDriveStore } from "@/lib/store";
 
-export function UploadDropzone() {
+export const UploadDropzone = () => {
   const folderId = useDriveStore((s) => s.selectedFolderId);
   const addUpload = useDriveStore((s) => s.addUpload);
   const [dragging, setDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  function handleFiles(files: FileList | null) {
+  const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     Array.from(files).forEach((f) => addUpload(folderId, f.name, f.size));
     toast.success(
@@ -20,7 +20,7 @@ export function UploadDropzone() {
         ? `"${files[0].name}" 업로드 시작 (presigned 3단계 — 목업)`
         : `${files.length}개 파일 업로드 시작 (목업)`,
     );
-  }
+  };
 
   return (
     <div
@@ -64,4 +64,4 @@ export function UploadDropzone() {
       />
     </div>
   );
-}
+};

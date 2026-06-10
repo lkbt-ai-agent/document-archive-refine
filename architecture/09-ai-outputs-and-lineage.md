@@ -57,10 +57,17 @@ sequenceDiagram
 **흐름:**
 1. `POST /generations` → api가 `generations` 헤드 행을 **`queued`로 먼저 기록**(이 시점에 생성 ID 확정, §7).
 2. arq enqueue 후 **즉시 `202 {id}`** 반환(§10).
-3. worker가 픽업 → **`running`** → 파이프라인 실행(§4 Summary/§5 Draft/§6 Report) → **`succeeded`/`failed`** 갱신 + 계보(출처·프롬프트·provider/model/seed·차트) 기록(§7·§8).
-4. 클라이언트가 `GET /generations/{id}` **폴링**으로 진행 표시(프론트 생성 이력 패널, [10](./10-frontend-drive-ui.md) 연동).
+3. worker가 픽업 → **`running`** → 파이프라인 실행(§4 Summary/§5 Draft/§6 Report) → **`succeeded`/`failed`** 갱신 + 계보(출처·프롬프트·provider/model/seed·차트) 기록(§7·§8) + **산출물을 문서로 materialize(§9a)**.
+4. 클라이언트가 `GET /generations/{id}` **폴링**으로 진행 표시(프론트 "산출물 내역" 패널, [10](./10-frontend-drive-ui.md) §11 연동).
 
 **상태:** `queued → running → succeeded | failed`.
+
+## 9a. 산출물의 문서화 (materialization) — 1급 문서
+AI 산출물(요약/초안/보고서)은 `generations.output_text`로만 두지 않고 **일반 문서와 동일하게 `documents` 행 + MinIO 오브젝트로 저장**한다(10 §11, 1.13.5). 이로써 산출물은 **Center 목록 노출·검색·RAG 대상**이 된다(08은 `documents`/`document_chunks` 기준이라 별도 처리 없이 포함).
+- `succeeded` 시 worker가 산출물(요약/초안/보고서=Markdown; report는 차트 spec 포함)을 오브젝트로 업로드하고 `documents` 행 생성 → **인제스트(청킹·임베딩)까지 수행**(검색/RAG 가능). `generations.output_document_id`에 결과 문서 id 기록(03 §5).
+- **폴더 위치:** 기본 **원본(주 source) 문서와 동일 폴더**(정책 추후 확정 — 전용 "산출물" 하위 폴더 옵션 가능).
+- **"산출물 내역"(원본 기준 목록):** `generation_source_documents.role='source'`로 원본과 연결된 생성 중 **`output_document_id`가 존재(NOT NULL)** 하는 것만 표시. row 클릭 → Center가 그 출력 문서의 폴더로 이동·선택(10 §11).
+- **삭제 정합:** Center에서 출력 문서 삭제 → `output_document_id` **`ON DELETE SET NULL`**(03 §5) → 해당 생성은 "산출물 내역"에서 자동 비노출(계보 헤드 행 자체는 감사 목적 유지).
 
 - **queued 선기록 이유:** ID 즉시 발급으로 폴링 대상 확보, 작업 유실 시에도 추적 가능.
 - **멱등:** worker 작업은 멱등 키로 중복 enqueue 안전 처리(06 Confirm과 동일 패턴).
@@ -70,9 +77,9 @@ sequenceDiagram
 | 메서드 | 경로 | 설명 |
 |---|---|---|
 | POST | `/generations` | `{kind, document_ids, options}` → 202 `{id}` |
-| GET | `/generations/{id}` | 상태·진행·결과 |
+| GET | `/generations/{id}` | 상태·진행·결과(`output_document_id`·`latency_ms` 포함) |
 | GET | `/generations/{id}/lineage` | 출처/프롬프트/차트 전체 |
-| GET | `/generations?kind=&user=` | 이력("AI 생성 이력 요약") |
+| GET | `/generations?source_document_id=&kind=&user=` | **"산출물 내역"** — 원본 문서 기준, `output_document_id` 존재 건만(§9a) |
 
 ## 11. 제약·리스크
 provider/model/seed 누락 시 재현 불가(기록 강제), 차트 수리 루프 한도(≤5회) 후 실패 처리, 장문 요약 지연/메모리.

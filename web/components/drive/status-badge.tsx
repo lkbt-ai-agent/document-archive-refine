@@ -19,7 +19,7 @@ const textByStatus: Record<DocStatus, string> = {
   uploaded: "text-status-uploaded",
 };
 
-export function StatusBadge({
+export const StatusBadge = ({
   status,
   stage,
   progress,
@@ -29,7 +29,7 @@ export function StatusBadge({
   stage?: DocStage;
   progress?: number;
   className?: string;
-}) {
+}) => {
   const label =
     status === "processing" && stage
       ? `${stageLabel[stage]}${typeof progress === "number" ? ` ${progress}%` : ""}`
@@ -50,4 +50,4 @@ export function StatusBadge({
       {label}
     </Badge>
   );
-}
+};

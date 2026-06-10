@@ -4,6 +4,7 @@ import * as React from "react";
 import { Sparkles, FileText, FileEdit, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { dialogMobileFullscreen } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -33,7 +34,7 @@ const genStatusColor: Record<GenStatus, string> = {
   queued: "text-status-uploaded",
 };
 
-export function GenerationPanel() {
+export const GenerationPanel = () => {
   const doc = useDriveStore((s) =>
     s.documents.find((d) => d.id === s.selectedDocumentId),
   );
@@ -42,14 +43,14 @@ export function GenerationPanel() {
   const [open, setOpen] = React.useState(false);
   const [kind, setKind] = React.useState<GenKind>("summary");
 
-  function generate() {
+  const generate = () => {
     if (!doc) return;
     startGeneration(kind, doc.id);
     setOpen(false);
     toast.success(
       `${genKindLabel[kind]} 생성 요청 (POST /generations → 202, 목업)`,
     );
-  }
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -60,7 +61,7 @@ export function GenerationPanel() {
               <Sparkles className="size-4" /> AI 산출물 생성
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className={cn(dialogMobileFullscreen, "sm:max-w-sm")}>
             <DialogHeader>
               <DialogTitle>AI 산출물 생성</DialogTitle>
               <DialogDescription>
@@ -136,4 +137,4 @@ export function GenerationPanel() {
       </div>
     </div>
   );
-}
+};

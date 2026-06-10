@@ -17,15 +17,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "문서 보관함",
-  description: "3-Panel Drive UI — 문서 업로드·검색·AI 산출물 (프로토타입)",
+  title: "Mechive",
+  description: "Mechive — 문서 업로드·검색·AI 산출물 (프로토타입)",
 };
 
-export default function RootLayout({
+const RootLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>) => {
   return (
     <html
       lang="ko"
@@ -44,4 +44,6 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

@@ -56,6 +56,7 @@ flowchart LR
 ```
 - 진행 보고: `status/stage` 갱신 → 프론트 react-query 폴링(ready/failed 정지).
 - 페이지/스테이지 멱등·백오프 재시도, 한 페이지 실패가 문서 전체 중단 안 함.
+- **소요 시간:** 파이프라인 시작~`ready`까지 경과를 `documents.ingest_ms`(03 §5)에 기록 → 메타데이터 패널에 표시(10 §11, 성능 측정용). (AI 산출물 문서는 생성 소요 `generations.latency_ms` 사용, 09 §9a.)
 
 ## 13. 제약·리스크
 - pypdf 추출 품질(복잡 레이아웃) → pdfplumber 병용 기본화.

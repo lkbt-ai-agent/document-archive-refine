@@ -24,6 +24,7 @@ erDiagram
   generations ||--o{ generation_source_documents : uses
   generations ||--o{ generation_source_chunks : cites
   generations ||--o{ generation_charts : has
+  generations ||--o| documents : "outputs(materialized)"
   models ||--o{ generations : runs
   prompt_templates ||--o{ generation_prompts : renders
 ```
@@ -59,6 +60,7 @@ CREATE TABLE archive.documents (
   -- AI 생성 메타(MVP는 읽기 전용 표시; 사용자 보정은 제외 — research/01 §8)
   llm_title TEXT, llm_summary TEXT, topics TEXT[], keywords TEXT[],
   content TEXT,                                  -- PGroonga 인덱스 대상
+  ingest_ms INT,                                 -- 인제스트(추출~임베딩) 소요(ms), 성능 측정 표시용(10 §11)
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),  -- 등록일(화면 노출 기준, 10 §10)
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()   -- 내부 감사용(화면 미노출)
 );
@@ -107,8 +109,10 @@ CREATE TABLE archive.generations (       -- 계보 헤드(=생성 1회)
   temperature REAL, top_p REAL, top_k INT, seed BIGINT,
   max_tokens INT, decode_params JSONB,
   embedding_model TEXT, retrieval_k INT, retrieval_params JSONB,
-  prompt_tokens INT, completion_tokens INT, total_tokens INT, latency_ms INT,
+  prompt_tokens INT, completion_tokens INT, total_tokens INT, latency_ms INT,  -- latency_ms=생성 소요(10 §11)
   output_text TEXT, output_meta JSONB, error TEXT,
+  -- 산출물을 1급 문서로 materialize한 결과 문서(09 §9a). 문서 삭제 시 SET NULL → "산출물 내역"에서 비노출.
+  output_document_id UUID REFERENCES archive.documents(id) ON DELETE SET NULL,
   progress_pct INT DEFAULT 0, progress_step TEXT,
   created_at TIMESTAMPTZ DEFAULT now(), started_at TIMESTAMPTZ, finished_at TIMESTAMPTZ);
 CREATE TABLE archive.generation_prompts (

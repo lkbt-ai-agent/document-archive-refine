@@ -29,7 +29,7 @@ export interface DocumentItem {
   keywords: string[];
   pageCount?: number;
   author?: string;
-  updatedAt: string; // ISO
+  createdAt: string; // ISO — 등록일(문서는 인앱 편집 없음, 수정일 미사용; arch 10 §10)
 }
 
 export type GenKind = "summary" | "draft" | "report";

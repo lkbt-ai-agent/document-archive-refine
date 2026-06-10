@@ -1,6 +1,6 @@
 import type { DocStage, DocStatus, GenKind, GenStatus } from "./types";
 
-export function formatBytes(bytes: number): string {
+export const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   const units = ["KB", "MB", "GB"];
   let v = bytes / 1024;
@@ -10,16 +10,16 @@ export function formatBytes(bytes: number): string {
     i += 1;
   }
   return `${v.toFixed(1)} ${units[i]}`;
-}
+};
 
 // 결정적 포맷(SSR/CSR 동일) — 로케일 의존 회피로 hydration 안정.
-export function formatDate(iso: string): string {
+export const formatDate = (iso: string): string => {
   const t = Date.parse(iso);
   if (!t) return "방금 전";
   const d = new Date(t);
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
-}
+};
 
 export const statusLabel: Record<DocStatus, string> = {
   uploaded: "업로드됨",

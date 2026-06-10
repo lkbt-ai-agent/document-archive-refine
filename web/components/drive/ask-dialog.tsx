@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { Sparkles, CornerDownLeft, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { dialogMobileFullscreen } from "@/lib/ui";
 import {
   Dialog,
   DialogContent,
@@ -9,30 +11,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { useDriveStore } from "@/lib/store";
 import { mockAskAnswer } from "@/lib/mock-data";
 
-export function AskDialog({
+export const AskDialog = ({
   open,
   onOpenChange,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-}) {
+}) => {
   const [q, setQ] = React.useState("작년 내 연봉이 얼마였지?");
   const [loading, setLoading] = React.useState(false);
   const [answered, setAnswered] = React.useState(false);
   const selectDocument = useDriveStore((s) => s.selectDocument);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
 
-  function ask() {
+  const ask = () => {
     if (!q.trim()) return;
     setLoading(true);
     setAnswered(false);
@@ -40,17 +38,17 @@ export function AskDialog({
       setLoading(false);
       setAnswered(true);
     }, 800);
-  }
+  };
 
-  function gotoCitation(documentId: string) {
+  const gotoCitation = (documentId: string) => {
     selectDocument(documentId);
     setMobileRight(true);
     onOpenChange(false);
-  }
+  };
 
   // 답변 텍스트에서 [n] 을 클릭 가능한 표식으로 분해
-  function renderAnswer(text: string) {
-    return text.split(/(\[\d+\])/g).map((part, i) => {
+  const renderAnswer = (text: string) =>
+    text.split(/(\[\d+\])/g).map((part, i) => {
       const m = part.match(/\[(\d+)\]/);
       if (m) {
         const n = Number(m[1]);
@@ -68,11 +66,10 @@ export function AskDialog({
       }
       return <span key={i}>{part}</span>;
     });
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className={cn(dialogMobileFullscreen, "sm:max-w-xl")}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" /> AI에게 질문 (RAG)
@@ -82,20 +79,32 @@ export function AskDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <InputGroup>
-          <InputGroupInput
+        {/* 자동 개행 textarea — 초기 1줄 → 최대 ~6줄 후 스크롤 */}
+        <div className="relative">
+          <Textarea
+            autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && ask()}
-            placeholder="자연어로 질문하세요"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                ask();
+              }
+            }}
+            placeholder="자연어로 질문하세요 (Enter 전송 · Shift+Enter 줄바꿈)"
+            rows={1}
+            className="max-h-40 min-h-0 resize-none overflow-y-auto py-2 pr-12"
           />
-          <InputGroupAddon align="inline-end">
-            <InputGroupButton onClick={ask} disabled={loading}>
-              {loading ? <Spinner /> : <CornerDownLeft className="size-4" />}
-              질문
-            </InputGroupButton>
-          </InputGroupAddon>
-        </InputGroup>
+          <Button
+            size="icon"
+            className="absolute right-1.5 bottom-1.5 size-8"
+            aria-label="질문"
+            onClick={ask}
+            disabled={loading}
+          >
+            {loading ? <Spinner /> : <CornerDownLeft className="size-4" />}
+          </Button>
+        </div>
 
         {loading && (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
@@ -137,4 +146,4 @@ export function AskDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

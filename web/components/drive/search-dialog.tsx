@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { Search, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { dialogMobileFullscreen } from "@/lib/ui";
 import {
   Dialog,
   DialogContent,
@@ -13,28 +15,21 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { useDriveStore } from "@/lib/store";
 import { mockSearchResults } from "@/lib/mock-data";
 
-const MODES = [
-  { value: "keyword", label: "키워드" },
-  { value: "semantic", label: "의미" },
-  { value: "rag", label: "RAG" },
-] as const;
-
-export function SearchDialog({
+// 검색 = retrieval 결과 리스트 전용. 모드 선택 UI 없이 항상 하이브리드(RRF)로 호출한다(arch 10 §11 / 08 §6·§12).
+// RAG 생성 답변은 "AI 질문"(/search/ask)으로 분리.
+export const SearchDialog = ({
   open,
   onOpenChange,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-}) {
+}) => {
   const query = useDriveStore((s) => s.searchQuery);
   const setQuery = useDriveStore((s) => s.setSearchQuery);
-  const mode = useDriveStore((s) => s.searchMode);
-  const setMode = useDriveStore((s) => s.setSearchMode);
   const selectDocument = useDriveStore((s) => s.selectDocument);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
 
@@ -49,15 +44,15 @@ export function SearchDialog({
     );
   }, [query]);
 
-  function open_(documentId: string) {
+  const open_ = (documentId: string) => {
     selectDocument(documentId);
     setMobileRight(true);
     onOpenChange(false);
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className={cn(dialogMobileFullscreen, "sm:max-w-xl")}>
         <DialogHeader>
           <DialogTitle>검색</DialogTitle>
         </DialogHeader>
@@ -73,19 +68,6 @@ export function SearchDialog({
             placeholder="키워드 또는 자연어로 검색"
           />
         </InputGroup>
-
-        <div className="flex gap-1">
-          {MODES.map((m) => (
-            <Badge
-              key={m.value}
-              variant={mode === m.value ? "default" : "outline"}
-              className="cursor-pointer"
-              onClick={() => setMode(m.value)}
-            >
-              {m.label}
-            </Badge>
-          ))}
-        </div>
 
         <div className="max-h-80 space-y-1.5 overflow-y-auto">
           {results.length === 0 ? (
@@ -123,4 +105,4 @@ export function SearchDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

@@ -6,7 +6,7 @@ import type {
   SearchResultItem,
 } from "./types";
 
-// 백엔드 미연동 — 모든 데이터는 목업. Phase 4에서 실 API(react-query)로 교체.
+// 백엔드 미연동 — 모든 데이터는 목업. 추후 실 API(react-query)로 교체.
 
 export const mockFolders: Folder[] = [
   { id: "root", parentId: null, name: "내 보관함" },
@@ -33,7 +33,7 @@ export const mockDocuments: DocumentItem[] = [
     llmTitle: "2025년도 연봉계약서",
     llmSummary:
       "2025년 기본급 및 성과급 구성, 지급 일정과 복리후생 항목을 정리한 연봉계약서.",
-    updatedAt: "2026-06-08T09:12:00Z",
+    createdAt: "2026-06-08T09:12:00Z",
   },
   {
     id: "d2",
@@ -48,7 +48,7 @@ export const mockDocuments: DocumentItem[] = [
     author: "인사팀",
     llmTitle: "2024년도 연봉계약서",
     llmSummary: "2024년 연봉 구성 및 지급 조건.",
-    updatedAt: "2025-06-07T03:20:00Z",
+    createdAt: "2025-06-07T03:20:00Z",
   },
   {
     id: "d3",
@@ -62,7 +62,7 @@ export const mockDocuments: DocumentItem[] = [
     topics: ["실적", "분기"],
     keywords: ["매출", "영업이익"],
     pageCount: 18,
-    updatedAt: "2026-06-10T01:02:00Z",
+    createdAt: "2026-06-10T01:02:00Z",
   },
   {
     id: "d4",
@@ -75,7 +75,7 @@ export const mockDocuments: DocumentItem[] = [
     topics: [],
     keywords: [],
     pageCount: 12,
-    updatedAt: "2026-06-09T22:41:00Z",
+    createdAt: "2026-06-09T22:41:00Z",
   },
   {
     id: "d5",
@@ -86,7 +86,7 @@ export const mockDocuments: DocumentItem[] = [
     status: "uploaded",
     topics: [],
     keywords: [],
-    updatedAt: "2026-06-10T02:55:00Z",
+    createdAt: "2026-06-10T02:55:00Z",
   },
   {
     id: "d6",
@@ -99,7 +99,7 @@ export const mockDocuments: DocumentItem[] = [
     keywords: ["근로계약", "표준"],
     llmTitle: "표준근로계약서",
     llmSummary: "근로조건·임금·근로시간을 규정한 표준 근로계약서 양식.",
-    updatedAt: "2026-05-30T11:10:00Z",
+    createdAt: "2026-05-30T11:10:00Z",
   },
 ];
 
@@ -157,6 +157,31 @@ export const mockSearchResults: SearchResultItem[] = [
     score: 0.52,
   },
 ];
+
+// "원본 보기" 마크다운 뷰어용 텍스트류 원본(목업). 텍스트 문서만 인앱 열람, 그 외는 다운로드.
+export const mockOriginalText: Record<string, string> = {
+  d5: `거래일자, 적요, 입금, 출금, 잔액
+2025-01-03, 급여이체, 3,200,000, , 5,120,000
+2025-01-12, 카드대금, , 480,000, 4,640,000
+2025-01-25, 이자, 1,250, , 4,641,250
+…(텍스트 원본 — 일부 발췌)`,
+  d6: `# 표준근로계약서
+
+본 계약은 **사용자**와 **근로자** 간 근로조건을 정한다.
+
+## 1. 근로시간
+- 1일 8시간, 주 40시간을 원칙으로 한다.
+- 휴게시간은 근로시간 4시간당 30분 이상 부여한다.
+
+## 2. 임금
+| 항목 | 내용 |
+| --- | --- |
+| 지급일 | 매월 25일 |
+| 지급방법 | 근로자 명의 계좌 이체 |
+
+> 본 양식은 표준근로계약서 예시이며, 실제 계약 시 법령을 확인한다.
+`,
+};
 
 export const mockAskAnswer = {
   answer:

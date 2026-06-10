@@ -62,8 +62,13 @@ flowchart TD
 ## 12. API 계약
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | `/search` | `{q, mode?, filters{folder,date}, limit}` → 결과 리스트 |
-| POST | `/search/ask` | RAG 질의 → `{answer, citations[{n,chunk_id,document_id}]}` |
+| POST | `/search` | `{q, mode?, filters{folder,date}, limit}` → `{results[], elapsed_ms}`. `mode∈{keyword,semantic,hybrid}`, **기본 `hybrid`**(미지정 시). (**rag 아님** — 생성 답변은 `/search/ask`.) |
+| POST | `/search/ask` | RAG 질의 → `{answer, citations[{n,chunk_id,document_id}], elapsed_ms}`. 프론트 **"RAG 질문"** 동선 전용(10 §11). |
+
+> **소요 시간(성능 측정용, 10 §11·1.13.4):** 두 응답 모두 **`elapsed_ms`**(서버 측 처리 시간)를 포함한다 — 검색=retrieval 소요, ask=RAG 전체 소요. 프론트는 초 단위로 표기. (생성 소요는 `generations.latency_ms`(03 §5), 인제스트 소요는 `documents.ingest_ms`(03 §5).)
+
+> **프론트 UI 분리(10 §11):** 검색 다이얼로그=`/search`(결과 리스트), "AI 질문"=`/search/ask`(생성 답변+인용).
+> **검색 UI는 모드 선택 없이 항상 `hybrid`로 호출**한다(키워드+벡터 RRF 융합이라 단일 용어·자연어 모두 견고; §8 LLM 라우터는 단순 retrieval엔 과함·비결정적). `mode?` 파라미터는 **평가 게이트(§11: 벡터only/하이브리드 비교)·향후 override용으로 API에 유지**하되 UI엔 노출하지 않는다. `rag`는 §8 라우터 intent일 뿐 `/search`의 mode가 아니다.
 
 ## 13. 제약·리스크
 확장 의존(02 §6 선행), PGroonga 인덱스=문서 단위, 리랭커 추가 런타임 포트/메모리.

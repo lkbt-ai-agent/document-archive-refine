@@ -15,40 +15,56 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { useDriveStore } from "@/lib/store";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
-export function DriveApp() {
+export const DriveApp = () => {
   const isMobile = useIsMobile();
   const mobileLeftOpen = useDriveStore((s) => s.mobileLeftOpen);
   const setMobileLeft = useDriveStore((s) => s.setMobileLeft);
   const mobileRightOpen = useDriveStore((s) => s.mobileRightOpen);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
+  const selectDocument = useDriveStore((s) => s.selectDocument);
+  // 우측 인스펙터는 문서 선택 시에만 노출(토글) — arch 10 §8b
+  const inspectorOpen = useDriveStore((s) => s.selectedDocumentId != null);
+  // 좌측 패널 접힘(PC) — 헤더 토글 (arch 10 §8b)
+  const leftCollapsed = useDriveStore((s) => s.leftCollapsed);
 
   return (
     <div className="flex h-dvh flex-col">
       <AppHeader />
 
-      {/* ≥md: 3패널 (PC·태블릿) */}
+      {/* ≥md: Left 트리 + Center 목록 상시 + Right 인스펙터(토글) (PC·태블릿) */}
       <div className="hidden flex-1 overflow-hidden md:block">
         <ResizablePanelGroup orientation="horizontal">
-          <ResizablePanel defaultSize="20%" minSize="14%" maxSize="30%">
-            <FolderTree />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize="52%" minSize="30%">
+          {!leftCollapsed && (
+            <>
+              <ResizablePanel
+                id="left"
+                defaultSize="20%"
+                minSize="14%"
+                maxSize="30%"
+              >
+                <FolderTree />
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+            </>
+          )}
+          <ResizablePanel
+            id="center"
+            defaultSize={inspectorOpen ? "52%" : "80%"}
+            minSize="30%"
+          >
             <CenterPanel />
           </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize="28%" minSize="18%" maxSize="40%">
-            <RightPanel />
-          </ResizablePanel>
+          {inspectorOpen && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel id="right" defaultSize="28%" minSize="18%" maxSize="40%">
+                <RightPanel />
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
       </div>
 
@@ -71,18 +87,29 @@ export function DriveApp() {
             </SheetContent>
           </Sheet>
 
-          <Drawer open={mobileRightOpen} onOpenChange={setMobileRight}>
-            <DrawerContent className="max-h-[85dvh]">
-              <DrawerHeader className="sr-only">
-                <DrawerTitle>메타데이터 / 생성</DrawerTitle>
-              </DrawerHeader>
-              <div className="h-[80dvh] overflow-hidden">
+          {/* 우측 인스펙터: 모바일은 바텀 시트가 아니라 전체 화면 Sheet(side=right).
+              닫으면 선택 해제해 같은 row 재클릭 시 다시 열리도록 한다. */}
+          <Sheet
+            open={mobileRightOpen}
+            onOpenChange={(open) => {
+              setMobileRight(open);
+              if (!open) selectDocument(null);
+            }}
+          >
+            <SheetContent
+              side="right"
+              className="w-screen max-w-none gap-0 p-0 sm:max-w-none"
+            >
+              <SheetHeader className="sr-only">
+                <SheetTitle>문서 상세</SheetTitle>
+              </SheetHeader>
+              <div className="h-full overflow-hidden">
                 <RightPanel />
               </div>
-            </DrawerContent>
-          </Drawer>
+            </SheetContent>
+          </Sheet>
         </>
       )}
     </div>
   );
-}
+};

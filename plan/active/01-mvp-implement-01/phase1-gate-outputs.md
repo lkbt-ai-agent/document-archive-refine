@@ -1,7 +1,7 @@
 ---
 status: transient
 scope: phase-1-gate
-absorbed_by: ["1.8 (globals.css/theme)", "1.9 (UI 프로토타입 코드)", "1.10 (개정; §1.10.8 메타보정은 MVP 제외→research/01 §8)"]
+absorbed_by: ["1.8 (globals.css/theme)", "1.9 (UI 프로토타입 코드)", "1.10 (개정1; §1.10.8 메타보정은 MVP 제외→research/01 §8)", "1.11 (개정2; Google Drive식 목록·하위폴더 row·패널 헤더 토글·TanStack Table 서버페이지네이션·업로드영역 미노출·검색/질문 역할분리·RAG textarea)", "1.12 (개정3; 우측=모바일 전체화면 Sheet·row 클릭 토글·패널 헤더 닫기버튼 제거·검색 하이브리드 고정/뱃지 제거)", "1.13 (개정4; Center 폴더 ⋯ 액션·폴더 단일=인스펙터/더블=진입·AI질문→RAG질문·소요시간 표시·AI산출물=1급 문서/산출물 내역)"]
 arch_sot: architecture/10-frontend-drive-ui.md
 ---
 
@@ -20,7 +20,11 @@ arch_sot: architecture/10-frontend-drive-ui.md
 ## 1.2 와이어프레임 (저충실도 ASCII)
 arch 10 §12 반응형 3단 기준. 고충실도는 1.9 프로토타입 자체.
 
-> ⚠️ **아래 스케치는 1.10 개정 이전본** — 실제 레이아웃은 **1.10/arch 10 기준**: ① 하단 DocumentDetail 패널 제거(상세는 Right로), ② **Right=토글 인스펙터**(row 선택/"⋯" 시), ③ MetadataEditor는 **읽기 전용 뷰**(보정 제외), ④ DocumentDetail에 **"원본 보기"** 버튼(미리보기 없음), ⑤ 폴더 행 **"⋯" 드롭다운** + New/Rename/Move 다이얼로그, ⑥ 목록은 **등록일**만. (ASCII는 역사적 참고용)
+> ⚠️ **아래 스케치는 1.10~1.12 개정 이전본** — 실제 레이아웃은 **1.10~1.12/arch 10 기준**:
+> **(1.10)** ① 하단 DocumentDetail 패널 제거(상세는 Right로), ② **Right=토글 인스펙터**(row 선택/"⋯" 시), ③ MetadataEditor는 **읽기 전용 뷰**(보정 제외), ④ DocumentDetail에 **"원본 보기"** 버튼(미리보기 없음), ⑤ 폴더 행 **"⋯" 드롭다운** + New/Rename/Move 다이얼로그, ⑥ 목록은 **등록일**만.
+> **(1.11)** ⑦ 목록은 **Google Drive식**(하위 폴더 row + 문서 row 혼합, 폴더 클릭=진입), ⑧ **업로드 드롭존 미노출**(컴포넌트는 보존), ⑨ Center 좌우 패딩·상단 border 제거, ⑩ **Left/Right 패널 헤더 토글 버튼**(PC·모바일), ⑪ 모바일 풀스크린 다이얼로그 콘텐츠 **상단 정렬**, ⑫ 목록 테이블 = shadcn `Table` + **TanStack Table 헤드리스(서버 페이지네이션)**, ⑬ **검색=결과 리스트 / AI 질문=RAG 답변** 역할 분리(검색 "RAG" 모드 제거), ⑭ AI 질문 입력 = **auto-grow textarea**.
+> **(1.12)** ⑮ 우측 인스펙터 모바일 = **전체 화면 `Sheet`(side=right)**(바텀 시트 아님), ⑯ 우측은 **문서 row 클릭 토글**(같은 row 재클릭=닫힘), ⑰ **좌/우 패널 헤더 닫기 버튼 제거**(좌=AppHeader 토글, 우=row 토글로 일원화), ⑱ **검색=하이브리드 고정**(모드 뱃지 제거; `/search` 기본 hybrid, `mode?`는 평가/override용 API에만).
+> **(1.13)** ⑲ Center 폴더 row **"⋯" 액션**(이동/이름변경/삭제, 공용 FolderActions), ⑳ Center 폴더 row **단일 클릭=폴더 인스펙터 토글·더블 클릭=진입**, ㉑ **"AI 질문"→"RAG 질문"** 개명, ㉒ **소요 시간(초)** 표시(검색=`elapsed_ms`/RAG=`elapsed_ms`/문서=`ingest_ms`/산출물=`latency_ms`), ㉓ **AI 산출물=1급 문서**("생성 이력"→"산출물 내역"; 산출물은 문서로 저장·검색·RAG; 내역 row 클릭→산출물 폴더로 이동; 삭제 시 내역 비노출), ㉔ **우클릭 컨텍스트 메뉴**(좌측 트리 폴더·Center 폴더/파일 = "⋯"와 동일 메뉴). (ASCII는 역사적 참고용)
 
 ### PC·태블릿 (`≥md`, 768+) — 3패널 + ResizablePanels
 태블릿은 동일 3패널, 패널 폭만 축소.
@@ -94,18 +98,21 @@ arch 10 §12 반응형 3단 기준. 고충실도는 1.9 프로토타입 자체.
 |---|---|---|
 | ResizablePanels | `resizable` | react-resizable-panels 래퍼 |
 | FolderTree | **외부** `shadcn-tree-view` + `collapsible`, `context-menu`(우클릭 CRUD), `button` | §9, 드래그 MOVE |
-| DocumentList | `table` + `scroll-area`, `skeleton`, `badge`(상태), `context-menu`, `pagination` | |
-| UploadDropzone | **외부** `shadcn-dropzone` + `progress` | presigned PUT 진행률 |
+| DocumentList | `table`(shadcn) + **TanStack Table 헤드리스(`@tanstack/react-table`, `manualPagination`)** + `scroll-area`, `skeleton`, `badge`(상태), `dropdown-menu`(row "⋯") | **Google Drive식**(하위 폴더 row + 문서 row, 1.11.1), 서버 페이지네이션(1.11.7) |
+| UploadDropzone | **외부** `shadcn-dropzone` + `progress` | presigned PUT 진행률. **MVP UI 미노출·컴포넌트 보존**(1.11.2) |
 | DocumentDetail (Right) | `card`, `separator`, `badge`, `button`(원본 보기), `empty`(미선택) | 미리보기 없음; 텍스트=MD 뷰어 다이얼로그/기타=다운로드(1.10.1) |
-| MetadataView (Right, 읽기 전용) | `card`, `separator`, `badge`, `label`(정적 표시) | 보정 MVP 제외(1.10.8) — input/form 없음 |
+| MetadataView (Right, 읽기 전용) | `card`, `separator`, `badge`, `label`(정적 표시) | 보정 MVP 제외(1.10.8) — input/form 없음. **업로드·인제스트 소요(`ingest_ms`) 표시**(1.13.4) |
+| FolderDetail (Right, 읽기 전용) | `card`, `separator`, `label` | 폴더 단일클릭 시(1.13.2): 이름/등록일/하위 항목 수 |
 | 폴더 다이얼로그 | `dialog`, `input`, `button`(New/Rename) · `dialog`+트리 선택(Move) | 1.10.5·1.10.7, 모바일 풀스크린(1.10.9) |
-| 폴더 액션 | `dropdown-menu`(폴더행 "⋯": 이동/이름변경/삭제) | 1.10.6 |
+| 폴더 액션(FolderActions) | `dropdown-menu`(폴더행 "⋯") + `context-menu`(우클릭) | **Left 트리·Center 목록 공용**(1.10.6·1.13.1), 우클릭=동일 메뉴(1.13.6) |
+| 우클릭 컨텍스트 메뉴 | `context-menu` | 폴더=이동/이름변경/삭제, 파일=상세/다운로드/삭제. "⋯"와 핸들러 공유(1.13.6) |
 | GenerationTrigger | `dialog`, `select`, `tabs`, `button` | 요약/초안/보고서 옵션 |
-| GenerationHistory | `table`/`item`, `badge`, `progress`, `scroll-area` | 폴링 |
-| SearchBar/Results | `input`/`input-group`, `command`(팔레트), `kbd`, `scroll-area` | |
-| AskDialog | `dialog`, `scroll-area`, `skeleton` | RAG 인용 표시 |
+| 산출물 내역(ArtifactList) | `table`/`item`, `badge`, `progress`, `scroll-area` | "생성 이력" 개명(1.13.5). 출력 문서 존재 건만, row 클릭→산출물 폴더 이동, 생성 소요(`latency_ms`) |
+| SearchBar/Results | `input`/`input-group`, `command`(팔레트), `kbd`, `scroll-area` | **retrieval 전용 결과 리스트** · **모드 선택 UI 없음 → 항상 하이브리드 고정**(1.12.4; RAG 모드도 제거 1.11.8) |
+| RAG 질문(AskDialog) | `dialog`, `textarea`(**auto-grow** 1.11.9), `scroll-area`, `skeleton` | **RAG 답변+인용 전용**(`/search/ask`). 라벨 "RAG 질문"(1.13.3), RAG 소요(`elapsed_ms`) 표시(1.13.4) |
 | ThemeToggle | `dropdown-menu`, `button` + lucide(Sun/Moon) | light/dark/system |
-| 모바일 Left/Right | `sheet`(좌 트리), `drawer`(우 메타) | arch 10 §12 |
+| 패널 토글 | AppHeader `button` + lucide(PanelLeft) | Left=AppHeader 토글 / Right=문서 row 클릭 토글. **패널 헤더 닫기 버튼 없음**(1.12.3) |
+| 모바일 Left/Right | `sheet`(좌 트리, side=left), `sheet`(우 인스펙터, **side=right 전체 화면**) | 바텀 시트 아님(1.12.1) · arch 10 §12 |
 | 삭제 확인 | `alert-dialog` | 폴더/문서 재귀 삭제 경고 |
 | 전역 알림 | `sonner`(Toaster) | 업로드/인제스트/생성 완료·실패 |
 | 로딩/빈 상태 | `skeleton`, `spinner`, `empty` | 패널별 스트리밍 |

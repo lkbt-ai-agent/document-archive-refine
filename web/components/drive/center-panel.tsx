@@ -1,23 +1,6 @@
 "use client";
 
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import { DocumentList } from "./document-list";
-import { DocumentDetail } from "./document-detail";
 
-export function CenterPanel() {
-  return (
-    <ResizablePanelGroup orientation="vertical" className="h-full">
-      <ResizablePanel defaultSize="60%" minSize="30%">
-        <DocumentList />
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize="40%" minSize="20%">
-        <DocumentDetail />
-      </ResizablePanel>
-    </ResizablePanelGroup>
-  );
-}
+// Center = 문서 목록 전용 (하단 상세 패널 제거; 상세는 우측 인스펙터로 통합 — arch 10 §4·§8)
+export const CenterPanel = () => <DocumentList />;

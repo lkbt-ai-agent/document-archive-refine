@@ -1,17 +1,26 @@
 "use client";
 
-import * as React from "react";
-import { Search, Sparkles, PanelLeft, FolderTree as FolderTreeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "./theme-toggle";
-import { SearchDialog } from "./search-dialog";
-import { AskDialog } from "./ask-dialog";
 import { useDriveStore } from "@/lib/store";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { Book, PanelLeft, Search, Sparkles } from "lucide-react";
+import * as React from "react";
+import { AskDialog } from "./ask-dialog";
+import { SearchDialog } from "./search-dialog";
+import { ThemeToggle } from "./theme-toggle";
 
-export function AppHeader() {
+export const AppHeader = () => {
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [askOpen, setAskOpen] = React.useState(false);
   const setMobileLeft = useDriveStore((s) => s.setMobileLeft);
+  const toggleLeftCollapsed = useDriveStore((s) => s.toggleLeftCollapsed);
+  const isMobile = useIsMobile();
+
+  // 좌측 패널 토글 — 모바일=Sheet 열기 / PC=패널 접기·펼치기
+  const onToggleLeft = () => {
+    if (isMobile) setMobileLeft(true);
+    else toggleLeftCollapsed();
+  };
 
   // ⌘K / Ctrl-K 로 검색 열기
   React.useEffect(() => {
@@ -27,20 +36,19 @@ export function AppHeader() {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
-      {/* 모바일: 폴더 트리 Sheet 트리거 */}
+      {/* 폴더 패널 토글 — 모바일=Sheet / PC=접기·펼치기 */}
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden"
-        aria-label="폴더 열기"
-        onClick={() => setMobileLeft(true)}
+        aria-label="폴더 패널 토글"
+        onClick={onToggleLeft}
       >
         <PanelLeft className="size-5" />
       </Button>
 
       <div className="flex items-center gap-2 font-semibold">
-        <FolderTreeIcon className="size-5 text-primary" />
-        <span className="hidden sm:inline">문서 보관함</span>
+        <Book className="size-5 text-primary" />
+        <span className="hidden sm:inline">Mechive</span>
       </div>
 
       {/* 검색 트리거 (가짜 입력 → 다이얼로그) */}
@@ -68,4 +76,4 @@ export function AppHeader() {
       <AskDialog open={askOpen} onOpenChange={setAskOpen} />
     </header>
   );
-}
+};
