@@ -1,7 +1,7 @@
 ---
 status: transient
 scope: phase-1-gate
-absorbed_by: ["1.8 (globals.css/theme)", "1.9 (UI 프로토타입 코드)"]
+absorbed_by: ["1.8 (globals.css/theme)", "1.9 (UI 프로토타입 코드)", "1.10 (개정; §1.10.8 메타보정은 MVP 제외→research/01 §8)"]
 arch_sot: architecture/10-frontend-drive-ui.md
 ---
 
@@ -19,6 +19,8 @@ arch_sot: architecture/10-frontend-drive-ui.md
 
 ## 1.2 와이어프레임 (저충실도 ASCII)
 arch 10 §12 반응형 3단 기준. 고충실도는 1.9 프로토타입 자체.
+
+> ⚠️ **아래 스케치는 1.10 개정 이전본** — 실제 레이아웃은 **1.10/arch 10 기준**: ① 하단 DocumentDetail 패널 제거(상세는 Right로), ② **Right=토글 인스펙터**(row 선택/"⋯" 시), ③ MetadataEditor는 **읽기 전용 뷰**(보정 제외), ④ DocumentDetail에 **"원본 보기"** 버튼(미리보기 없음), ⑤ 폴더 행 **"⋯" 드롭다운** + New/Rename/Move 다이얼로그, ⑥ 목록은 **등록일**만. (ASCII는 역사적 참고용)
 
 ### PC·태블릿 (`≥md`, 768+) — 3패널 + ResizablePanels
 태블릿은 동일 3패널, 패널 폭만 축소.
@@ -94,8 +96,10 @@ arch 10 §12 반응형 3단 기준. 고충실도는 1.9 프로토타입 자체.
 | FolderTree | **외부** `shadcn-tree-view` + `collapsible`, `context-menu`(우클릭 CRUD), `button` | §9, 드래그 MOVE |
 | DocumentList | `table` + `scroll-area`, `skeleton`, `badge`(상태), `context-menu`, `pagination` | |
 | UploadDropzone | **외부** `shadcn-dropzone` + `progress` | presigned PUT 진행률 |
-| DocumentDetail | `card`, `tabs`, `separator`, `badge`, `empty`(미선택) | |
-| MetadataEditor | `form`, `field`, `input`, `textarea`, `label`, `button` | 토픽/키워드=태그 입력 |
+| DocumentDetail (Right) | `card`, `separator`, `badge`, `button`(원본 보기), `empty`(미선택) | 미리보기 없음; 텍스트=MD 뷰어 다이얼로그/기타=다운로드(1.10.1) |
+| MetadataView (Right, 읽기 전용) | `card`, `separator`, `badge`, `label`(정적 표시) | 보정 MVP 제외(1.10.8) — input/form 없음 |
+| 폴더 다이얼로그 | `dialog`, `input`, `button`(New/Rename) · `dialog`+트리 선택(Move) | 1.10.5·1.10.7, 모바일 풀스크린(1.10.9) |
+| 폴더 액션 | `dropdown-menu`(폴더행 "⋯": 이동/이름변경/삭제) | 1.10.6 |
 | GenerationTrigger | `dialog`, `select`, `tabs`, `button` | 요약/초안/보고서 옵션 |
 | GenerationHistory | `table`/`item`, `badge`, `progress`, `scroll-area` | 폴링 |
 | SearchBar/Results | `input`/`input-group`, `command`(팔레트), `kbd`, `scroll-area` | |
@@ -149,3 +153,8 @@ arch 10 §12 반응형 3단 기준. 고충실도는 1.9 프로토타입 자체.
 
 ### 검색/Ask UX 연계(참고, 1.9 동선)
 검색 결과·`/search/ask` 인용 `[n]` 클릭 → 해당 `document_id` 선택 + `chunk_id` 위치로 DocumentDetail 딥링크(arch 08 §9·§12, 10 §11).
+
+---
+
+## 1.10.8 메타데이터 사용자 보정 — **MVP 제외 (보고는 research로 이관)**
+검수 질문(메타 input 의도/저장/표시)에 대한 타 서비스 사례 분석은 **`research/01-document-processing.md §8`로 이관**했다. **MVP는 보정 기능을 넣지 않고 AI 생성 메타를 그대로(읽기 전용) 표시**한다. 오입력 보정 방식(수동 입력 vs AI 프롬프트)은 추후 결정 → arch 변경(03 §5 `user_*`, 10 §7a) 철회.

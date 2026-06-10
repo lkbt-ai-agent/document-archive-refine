@@ -254,3 +254,26 @@ CREATE INDEX ON document_chunks USING gin (metadata);
 | 청킹 | 재귀 512토큰/64오버랩, 토크나이저 측정, 구조 인식 |
 | 벡터DB | pgvector HNSW cosine, `m=16 ef_construction=200` |
 | 비동기 | arq+Redis, status/stage, 멱등 |
+
+---
+
+## 8. 메타데이터 사용자 보정 (provenance) — **MVP 제외, 추후 과제**
+
+> §3에서 "메타: …편집가능, 이력 보존"으로 열어둔 항목의 심화 조사. **MVP 범위에서는 제외**한다 — 현재는 **AI가 생성한 메타데이터를 그대로(읽기 전용) 표시**한다. 오입력 메타를 (a)사람이 직접 입력해 보정할지, (b)AI와 프롬프트를 주고받아 보정할지는 **추후 결정**. 아래는 그때 참고할 사례·설계 옵션 기록.
+
+### 8.1 사용자 보정을 도입할 경우의 사례
+| 사례 | 패턴 | 시사점 |
+|---|---|---|
+| **Ex Libris Alma — AI Metadata Assistant** | AI 생성 필드에 "data provenance" 서브필드를 부착해 출처(AI) 표식 보존, 정규화로 add/replace/remove | 원본을 지우지 말고 **출처를 메타로 남긴다** |
+| **C2PA / Content Credentials** | 변조 방지 메타로 생성·편집 이력(provenance) 보존 | AI/사람 편집을 **이력으로 분리 기록** |
+| **Google Document AI / AWS — HITL 검수** | confidence score 색(녹/황/적) + 필드별 confirm/correct, AI 추출값 pre-fill(빈칸 타이핑보다 보정이 빠름) | 입력 UX = **미리 채운 값 보정**, 신뢰도 시각화 |
+| **IDP 일반(Parseur 등)** | 사람 override를 추적해 피드백 루프로 모델 개선 | override는 **별도로 추적 가능**해야 |
+
+요지(공통): ① AI 원본을 덮어쓰지 않고 보존, ② 출처/편집 여부 명시(provenance), ③ 입력은 pre-fill 보정, ④ override는 구분 저장·추적.
+
+### 8.2 보정 도입 시 설계 옵션 (참고)
+- **저장:** AI 원본 `llm_*`은 불변 보존(계보·재현성 정렬), 사용자 보정은 **별도 컬럼**(`user_*`)+`metadata_edited_at`에 기록, 표시값 = `COALESCE(user_*, llm_*)`. (덮어쓰기=원본 소실로 기각, JSONB provenance 맵=복잡도로 후순위, 페어 컬럼이 최단순·무손실.)
+- **표시:** 필드별 출처를 `user_* IS NOT NULL`로 도출 → "AI 생성 / 수정됨" 배지 + "AI 원본으로 되돌리기".
+- **(b) AI 프롬프트 보정안:** 사용자가 자연어로 수정 요청 → LLM이 메타 재생성. 이 경우 계보(`generations`/provenance)와의 통합 설계가 추가로 필요 → 별도 검토.
+
+> 조사일: 2026-06-10 추가(게이트 2차 피드백 기록). MVP 미구현.

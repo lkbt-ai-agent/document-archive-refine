@@ -12,6 +12,8 @@ arch_ref: architecture/00-README.md
 > **전역 제약:** PG·MinIO 원격 고정(연결만, 로컬 중복 정의 금지). 시크릿은 `.env`(=`.gitignore`)로만. DB는 전용 스키마 `archive`. 드라이버 psycopg3 async.
 >
 > **구현 규약:** 각 모듈(라이브러리/프레임워크/SDK) 구현 시 **context7 MCP로 최신 공식 문서를 조회**해 API·설정·버전을 확인한 뒤 작성한다(메모리 의존 금지). 예: Next.js 16/React 19, Tailwind 4, shadcn, FastAPI, SQLAlchemy/Alembic, arq, pgvector/PGroonga, llama.cpp. UI 컴포넌트 선정은 shadcn MCP 병행(arch 10 §9).
+>
+> **코드 스타일 규약(React/TS):** 직접 작성하는 **모든 함수는 `function` 키워드 대신 화살표 함수(`const f = () => {}`)**, 객체/클래스 메서드는 **ES6 단축 표현**을 사용한다. **예외:** shadcn/ui 등 **외부 라이브러리가 생성·제공한 코드**(예: `components/ui/*`)는 원본 스타일 유지(개작 금지). (이 규약은 `web/AGENTS.md`에도 명시.)
 
 ---
 
@@ -27,11 +29,33 @@ arch_ref: architecture/00-README.md
 - [x] 1.4 API 계약 목록화 — 05~09의 엔드포인트를 프론트 관점에서 점검, 누락/불일치는 **arch 05~09에 피드백 반영**
 - [x] 1.5 디자인 토큰/Tailwind 4 테마 — **라이트/다크 듀얼 토큰**(shadcn CSS 변수) + shadcn 컴포넌트 후보 선정(MCP 탐색), **구체 토큰 값은 1.8 이후 코드에 적용** (§9·§3)
 - [x] 1.6 presigned 3단계 업/다운로드 UX 플로우 정의 (arch 06 §4 정합)
-- [ ] 1.7 Next.js 스캐폴드 — `npx create-next-app@latest web --yes` (프로젝트명 `web`, plan 2.7 서비스명 정합)
-- [ ] 1.8 shadcn/ui 초기화 — `npx shadcn@latest init --preset b6F9PilA8 --template next`
-- [ ] 1.9 UI 프로토타입 구현 — 1.1~1.6 설계 반영, 3패널 셸 + 핵심 동선(폴더 트리·문서 목록/상세·업로드·검색/생성)을 **목업 데이터로** 클릭 가능하게 (백엔드 미연동). **라이트/다크 토글(`next-themes`) + 3단 반응형(PC/태블릿/모바일) 포함**
-
-> **🚦 게이트(Phase 2 진입 전):** 1.9 프로토타입으로 **UI 동선 사용자 검수** 필수. 승인 전 Phase 2 착수 금지.
+- [x] 1.7 Next.js 스캐폴드 — `npx create-next-app@latest web --yes` (프로젝트명 `web`, plan 2.7 서비스명 정합)
+- [x] 1.8 shadcn/ui 초기화 — `npx shadcn@latest init --preset b6F9PilA8 --template next`
+- [x] 1.9 UI 프로토타입 구현 — 1.1~1.6 설계 반영, 3패널 셸 + 핵심 동선(폴더 트리·문서 목록/상세·업로드·검색/생성)을 **목업 데이터로** 클릭 가능하게 (백엔드 미연동). **라이트/다크 토글(`next-themes`) + 3단 반응형(PC/태블릿/모바일) 포함**
+  - [x] 1.9a `web/README.md` 작성 — **개발 서버 구동 명령어만 간략히**(`npm run dev`). **테스트 직후 가동 시 반드시 `npm run lint` 선행 호출**하도록 명시. (그 외 장황한 설명 금지)
+  - [x] 1.9b **원격(Tailscale) dev 서버 접속 설정** — 게이트 검수를 Mac mini의 Tailscale 호스트(`http://xxx-macmini.tail902fcf.ts.net:3000/`)로 수행하기 위한 dev 전용 설정. (Phase 4 dev에서도 재사용)
+    - **`web/next.config.ts` — `allowedDevOrigins` 추가(필수):** Next.js 16은 기본적으로 localhost 외 origin의 dev 전용 자산/엔드포인트(HMR 등) cross-origin 요청을 **차단**한다. Tailscale 호스트를 허용 목록에 등록.
+      ```ts
+      // next.config.ts
+      const nextConfig: NextConfig = {
+        allowedDevOrigins: ["xxx-macmini.tail902fcf.ts.net", "*.tail902fcf.ts.net"],
+      };
+      ```
+      (`web/node_modules/next/dist/docs/01-app/.../allowedDevOrigins.md` 근거. 운영(`next start`)에는 미적용 — dev 전용.)
+    - **바인딩(보통 불필요):** `next dev`는 이미 전 인터페이스 바인딩(기동 로그 `Network:` URL 노출 → Tailscale 100.x 인터페이스로 도달 가능). 미노출 시에만 `package.json`의 dev 스크립트를 `next dev -H 0.0.0.0`으로 명시.
+    - **전제(코드 외):** Mac mini에서 Tailscale 실행 + MagicDNS로 호스트명 해석, macOS 방화벽에서 `node` 인바운드 허용(또는 방화벽 off). 시크릿 아님(호스트명만) → `.env` 무관.
+    - **보안:** dev 서버를 tailnet에 노출하는 것이므로 tailnet ACL 신뢰 범위 내로 한정. 공개 인터넷 노출 금지(운영은 reverse proxy + TLS, arch 06 §10 정합).
+- [ ] 1.10 **프로토타입 개정 (1.9 게이트 1차 검수 피드백)** — 아래 개정을 1.9 프로토타입 코드에 반영 후 재검수. 설계 변경은 arch에 역반영 완료(각 항목 참조). 코드 스타일은 상단 **코드 스타일 규약** 준수.
+  - [ ] 1.10.1 **하단(Center 상세) 패널 제거 → 우측 패널로 통합.** Center는 문서 **목록 전용**. 상세 정보는 Right(DetailInspector)로 이관, **중복 기능 추가 금지**. **미리보기 영역 삭제**하고 **"원본 보기" 버튼**만: 텍스트류=마크다운 뷰어 다이얼로그, 그 외=presigned 다운로드. (arch 10 §4·§8·§10)
+  - [ ] 1.10.2 **우측 패널 토글화** — 문서 row **선택** 또는 row **"⋯" 클릭** 시에만 열림(선택 해제 시 접힘). 참고 UX: shadcn `sidebar-demo`(base-nova). (arch 10 §8b)
+  - [ ] 1.10.3 **등록일만 표시** — 문서는 인앱 편집이 없으므로 **수정일 비노출**, `created_at`(등록일)만 화면 표기. (arch 10 §10, arch 03 주석)
+  - [ ] 1.10.4 **앱 타이틀 `Mechive`** — 브라우저 `<title>`/메타데이터·헤더 브랜드. (저장소·버킷명은 불변, 표시명만) (arch 10 §1)
+  - [ ] 1.10.5 **새 폴더 다이얼로그** 프로토타입 — 이름 입력 → `POST /folders`. (arch 10 §8a, arch 05 §8)
+  - [ ] 1.10.6 **좌측 폴더 "⋯" 드롭다운** — 폴더 행마다 **이동/이름 변경/삭제** 메뉴. (arch 10 §8a)
+  - [ ] 1.10.7 **폴더 이동 다이얼로그** 프로토타입 — **폴더 트리 구조 표현 + 옮길 대상 상위 폴더 선택** 동선(자기·후손 비활성, 사이클 방지). `PATCH /folders/{id} {parent_id}`. (arch 10 §8a, arch 05 §6) *(요청 표기는 "이름 변경 다이얼로그"였으나 기술된 동선=MOVE이므로 이동 다이얼로그로 해석. 이름 변경 다이얼로그는 1.10.6의 별도 항목으로 분리.)*
+  - [ ] 1.10.8 **메타데이터 읽기 전용 표시(보정 MVP 제외)** — AI가 생성한 메타(제목/요약/토픽/키워드)를 **input/저장 없이 그대로 표시**. 우측 패널 `MetadataEditor`→**읽기 전용 뷰**로 전환. 오입력 보정 방식(수동 입력 vs AI 프롬프트)은 **추후 결정**. 사례 분석은 `research/01-document-processing.md §8`로 이관. (arch 10 §7a)
+  - [ ] 1.10.9 **모든 다이얼로그 모바일 풀스크린** — `<md`에서 Dialog 전체 화면(`w-screen h-dvh`, 라운드/마진 제거), 데스크톱은 중앙 모달. (arch 10 §12)
+> **🚦 게이트(Phase 2 진입 전):** 1.9 프로토타입 + **1.10 개정** 반영본으로 **UI 동선 사용자 재검수** 필수. 승인 전 Phase 2 착수 금지.
 
 ## Phase 2 — 인프라 셋업 (arch 02)
 원격 PG/MinIO 연결 검증 + 로컬 런타임(Redis·llama) 기동.
@@ -98,15 +122,16 @@ arch_ref: architecture/00-README.md
 - [ ] 3.34 계보 기록(provider/model/seed/프롬프트/출처/차트) + `/generations/{id}`·`/lineage`
 
 ## Phase 4 — 프론트엔드 구현 (arch 10)
-- [ ] 4.1 Phase 1 프로토타입(`web`) 승계 — 목업 제거·실 API 배선 전환, `NEXT_PUBLIC_API_URL` 주입 (1.7·1.8 재사용)
-- [ ] 4.2 AppShell(RSC) + ResizablePanels + `HydrationBoundary` 초기 시드
+> Phase 1 프로토타입(1.9 + **1.10 개정 반영본**)을 승계한다. 레이아웃은 **Left 트리 / Center 목록 / Right 토글 인스펙터**(하단 상세 패널 없음, arch 10 §4·§8).
+- [ ] 4.1 Phase 1 프로토타입(`web`) 승계 — 목업 제거·실 API 배선 전환, `NEXT_PUBLIC_API_URL` 주입 (1.7·1.8·1.10 재사용)
+- [ ] 4.2 AppShell(RSC, 브랜드명 **Mechive**) + ResizablePanels + `HydrationBoundary` 초기 시드
 - [ ] 4.3 react-query 클라이언트 + Zustand 스토어 배선
-- [ ] 4.4 Left — FolderTree(트리/선택/확장, CRUD/MOVE 드래그, 낙관 업데이트)
-- [ ] 4.5 Center — DocumentList/Detail + UploadDropzone(presigned 3단계, 진행률)
+- [ ] 4.4 Left — FolderTree(트리/선택/확장, CRUD/MOVE 드래그, 낙관 업데이트) + 폴더 **"⋯" 드롭다운(이동/이름변경/삭제)** + New/Rename/MoveFolder 다이얼로그 (arch 10 §8a)
+- [ ] 4.5 Center — **DocumentList(목록 전용)** + UploadDropzone(presigned 3단계, 진행률). **등록일만 표시**(수정일 비노출, arch 10 §10)
 - [ ] 4.6 인제스트 status/stage 폴링 표시(ready/failed 정지)
-- [ ] 4.7 Right — MetadataEditor + GenerationHistory(생성 이력·폴링)
+- [ ] 4.7 Right — **DetailInspector(토글형: row 선택/"⋯" 시 노출, §8b)** = DocumentDetail(status/stage + **"원본 보기"**: 텍스트=MD 뷰어/기타=다운로드, §10) + **MetadataView(읽기 전용, 보정 제외 §7a)** + GenerationTrigger/History(생성 이력·폴링)
 - [ ] 4.8 검색·AskDialog — 결과/인용 클릭 → 원문 딥링크, 요약/초안/보고서 생성 UI
-- [ ] 4.9 반응형 — PC·태블릿 3패널(폭 축소) / 모바일 단일+Sheet·Drawer (arch 10 §12)
+- [ ] 4.9 반응형 — PC·태블릿(Left 트리+Center 목록 상시 + **Right 토글 인스펙터**) / 모바일 단일+Sheet·Drawer + **모든 다이얼로그 모바일 풀스크린** (arch 10 §12)
 - [ ] 4.10 라이트/다크 테마 — `next-themes` 토글 + 듀얼 토큰 적용, 시스템 추종·FOUC 방지 (arch 10 §3)
 - [ ] 4.11 **MinIO 버킷 CORS 설정**(브라우저 presigned 호출용)
 
@@ -115,7 +140,7 @@ arch_ref: architecture/00-README.md
 - [ ] 5.2 파이프라인 — 추출/OCR/청킹/임베딩 멱등·재시작, 부분 실패 격리
 - [ ] 5.3 **검색 평가 게이트** — ~50 한국어 골든셋, Recall@5/@20(벡터only/하이브리드/+리랭크), 인용 존재 체크, CI 결정적 (arch 08 §11)
 - [ ] 5.4 통합(E2E) — 업로드→인제스트→검색→RAG 답변→생성·계보 전 경로
-- [ ] 5.5 프론트 — 핵심 플로우(트리 CRUD, 업/다운로드, 검색, 생성) + presigned/CORS 동작 + **3단 반응형·라이트/다크 렌더 스모크**
+- [ ] 5.5 프론트 — 핵심 플로우(트리 CRUD/이동 다이얼로그, 업/다운로드, 원본 보기, 검색, 생성) + 우측 인스펙터 토글 + presigned/CORS 동작 + **3단 반응형(다이얼로그 모바일 풀스크린)·라이트/다크 렌더 스모크**
 - [ ] 5.6 재현성 검증 — provider/model/seed 기록으로 동일 생성 재실행
 
 ---

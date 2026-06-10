@@ -56,10 +56,11 @@ CREATE TABLE archive.documents (
   status TEXT NOT NULL DEFAULT 'uploaded', stage TEXT, error TEXT,
   page_count INT, author TEXT, language TEXT,
   doc_created_at TIMESTAMPTZ, doc_modified_at TIMESTAMPTZ,
+  -- AI 생성 메타(MVP는 읽기 전용 표시; 사용자 보정은 제외 — research/01 §8)
   llm_title TEXT, llm_summary TEXT, topics TEXT[], keywords TEXT[],
   content TEXT,                                  -- PGroonga 인덱스 대상
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),  -- 등록일(화면 노출 기준, 10 §10)
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()   -- 내부 감사용(화면 미노출)
 );
 CREATE INDEX ix_documents_folder_id ON archive.documents(folder_id);
 CREATE INDEX ix_documents_sha256 ON archive.documents(sha256);

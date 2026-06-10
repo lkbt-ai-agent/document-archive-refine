@@ -39,7 +39,7 @@ PaddleOCR PP-OCRv5(기본) → Tesseract `kor`(폴백) → (선택) Qwen2.5-VL(�
 ## 9. 메타데이터 생성
 - intrinsic: pypdf/Tika(page_count·author·날짜).
 - NLP: 언어감지·키워드.
-- LLM: `--json-schema`로 `{title,summary,topics[],keywords[]}` — 사용자 편집 가능(`PATCH /documents/{id}`, 06 §5.1), 이력은 계보(09).
+- LLM: `--json-schema`로 `{title,summary,topics[],keywords[]}` — MVP는 읽기 전용 표시(사용자 보정 제외, research/01 §8 / 10 §7a).
 
 ## 10. 청킹
 재귀 분할 **512토큰/64오버랩**(실제 토크나이저로 측정), 표는 원자 단위(행 중간 분할 금지). (선택) Contextual Retrieval prefix.

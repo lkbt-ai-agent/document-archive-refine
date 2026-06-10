@@ -35,7 +35,7 @@ sequenceDiagram
 `GET /documents/{id}/download` → presigned GET 반환(Content-Disposition에 한국어 원본명 RFC 5987 인코딩) → 브라우저 직접 fetch.
 
 ### 5.1 문서 API 계약 (전체)
-> 1.4 프론트 관점 점검에서 보강: 기존 본문은 업로드/다운로드만 기술했고 **목록·상세·편집·삭제 엔드포인트가 누락**되어 추가(DocumentList/Detail·MetadataEditor·삭제 동선 필수).
+> 1.4 프론트 관점 점검에서 보강: 기존 본문은 업로드/다운로드만 기술했고 **목록·상세·이동·삭제 엔드포인트가 누락**되어 추가(DocumentList/Detail·이동/삭제 동선 필수). (메타 사용자 편집은 MVP 제외 — research/01 §8)
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
@@ -43,7 +43,7 @@ sequenceDiagram
 | GET | `/documents/{id}` | 문서 상세(메타 + `status`/`stage`/`error`) — DocumentDetail·폴링(07 §12) |
 | POST | `/documents` | **Init**: `{folder_id, filename, size, mime}` → `uploaded` 행 + presigned PUT(§4) |
 | POST | `/documents/{id}/complete` | **Confirm**: `stat_object` 검증 → `processing` + 인제스트 enqueue(§4·§8) |
-| PATCH | `/documents/{id}` | 메타 편집(`{llm_title,llm_summary,topics,keywords}`, 07 §9) / 이동(`{folder_id}`) |
+| PATCH | `/documents/{id}` | 이동(`{folder_id}`). (메타 사용자 편집은 MVP 제외 — research/01 §8) |
 | DELETE | `/documents/{id}` | 삭제 수명주기(§9): `object_key` 수집 → DB CASCADE → worker MinIO 삭제 |
 | GET | `/documents/{id}/download` | presigned GET 발급 — **발급 전 `owner_id` 검사**(§10, §5) |
 
