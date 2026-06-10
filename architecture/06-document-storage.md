@@ -34,6 +34,21 @@ sequenceDiagram
 ## 5. 다운로드
 `GET /documents/{id}/download` → presigned GET 반환(Content-Disposition에 한국어 원본명 RFC 5987 인코딩) → 브라우저 직접 fetch.
 
+### 5.1 문서 API 계약 (전체)
+> 1.4 프론트 관점 점검에서 보강: 기존 본문은 업로드/다운로드만 기술했고 **목록·상세·편집·삭제 엔드포인트가 누락**되어 추가(DocumentList/Detail·MetadataEditor·삭제 동선 필수).
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/documents?folder_id=&limit=&cursor=` | 폴더 내 문서 목록(페이지네이션) — DocumentList(10 §8) |
+| GET | `/documents/{id}` | 문서 상세(메타 + `status`/`stage`/`error`) — DocumentDetail·폴링(07 §12) |
+| POST | `/documents` | **Init**: `{folder_id, filename, size, mime}` → `uploaded` 행 + presigned PUT(§4) |
+| POST | `/documents/{id}/complete` | **Confirm**: `stat_object` 검증 → `processing` + 인제스트 enqueue(§4·§8) |
+| PATCH | `/documents/{id}` | 메타 편집(`{llm_title,llm_summary,topics,keywords}`, 07 §9) / 이동(`{folder_id}`) |
+| DELETE | `/documents/{id}` | 삭제 수명주기(§9): `object_key` 수집 → DB CASCADE → worker MinIO 삭제 |
+| GET | `/documents/{id}/download` | presigned GET 발급 — **발급 전 `owner_id` 검사**(§10, §5) |
+
+에러: 권한 외 404, 형제/이동 충돌은 상위 폴더 정책 준수(05 §8), Confirm 검증 실패 4xx. 모든 쿼리 `owner_id` 강제(04 §8).
+
 ## 6. object key 설계
 `docs/{uuid}`. 폴더 멤버십·표시명은 PG가 보유 → 폴더 이동/이름변경이 MinIO를 건드리지 않음.
 

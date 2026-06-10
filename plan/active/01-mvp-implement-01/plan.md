@@ -21,12 +21,12 @@ arch_ref: architecture/00-README.md
 
 > **산출물 정책(중복 방지):** `architecture/`가 SoT. 1.1~1.6은 **재문서화가 아니라 검증 게이트**다. 새 설계 문서를 만들지 않고 산출물을 흘려보낸다 — 검증 델타(1.1·1.3)는 **arch에 역반영**, API 갭(1.4)은 **arch 05~09 패치**, 토큰 값(1.5)은 **1.8 이후 코드**(`globals.css`/theme), 와이어프레임(1.2)은 **1.9 프로토타입 코드로 흡수**. 영구 신규 산출물은 `web/` 코드뿐.
 
-- [ ] 1.1 컴포넌트 맵 **검증** — AppShell(RSC) → ResizablePanels → Left/Center/Right + Search, arch 10 §4 대비 누락/변경만 arch 역반영 (재작성 금지)
-- [ ] 1.2 와이어프레임 — **저충실도 ASCII/마크다운 레이아웃 스케치**(PC·태블릿 3패널 / 모바일 단일+Sheet·Drawer), 1.9의 입력 스펙(고충실도=1.9 프로토타입 자체) (§12)
-- [ ] 1.3 상태 소유 **검증** — react-query(서버 데이터) vs Zustand(선택/확장) 경계, arch 10 §6·§7 대비 확정
-- [ ] 1.4 API 계약 목록화 — 05~09의 엔드포인트를 프론트 관점에서 점검, 누락/불일치는 **arch 05~09에 피드백 반영**
-- [ ] 1.5 디자인 토큰/Tailwind 4 테마 — **라이트/다크 듀얼 토큰**(shadcn CSS 변수) + shadcn 컴포넌트 후보 선정(MCP 탐색), **구체 토큰 값은 1.8 이후 코드에 적용** (§9·§3)
-- [ ] 1.6 presigned 3단계 업/다운로드 UX 플로우 정의 (arch 06 §4 정합)
+- [x] 1.1 컴포넌트 맵 **검증** — AppShell(RSC) → ResizablePanels → Left/Center/Right + Search, arch 10 §4 대비 누락/변경만 arch 역반영 (재작성 금지)
+- [x] 1.2 와이어프레임 — **저충실도 ASCII/마크다운 레이아웃 스케치**(PC·태블릿 3패널 / 모바일 단일+Sheet·Drawer), 1.9의 입력 스펙(고충실도=1.9 프로토타입 자체) (§12)
+- [x] 1.3 상태 소유 **검증** — react-query(서버 데이터) vs Zustand(선택/확장) 경계, arch 10 §6·§7 대비 확정
+- [x] 1.4 API 계약 목록화 — 05~09의 엔드포인트를 프론트 관점에서 점검, 누락/불일치는 **arch 05~09에 피드백 반영**
+- [x] 1.5 디자인 토큰/Tailwind 4 테마 — **라이트/다크 듀얼 토큰**(shadcn CSS 변수) + shadcn 컴포넌트 후보 선정(MCP 탐색), **구체 토큰 값은 1.8 이후 코드에 적용** (§9·§3)
+- [x] 1.6 presigned 3단계 업/다운로드 UX 플로우 정의 (arch 06 §4 정합)
 - [ ] 1.7 Next.js 스캐폴드 — `npx create-next-app@latest web --yes` (프로젝트명 `web`, plan 2.7 서비스명 정합)
 - [ ] 1.8 shadcn/ui 초기화 — `npx shadcn@latest init --preset b6F9PilA8 --template next`
 - [ ] 1.9 UI 프로토타입 구현 — 1.1~1.6 설계 반영, 3패널 셸 + 핵심 동선(폴더 트리·문서 목록/상세·업로드·검색/생성)을 **목업 데이터로** 클릭 가능하게 (백엔드 미연동). **라이트/다크 토글(`next-themes`) + 3단 반응형(PC/태블릿/모바일) 포함**
