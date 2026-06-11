@@ -1,35 +1,30 @@
-# 03. 데이터 모델 & 마이그레이션 아키텍처
+---
+created: 2026-06-11
+updated: 2026-06-11
+status: draft
+overview: 폴더·문서·청크·계보 전체 스키마와 Alembic 전략. 모든 테이블은 전용 스키마 archive에 둔다.
+refs: research/01 §5.4, research/03 §4, research/04 §1·§4b
+---
 
-## 1. 개요 / 범위
-폴더·문서·청크·계보 전체 스키마와 Alembic 전략. 모든 테이블은 전용 스키마 `archive`에 둔다(02 §7).
+# 데이터 모델 & 마이그레이션
 
-## 2. 요구사항 매핑
-데이터 모델 전체 + 마이그레이션(원격 공유 DB 대상).
+## 1. 범위
+폴더·문서·청크·계보 전체 스키마와 Alembic 전략. 전용 스키마 `archive`(infrastructure §6).
 
-## 3. 설계 결정
+## 2. 설계 결정
 - 임베딩 차원 **1024** 전 시스템 통일, HNSW cosine.
 - 계보는 행 단위 스냅샷(W3C PROV/Langfuse 정렬) — 모델/템플릿 변경이 과거 기록 미오염.
 - 전용 스키마 `archive` 격리, 확장은 `public`.
-- **`users`:** MVP는 인증 범위 밖 → 최소 `users(id, created_at)`만 두고 시드 1명, `owner_id`는 향후 멀티테넌트 대비 강제.
+- `users`: MVP는 인증 범위 밖 → 최소 `users(id, created_at)` + 시드 1명, `owner_id`는 향후 멀티테넌트 대비 강제.
 
-## 4. ER 다이어그램
-```mermaid
-erDiagram
-  users ||--o{ folders : owns
-  users ||--o{ documents : owns
-  folders ||--o{ folders : parent
-  folders ||--o{ documents : contains
-  documents ||--o{ document_chunks : has
-  generations ||--o{ generation_prompts : has
-  generations ||--o{ generation_source_documents : uses
-  generations ||--o{ generation_source_chunks : cites
-  generations ||--o{ generation_charts : has
-  generations ||--o| documents : "outputs(materialized)"
-  models ||--o{ generations : runs
-  prompt_templates ||--o{ generation_prompts : renders
-```
+## 3. 관계 (ERD 대용)
+- `users` 1—N `folders` / `documents` (owns).
+- `folders` 1—N `folders` (self, parent) / `documents` (contains).
+- `documents` 1—N `document_chunks`.
+- `generations` 1—N `generation_prompts` / `_source_documents` / `_source_chunks` / `_charts`.
+- `generations` 0—1 `documents` (output materialize), N—1 `models` / `prompt_templates`.
 
-## 5. 테이블 DDL (요약, 스키마=archive)
+## 4. 테이블 DDL (요약, 스키마=archive)
 
 ### folders (인접 리스트)
 ```sql
@@ -57,11 +52,11 @@ CREATE TABLE archive.documents (
   status TEXT NOT NULL DEFAULT 'uploaded', stage TEXT, error TEXT,
   page_count INT, author TEXT, language TEXT,
   doc_created_at TIMESTAMPTZ, doc_modified_at TIMESTAMPTZ,
-  -- AI 생성 메타(MVP는 읽기 전용 표시; 사용자 보정은 제외 — research/01 §8)
+  -- AI 생성 메타(MVP 읽기 전용 표시; 사용자 보정 제외)
   llm_title TEXT, llm_summary TEXT, topics TEXT[], keywords TEXT[],
   content TEXT,                                  -- PGroonga 인덱스 대상
-  ingest_ms INT,                                 -- 인제스트(추출~임베딩) 소요(ms), 성능 측정 표시용(10 §11)
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),  -- 등록일(화면 노출 기준, 10 §10)
+  ingest_ms INT,                                 -- 인제스트 소요(ms), 성능 표시용
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),  -- 등록일(화면 노출 기준)
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()   -- 내부 감사용(화면 미노출)
 );
 CREATE INDEX ix_documents_folder_id ON archive.documents(folder_id);
@@ -86,7 +81,7 @@ CREATE INDEX ix_chunks_hnsw ON archive.document_chunks
 CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata);
 ```
 
-### 계보 (요약 — 상세 운용은 09)
+### 계보 (요약 — 상세 운용은 ai-outputs)
 ```sql
 CREATE TYPE archive.artifact_kind AS ENUM ('summary','draft','report');
 CREATE TYPE archive.gen_method  AS ENUM ('stuff','map_reduce','refine','hierarchical','outline_expand','template_fill');
@@ -109,9 +104,9 @@ CREATE TABLE archive.generations (       -- 계보 헤드(=생성 1회)
   temperature REAL, top_p REAL, top_k INT, seed BIGINT,
   max_tokens INT, decode_params JSONB,
   embedding_model TEXT, retrieval_k INT, retrieval_params JSONB,
-  prompt_tokens INT, completion_tokens INT, total_tokens INT, latency_ms INT,  -- latency_ms=생성 소요(10 §11)
+  prompt_tokens INT, completion_tokens INT, total_tokens INT, latency_ms INT,  -- latency_ms=생성 소요
   output_text TEXT, output_meta JSONB, error TEXT,
-  -- 산출물을 1급 문서로 materialize한 결과 문서(09 §9a). 문서 삭제 시 SET NULL → "산출물 내역"에서 비노출.
+  -- 산출물을 1급 문서로 materialize한 결과 문서. 문서 삭제 시 SET NULL → "산출물 내역" 비노출.
   output_document_id UUID REFERENCES archive.documents(id) ON DELETE SET NULL,
   progress_pct INT DEFAULT 0, progress_step TEXT,
   created_at TIMESTAMPTZ DEFAULT now(), started_at TIMESTAMPTZ, finished_at TIMESTAMPTZ);
@@ -137,37 +132,29 @@ CREATE TABLE archive.generation_charts (
   data_rows JSONB, computed_stats JSONB, valid BOOLEAN, repair_attempts INT DEFAULT 0);
 ```
 
-## 6. 명명 규약 & Base
+## 5. 명명 규약 & Base
 - SQLAlchemy `MetaData(naming_convention={ix,uq,fk,pk,ck})`, `Mapped[]`+`mapped_column()`.
 - Pydantic v2 `ConfigDict(from_attributes=True)`, 상태는 `Literal[...]`.
 
-## 7. 확장 의존 & 격리
-| 확장 | 용도 | 미가용 영향 |
-|---|---|---|
-| `vector` | 임베딩 저장·HNSW | 의미 검색 불가 |
-| `pgroonga` | 한국어 키워드 검색 | `tsvector simple` 폴백(품질↓) |
+## 6. 확장 의존 & 격리
+- `vector` — 임베딩 저장·HNSW. 미가용 시 의미 검색 불가.
+- `pgroonga` — 한국어 키워드 검색. 미가용 시 `tsvector simple` 폴백(품질↓).
+- 확장은 `public`, 테이블은 `archive`. infrastructure §5 검증 선행.
 
-확장은 `public`, 테이블은 `archive`. 02 §6 검증 선행.
-
-## 8. Alembic 전략
+## 7. Alembic 전략
 - `alembic init -t async`, `target_metadata=Base.metadata`, 모든 모델 import.
-- 확장/특수 인덱스(HNSW·PGroonga)·ENUM은 **수동 마이그레이션**으로 작성.
-- `version_table_schema='archive'`. 원격 DB 대상 `alembic upgrade head`, 롤백은 `downgrade`.
+- 확장/특수 인덱스(HNSW·PGroonga)·ENUM은 수동 마이그레이션.
+- `version_table_schema='archive'`. 원격 DB 대상 `alembic upgrade head`, 롤백 `downgrade`.
 
-## 9. 무결성·삭제 정책
+## 8. 무결성·삭제 정책
 - CASCADE: `folders`→하위 `folders`/`documents`→`document_chunks`. 계보 하위 테이블도 `generations` CASCADE.
-- **DB CASCADE는 MinIO 오브젝트를 지우지 않음** → 문서/폴더 삭제 시 애플리케이션·worker가 오브젝트 삭제 책임(06 정합).
+- **DB CASCADE는 MinIO 오브젝트를 지우지 않음** → 문서/폴더 삭제 시 앱·worker가 오브젝트 삭제 책임(document-storage 정합).
+- 삭제 흐름: 폴더 삭제 →(CASCADE) 하위 documents →(CASCADE) document_chunks; documents의 MinIO 오브젝트는 앱/worker가 별도 삭제.
 
-## 10. 다이어그램(삭제 흐름)
-```mermaid
-flowchart TD
-  delF[폴더 삭제] -->|CASCADE| delD[하위 documents]
-  delD -->|CASCADE| delC[document_chunks]
-  delD -->|앱/worker| delO[MinIO 오브젝트 삭제]
-```
-
-## 11. 제약·리스크
-- 확장 권한(02 §6 선행). HNSW 빌드 비용(원격 리소스 확인). PGroonga 인덱스 대상=문서 단위(`documents.content`, 08 정합).
-
-## 참고
-`research/01 §5.4`, `research/03 §4`, `research/04 §1·§4b`.
+## 9. 운영 배포 전 TODO
+- 확장 권한 (infrastructure §5 선행)
+  - 해결: [ ]
+  - 비고: 배포 전 `CREATE EXTENSION` 권한 확인, 없으면 DBA 요청.
+- HNSW 빌드 비용
+  - 해결: [ ]
+  - 비고: 원격 리소스 여유 확인.
