@@ -132,6 +132,15 @@ export const mockGenerations: Generation[] = [
     createdAt: "2026-06-09T10:00:00Z",
     outputDocumentId: "d7",
     elapsedMs: 18_400,
+    sourceDocumentIds: ["d1"],
+    model: "qwen2.5-14b-instruct-q5_k_m",
+    provider: "local",
+    seed: 42,
+    prompt: {
+      system:
+        "당신은 사내 문서 보관함의 요약 도우미입니다. 제공된 발췌만 근거로 사실에 기반해 답하고, 각 근거에 [n] 인용을 답니다.",
+      user: "다음 연봉계약서를 핵심 항목(기본급·성과급·지급 일정·복리후생) 위주로 한국어 불릿으로 요약하세요.",
+    },
   },
   {
     id: "g2",

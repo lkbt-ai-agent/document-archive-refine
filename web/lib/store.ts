@@ -319,6 +319,16 @@ export const useDriveStore = create<DriveState>((set, get) => ({
                       progressPct: 100,
                       outputDocumentId: outId,
                       elapsedMs: 7_000,
+                      // 계보 스냅샷(재현성) — 실제로는 worker가 provider/model/seed/렌더 프롬프트 기록(arch 09 §8)
+                      sourceDocumentIds: [documentId],
+                      model: "qwen2.5-14b-instruct-q5_k_m",
+                      provider: "local",
+                      seed: 42,
+                      prompt: {
+                        system:
+                          "당신은 사내 문서 보관함의 산출물 생성 도우미입니다. 제공된 발췌만 근거로 사실에 기반해 답하고 [n] 인용을 답니다.",
+                        user: `"${src?.name ?? "문서"}"를 근거로 ${kindLabel}을(를) 생성하세요.`,
+                      },
                     }
                   : g,
               ),

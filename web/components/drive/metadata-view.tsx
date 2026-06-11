@@ -10,6 +10,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { useDriveStore } from "@/lib/store";
+import { LineageView } from "./lineage-view";
 
 // AI 생성 메타데이터 — 읽기 전용 표시 (사용자 보정 MVP 제외; arch 10 §7a).
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -33,6 +34,9 @@ export const MetadataView = () => {
 
   return (
     <div className="space-y-4 p-4">
+      {/* 산출물 문서면 계보 섹션(부모 링크·모델/seed·프롬프트) 표시, 아니면 null (1.13.7) */}
+      <LineageView />
+
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Sparkles className="size-3.5 text-primary" />
         AI가 생성한 메타데이터 (읽기 전용)

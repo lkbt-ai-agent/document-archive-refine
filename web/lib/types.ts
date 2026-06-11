@@ -42,11 +42,18 @@ export interface Generation {
   kind: GenKind;
   status: GenStatus;
   progressPct: number;
-  documentId: string; // 원본(source) 문서 id
+  documentId: string; // 원본(주 source) 문서 id
   documentName: string;
   createdAt: string; // ISO
   outputDocumentId?: string; // 산출물이 materialize된 문서 id(succeeded). 문서 삭제 시 해제 → 내역 비노출
-  elapsedMs?: number; // 생성 소요 ms — 성능 측정 표시용(arch 10 §11)
+  elapsedMs?: number; // 생성 소요 ms — 성능 측정 표시용
+
+  // 계보(lineage) — 산출물 문서 인스펙터의 계보 섹션 표시용. 실 데이터는 GET /generations/{id}/lineage (arch 09 §10).
+  sourceDocumentIds?: string[]; // 부모(원본) 문서들 — 다중 원본 대비(현재 목업은 [documentId])
+  model?: string; // 모델 파일/이름 스냅샷(재현성, arch 09 §8)
+  provider?: string; // local | bedrock 등
+  seed?: number;
+  prompt?: { system: string; user: string }; // 렌더된 프롬프트 스냅샷
 }
 
 export interface SearchResultItem {
