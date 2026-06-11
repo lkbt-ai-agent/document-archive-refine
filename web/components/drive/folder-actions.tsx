@@ -145,7 +145,7 @@ export const FolderActionsMenu = ({
   </DropdownMenu>
 );
 
-// 폴더 우클릭 컨텍스트 메뉴 — "⋯"와 동일 액션 (plan 1.13.6)
+// 폴더 우클릭 컨텍스트 메뉴 — "⋯"와 동일 액션
 export const FolderContextMenu = ({
   folder,
   onAction,

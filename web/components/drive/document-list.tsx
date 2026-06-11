@@ -112,7 +112,7 @@ export const DocumentList = () => {
     return rows.slice(start, start + pagination.pageSize);
   }, [rows, pagination]);
 
-  // 폴더 row: 단일 클릭=인스펙터 토글 / 더블 클릭=진입 (plan 1.13.2)
+  // 폴더 row: 단일 클릭=인스펙터 토글 / 더블 클릭=진입
   const folderClickTimer = React.useRef<number | null>(null);
   const onFolderClick = (id: string) => {
     if (folderClickTimer.current) return; // 더블 클릭 진행 중

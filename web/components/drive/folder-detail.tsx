@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { useDriveStore } from "@/lib/store";
 import { formatDate } from "@/lib/format";
 
-// 폴더 인스펙터(읽기 전용) — 폴더 단일 클릭 시 우측에 표시 (arch 10 §7a, plan 1.13.2)
+// 폴더 인스펙터(읽기 전용) — 폴더 단일 클릭 시 우측에 표시 (arch 10 §7a)
 const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="flex justify-between gap-4 py-1 text-sm">
     <span className="text-muted-foreground">{label}</span>

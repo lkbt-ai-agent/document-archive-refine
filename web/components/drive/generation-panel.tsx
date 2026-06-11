@@ -70,7 +70,7 @@ export const GenerationPanel = () => {
           documents.some((d) => d.id === g.outputDocumentId))),
   );
 
-  // 산출물 내역 row 클릭 → Center가 산출물 문서 폴더로 이동·선택 (plan 1.13.5)
+  // 산출물 내역 row 클릭 → Center가 산출물 문서 폴더로 이동·선택
   const openArtifact = (g: Generation) => {
     const out = g.outputDocumentId
       ? documents.find((d) => d.id === g.outputDocumentId)

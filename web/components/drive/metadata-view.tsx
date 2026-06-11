@@ -34,7 +34,7 @@ export const MetadataView = () => {
 
   return (
     <div className="space-y-4 p-4">
-      {/* 산출물 문서면 계보 섹션(부모 링크·모델/seed·프롬프트) 표시, 아니면 null (1.13.7) */}
+      {/* 산출물 문서면 계보 섹션(부모 링크·모델/seed·프롬프트) 표시, 아니면 null */}
       <LineageView />
 
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

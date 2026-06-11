@@ -10,3 +10,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - Use arrow functions for all manually written functions. Use ES6 shorthand for object/class methods.
 - Exception: Preserve the original style of external library code (e.g. `components/ui/*` from shadcn/ui).
+- Do not write plan versions/IDs (e.g. `1.13.7`, `G7`) in code comments.

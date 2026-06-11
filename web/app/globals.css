@@ -71,7 +71,7 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  /* 문서/생성 상태 토큰 (1.5 plan) — light */
+  /* 문서/생성 상태 토큰 — light */
   --status-ready: oklch(0.62 0.17 150);
   --status-processing: oklch(0.62 0.15 245);
   --status-failed: oklch(0.58 0.22 27);
@@ -111,7 +111,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  /* 문서/생성 상태 토큰 (1.5 plan) — dark */
+  /* 문서/생성 상태 토큰 — dark */
   --status-ready: oklch(0.78 0.16 150);
   --status-processing: oklch(0.76 0.13 245);
   --status-failed: oklch(0.72 0.19 27);
