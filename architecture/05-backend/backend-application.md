@@ -9,7 +9,7 @@ refs: research/04 §0·§3, research/00 §0.2
 # 백엔드 애플리케이션 구조 & Provider 추상화
 
 ## 1. 범위
-백엔드 모듈 구조 + Provider 추상화(로컬 llama ↔ 추후 Bedrock). 도메인별 동작은 04-domains 각 문서, 데이터는 data-model.
+백엔드 모듈 구조 + Provider 추상화(로컬 llama ↔ 추후 Bedrock). 도메인별 동작은 04-domains 각 문서, 데이터는 schema-rule.
 
 ## 2. 설계 결정
 - 도메인 모듈(`fastapi-best-practices`) + async SA2(psycopg3).
@@ -86,7 +86,7 @@ llama.cpp `--json-schema`(GBNF) 호출 래퍼를 ai 모듈에 공통화 — 메�
 ## 12. 운영 배포 전 TODO
 - 드라이버 일관성(psycopg3)
   - 해결: [x]
-  - 비고: infrastructure·data-model과 정합 확인.
+  - 비고: infrastructure·schema-rule과 정합 확인.
 - Bedrock 실구현
   - 해결: [ ]
   - 비고: MVP는 인터페이스만, 실구현 제외.

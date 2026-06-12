@@ -6,7 +6,7 @@ overview: 원격 PG/MinIO 연결 검증 + 로컬 런타임(Redis·llama) 기동 
 
 ## 연결·스키마
 - [ ] A1 `.env` 키 카탈로그(DATABASE_URL/MINIO_*/REDIS_URL/LLAMA_*/LLM_PROVIDER/DB_SCHEMA) (§2).
-- [ ] A2 DB 확장 가용성·권한 검증 + `CREATE EXTENSION vector/pgroonga` (data-model §9, 선행 필수).
+- [ ] A2 DB 확장 가용성·권한 검증 + `CREATE EXTENSION vector/pgroonga` (schema-rule §5, 선행 필수).
 - [ ] A3 전용 스키마 `archive` 생성 + `search_path=archive,public` (§4).
 - [ ] A4 원격 MinIO 연결·버킷 보장(멱등) (§5).
 

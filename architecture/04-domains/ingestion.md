@@ -51,7 +51,7 @@ KURE-v1로 청크 임베딩(1024d) → `archive.document_chunks` insert. 멱등:
 2. extract → meta → chunk → embed → ready. 실패 시 `failed` + error.
 3. 진행 보고: `status/stage` 갱신 → 프론트 react-query 폴링(ready/failed 정지).
 4. 페이지/스테이지 멱등·백오프 재시도, 한 페이지 실패가 문서 전체 중단 안 함.
-5. 소요 시간: 파이프라인 시작~`ready` 경과를 `documents.ingest_ms`(data-model §4)에 기록 → 메타데이터 패널 표시.
+5. 소요 시간: 파이프라인 시작~`ready` 경과를 `documents.ingest_ms`(`documents-schema.md`)에 기록 → 메타데이터 패널 표시.
 
 ## 12. 운영 배포 전 TODO
 - pypdf 추출 품질(복잡 레이아웃)

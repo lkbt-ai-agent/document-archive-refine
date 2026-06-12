@@ -12,12 +12,15 @@ refs: research/04 §1
 - 폴더 생성/이름변경/이동/삭제 + 트리 조회.
 
 ## 2. 설계 결정
-- **인접 리스트(`parent_id`) + 재귀 CTE** 채택. MOVE=1행 update가 핵심.
+- 인접 리스트(`parent_id`) + 재귀 CTE. MOVE=1행 update가 핵심.
+  - FIXME: MOVE=1행 update가 뭔 소리야? 주어/목적어/서술어 제대로 문장 작성.
 - 기각: 머티리얼라이즈드 패스/ltree/네스티드 셋/클로저 테이블 — 서브트리 재작성·복잡도 부적합.
 - 재귀 CTE는 원격 PG 기본 기능(추가 확장 불필요).
+  - FIXME: PG 약어 쓰지 말고 풀네임으로 작성.
 
 ## 3. 데이터 모델 참조
-`archive.folders`(data-model §4): self-FK `parent_id ON DELETE CASCADE`, `uq_folder_sibling_name(parent_id,owner_id,name)`, `ix_folders_parent_id`.
+`archive.folders`(`folders-schema.md`): self-FK `parent_id ON DELETE CASCADE`, `uq_folder_sibling_name(parent_id,owner_id,name)`, `ix_folders_parent_id`.
+- FIXME: 문장으로 풀어서 써라.
 
 ## 4. 트리 조회
 - 재귀 CTE로 소유자 전체 폴더 평면 리스트 반환 → 프론트에서 `useMemo`로 트리 구성.

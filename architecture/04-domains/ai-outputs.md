@@ -30,7 +30,7 @@ refs: research/03
 ① LLM 구조화 데이터 추출(rows) → ② **Python이 통계 결정적 계산** → ③ LLM Vega-Lite 스펙 생성 → ④ JSON 스키마 검증·수리 루프(≤5회) → ⑤ react-vega 렌더 + 서사(`[n]` 인용).
 
 ## 6. 계보 데이터 모델
-`generations`(헤드) + `generation_prompts`/`source_documents`/`source_chunks`/`charts` + `models`/`prompt_templates`. DDL은 data-model §4. 한 생성=`generations` 한 행, 하위 테이블이 출처·프롬프트·차트 연결.
+`generations`(헤드) + `generation_prompts`/`source_documents`/`source_chunks`/`charts` + `models`/`prompt_templates`. DDL은 `generations-schema.md`. 한 생성=`generations` 한 행, 하위 테이블이 출처·프롬프트·차트 연결.
 
 ## 7. 재현성
 저장: `seed` + 디코딩 파라미터(temperature/top_p/top_k) + 렌더된 프롬프트 + 모델 파일 해시 + `provider`(+Bedrock이면 model id/region). 동일 조건 재실행 가능, 로컬↔Bedrock 이식성 확보.
@@ -46,7 +46,7 @@ refs: research/03
 
 ## 9. 산출물의 문서화 (materialization) — 1급 문서
 AI 산출물은 `generations.output_text`로만 두지 않고 **일반 문서와 동일하게 `documents` 행 + MinIO 오브젝트로 저장** → Center 목록 노출·검색·RAG 대상이 된다(search-and-rag는 `documents`/`document_chunks` 기준이라 별도 처리 없이 포함).
-- `succeeded` 시 worker가 산출물(Markdown; report는 차트 spec 포함)을 오브젝트 업로드 + `documents` 행 생성 → **인제스트(청킹·임베딩)까지 수행**. `generations.output_document_id`에 결과 문서 id 기록(data-model §4).
+- `succeeded` 시 worker가 산출물(Markdown; report는 차트 spec 포함)을 오브젝트 업로드 + `documents` 행 생성 → **인제스트(청킹·임베딩)까지 수행**. `generations.output_document_id`에 결과 문서 id 기록(`generations-schema.md`).
 - 폴더 위치: 기본 원본(주 source) 문서와 동일 폴더(정책 추후 확정).
 - "산출물 내역"(원본 기준 목록): `generation_source_documents.role='source'`로 연결된 생성 중 `output_document_id` NOT NULL인 것만 표시. row 클릭 → Center가 그 출력 문서 폴더로 이동·선택.
 - 삭제 정합: Center에서 출력 문서 삭제 → `output_document_id` **`ON DELETE SET NULL`** → 해당 생성 "산출물 내역"에서 자동 비노출(계보 헤드 행은 감사 목적 유지).

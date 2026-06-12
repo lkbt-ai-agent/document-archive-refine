@@ -64,7 +64,7 @@ react-query(목록/상세/트리 + 파이프라인·생성 폴링 + 캐시·낙�
 ### 7a. 인스펙터 표시 (읽기 전용 — MVP)
 문서 본문은 편집하지 않는다(읽기 전용 보관함). AI 추출 메타(제목/요약/토픽/키워드)도 MVP는 보정 없이 읽기 전용 표시.
 - 폴더 인스펙터(FolderDetail): Center 폴더 row **단일 클릭** 시 폴더 정보(이름·등록일·하위 수) 읽기 전용. (더블 클릭=진입, §8.)
-- 소요 시간(성능 표시): MetadataView에 인제스트 소요(`documents.ingest_ms`, data-model §4), AI 산출물은 생성 소요(`generations.latency_ms`)를 초 단위로. 검색·RAG 소요는 각 다이얼로그 `elapsed_ms`(§11).
+- 소요 시간(성능 표시): MetadataView에 인제스트 소요(`documents.ingest_ms`, `documents-schema.md`), AI 산출물은 생성 소요(`generations.latency_ms`, `generations-schema.md`)를 초 단위로. 검색·RAG 소요는 각 다이얼로그 `elapsed_ms`(§11).
 - AI 산출물 계보(Lineage) 섹션: 산출물 문서(= 어떤 생성의 `output_document_id`)면 계보 표시 — 부모 문서 링크(클릭=Center 이동)·종류·모델/provider/seed·생성 소요·프롬프트(접기)·인용 출처. 데이터=`GET /generations/{id}/lineage`(ai-outputs §10). 일반 업로드 문서엔 미표시.
 
 ## 8. 패널 구성 (Left 트리 / Center 목록 / Right 토글 인스펙터)

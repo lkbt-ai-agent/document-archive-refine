@@ -54,7 +54,7 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - [x] G2 폴더 row 단일=인스펙터 토글·더블=진입, 인스펙터 문서/폴더 확장 (§8·§8b·§7a).
 - [x] G3 "AI 질문" → "RAG 질문" 명칭 변경 (§11).
 - [x] G4 소요 시간 표시 — 검색/RAG/메타데이터/생성, 응답에 `elapsed_ms` (§11·§7a, search-and-rag §11).
-- [x] G5 AI 산출물=1급 문서("산출물 내역"), materialize + row 클릭 이동, 삭제 시 비노출 (ai-outputs, data-model §4, §11).
+- [x] G5 AI 산출물=1급 문서("산출물 내역"), materialize + row 클릭 이동, 삭제 시 비노출 (ai-outputs, generations-schema.md, §11).
 - [x] G6 우클릭 컨텍스트 메뉴 = "⋯" 동일 액션(shadcn context-menu) (§8a).
 - [x] G7 AI 산출물 계보 패널 — 부모 링크·모델/seed·프롬프트, `/generations/{id}/lineage` (§7a, ai-outputs §6·§10).
 

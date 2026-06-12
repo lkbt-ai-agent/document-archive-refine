@@ -68,7 +68,7 @@ llama-server -m kure-v1-q8_0.gguf --embeddings --pooling cls -ngl 99 \
 - 부트스트랩 (앱 최초 기동 시 1회 수행하는 멱등 초기화 절차)
   1. DB 마이그레이션 적용: `alembic upgrade head`로 스키마를 최신 버전까지 올린다(이미 최신이면 아무것도 안 함).
   2. MinIO 버킷 생성: 업로드 대상 버킷이 있는지 확인하고 없으면 생성한다(있으면 그대로 둠).
-  3. DB 확장 활성화 확인: `vector`·`pgroonga` 확장이 설치·활성 상태인지 점검한다(미설치 시 data-model §9 절차로 처리).
+  3. DB 확장 활성화 확인: `vector`·`pgroonga` 확장이 설치·활성 상태인지 점검한다(미설치 시 schema-rule §5 절차로 처리).
 
 ## 9. 운영 배포 전 TODO
 - MinIO http(비TLS)·공인 IP 노출
