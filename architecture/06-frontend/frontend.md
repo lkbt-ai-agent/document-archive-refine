@@ -2,7 +2,7 @@
 created: 2026-06-11
 updated: 2026-06-12
 status: draft
-overview: Next.js 16/React 19 기반 3패널 Drive UI 셸 — 레이아웃·서버/클라 분리·데이터/상태 경계·테마·반응형. 도메인 UI는 각 <domain>-frontend.md.
+overview: 3패널 Drive UI 셸(레이아웃·서버/클라 분리·데이터/상태 경계·테마·반응형)을 정의한다.
 refs: research/04 §5
 ---
 

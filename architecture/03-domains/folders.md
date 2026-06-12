@@ -2,7 +2,7 @@
 created: 2026-06-11
 updated: 2026-06-12
 status: approved
-overview: 폴더 도메인 — 인접 리스트 폴더 트리의 생성/이름변경/이동/삭제와 트리 조회. 소유자 스코프.
+overview: 폴더 트리의 생성·이름변경·이동·삭제·조회를 정의하는 폴더 도메인.
 refs: research/04 §1
 ---
 

@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: 문서 도메인의 백엔드 구현 — API 계약, 모듈 흐름, presigned 메커니즘·정리 잡·보안. 도메인 정의는 document.md, 스키마는 documents-schema, 오브젝트 레이아웃은 documents-minio.
+overview: 문서 도메인의 백엔드 구현(API·presigned·정리 잡·보안)을 정의한다.
 refs: research/04 §2
 ---
 

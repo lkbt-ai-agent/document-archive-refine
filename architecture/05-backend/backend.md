@@ -2,7 +2,7 @@
 created: 2026-06-11
 updated: 2026-06-12
 status: draft
-overview: FastAPI 도메인 모듈 구조·레이어링, async SQLAlchemy 와이어링, API 공통 규약, AI Provider 추상화. 도메인 구현은 각 <domain>-backend.md.
+overview: 백엔드 공통 구조·레이어링·세션·API 규약·AI Provider 추상화를 정의한다.
 refs: research/04 §0·§3, research/00 §0.2
 ---
 

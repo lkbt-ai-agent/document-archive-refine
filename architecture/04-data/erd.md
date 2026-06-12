@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: approved
-overview: 도메인 엔티티 간 관계(ERD 대용)를 정의한다. 각 테이블 DDL은 도메인별 스키마 파일 참조.
+overview: 도메인 엔티티 간 관계(ERD 대용)를 정의한다.
 refs: research/01 §5.4, research/03 §4
 ---
 

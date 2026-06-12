@@ -51,16 +51,16 @@ CREATE INDEX ix_chunks_hnsw ON archive.document_chunks
   USING hnsw (embedding vector_cosine_ops) WITH (m=16, ef_construction=200);
 CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata);
 ```
-- 인제스트 청크 적재는 멱등 upsert: `INSERT ... ON CONFLICT (document_id, chunk_index) DO UPDATE`로 재실행 시 중복 없이 갱신(구현은 ingestion-backend.md).
+- 인제스트 청크 적재는 멱등 upsert: `INSERT ... ON CONFLICT (document_id, chunk_index) DO UPDATE`로 재실행 시 중복 없이 갱신한다.
 
 ## 2. 무결성·삭제 정책
 - 문서 삭제 → 청크 연쇄 삭제
   - `documents` 한 행을 삭제하면, 그 문서를 참조하는(`document_chunks.document_id` FK) 모든 `document_chunks` 행이 `ON DELETE CASCADE`로 자동 삭제된다.
   - 즉 문서 1개를 지우면 그 문서에서 쪼갠 청크 N개가 DB에서 함께 사라진다
-- MinIO 오브젝트는 CASCADE 대상 아님(앱이 별도 삭제 — document-backend §2).
+- MinIO 오브젝트는 CASCADE 대상 아님(앱이 별도 삭제).
 - 생성 출처로 인용된 문서·청크의 삭제 차단은 `generations-schema.md` §2 참조.
 
 ## 3. 무결성·중복 (`sha256`)
 - `sha256` 컬럼: 파일 본문 해시(무결성 검증·동일 파일 식별).
 - `ix_documents_sha256` 인덱스로 동일 파일 조회를 가속한다.
-- 계산 시점은 document-backend §5, 중복 처리 규칙은 document.md §4.
+- 중복 처리 규칙은 document.md §4.

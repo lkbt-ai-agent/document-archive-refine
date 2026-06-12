@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: 검색(키워드·의미·하이브리드)의 실 SQL을 정의한다. 도메인 동작은 search-and-rag.md, 구현은 search-backend.md.
+overview: 검색(키워드·의미·하이브리드)의 실 SQL을 정의한다.
 refs: research/02
 ---
 
@@ -42,4 +42,4 @@ FROM kw FULL OUTER JOIN vec ON kw.id = vec.id
 ORDER BY score DESC LIMIT :n;
 ```
 - `kw`/`vec`는 각각 키워드·의미 검색 결과에 `row_number()` 순위를 매긴 CTE.
-- `k=50`은 순위 융합 상수(점수 스케일 독립). 구현은 `search-backend.md`.
+- `k=50`은 순위 융합 상수(점수 스케일 독립).

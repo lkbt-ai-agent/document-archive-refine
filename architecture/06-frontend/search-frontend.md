@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: 검색·RAG 프론트 — SearchBar/SearchResults·AskDialog, 인용 딥링크·소요 표시. 셸은 frontend.md.
+overview: 검색·RAG 도메인의 프론트 구현(검색/RAG 다이얼로그·인용·소요)을 정의한다.
 refs: research/04 §5
 ---
 

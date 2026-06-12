@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: AI 산출물 프론트 — 생성 트리거·산출물 내역·계보 인스펙터·차트 렌더. 셸은 frontend.md.
+overview: AI 산출물 도메인의 프론트 구현(생성 트리거·산출물 내역·계보·차트)을 정의한다.
 refs: research/04 §5
 ---
 

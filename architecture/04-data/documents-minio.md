@@ -8,7 +8,7 @@ refs: research/04 §2
 
 # 문서 오브젝트 저장 레이아웃 (MinIO)
 
-- 백엔드 흐름(presigned·정리 잡·삭제·보안·설계)은 `document-backend.md`, 연결·버킷·자격증명은 infrastructure.
+- 오브젝트 저장소 연결·버킷·자격증명은 infrastructure 참조.
 
 ## 1. object key
 - 키 형식 `docs/{uuid}`, 버킷 1개.

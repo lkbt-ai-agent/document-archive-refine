@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: 폴더 도메인의 백엔드 구현 — API 계약과 모듈 호출 흐름. 도메인 정의는 folders.md, 쿼리는 folders-schema.md.
+overview: 폴더 도메인의 백엔드 구현(API·모듈 흐름)을 정의한다.
 refs: research/04 §1
 ---
 

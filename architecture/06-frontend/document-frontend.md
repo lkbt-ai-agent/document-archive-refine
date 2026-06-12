@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: 문서 도메인 프론트 — DocumentList·업/다운로드·원본 보기·DocumentDetail(인제스트 폴링 포함). 셸은 frontend.md.
+overview: 문서 도메인의 프론트 구현(목록·업/다운로드·원본 보기·상세·폴링)을 정의한다.
 refs: research/04 §5
 ---
 

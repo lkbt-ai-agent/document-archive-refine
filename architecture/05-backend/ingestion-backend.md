@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: 인제스트 파이프라인의 백엔드 구현 — arq 워커, 추출/OCR/메타/청킹/임베딩 도구 선택과 호출 흐름. 도메인 정의는 ingestion.md.
+overview: 인제스트 파이프라인의 백엔드 구현(arq 워커·추출/OCR/메타/청킹/임베딩)을 정의한다.
 refs: research/01, research/04 §4
 ---
 

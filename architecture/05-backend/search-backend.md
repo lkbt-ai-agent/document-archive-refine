@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: 검색·RAG의 백엔드 구현 — API 계약, 질의 파싱·검색·융합·생성 호출 흐름, 파라미터. 도메인 정의는 search-and-rag.md, 쿼리는 search-schema.md.
+overview: 검색·RAG 도메인의 백엔드 구현(API·질의 파싱·검색·융합·생성)을 정의한다.
 refs: research/02
 ---
 
@@ -20,7 +20,14 @@ refs: research/02
 ## 2. 모듈 흐름
 - `search/router → service`.
 - 질의 파싱: 구조화 출력(GBNF, backend.md §9)으로 `{intent, rewritten_query, keywords, time_ref, folder}` 추출. 날짜는 Python으로 절대 범위 환산, `owner_id` 강제.
-- 라우팅: keyword → 키워드 SQL / semantic·rag → 임베딩(EmbeddingClient) → `hybrid_search` → (선택) 리랭크 → 컨텍스트 조립 → 인용 강제 생성.
+- 라우팅
+  - keyword: 키워드 SQL.
+  - semantic·rag
+    1. 임베딩(EmbeddingClient).
+    2. `hybrid_search`.
+    3. (선택) 리랭크.
+    4. 컨텍스트 조립.
+    5. 인용 강제 생성.
 
 ## 3. 검색 구현
 - 키워드: PGroonga TokenBigram(한국어), 미설치 시 `to_tsvector('simple')` 폴백. 쿼리는 search-schema §1.

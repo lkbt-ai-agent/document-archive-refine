@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: 폴더 도메인 프론트 — FolderTree·FolderActions·다이얼로그, 트리 구성과 상태 관리. 셸은 frontend.md.
+overview: 폴더 도메인의 프론트 구현(트리·액션·다이얼로그·상태)을 정의한다.
 refs: research/04 §5
 ---
 

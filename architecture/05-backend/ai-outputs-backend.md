@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-12
 status: draft
-overview: AI 산출물·계보의 백엔드 구현 — API 계약, 워크플로우 구현, 비동기 생성, 계보 기록·산출물 문서화 흐름. 도메인 정의는 ai-outputs.md.
+overview: AI 산출물·계보 도메인의 백엔드 구현(API·워크플로우·비동기 생성·계보 기록)을 정의한다.
 refs: research/03
 ---
 
@@ -20,18 +20,36 @@ refs: research/03
 
 ## 2. 비동기 생성 흐름
 - 상태(`queued→running→succeeded|failed`) 정의는 ai-outputs.md §8.
-- `POST /generations` → 헤드를 `queued`로 기록(ID 확정) → arq enqueue 후 즉시 202 → worker가 `running` → 워크플로우 → `succeeded`/`failed`.
+- 흐름
+  1. `POST /generations` → 헤드를 `queued`로 기록(ID 확정).
+  2. arq enqueue 후 즉시 202 반환.
+  3. worker가 `running`으로 전이.
+  4. 워크플로우 실행.
+  5. `succeeded`/`failed`로 종료.
 - 멱등 키 `generation_id`. 진행은 `GET /generations/{id}` 폴링.
 
 ## 3. Summary 구현
-- 길이 분기: `doc_tokens ≤ 0.6*ctx` → STUFF(1콜) / `> 0.6*ctx` → MAP-REDUCE / `> ~50청크` → HIERARCHICAL(섹션 그룹 재귀).
+- 길이 분기
+  - `doc_tokens ≤ 0.6*ctx`: STUFF(1콜).
+  - `> 0.6*ctx`: MAP-REDUCE.
+  - `> ~50청크`: HIERARCHICAL(섹션 그룹 재귀).
 - 청크 미니요약 + 문서 최종요약 2단 저장, `[n]` 인용.
 
 ## 4. Draft 구현
-- outline-then-expand: 요약들로 개요 제안 → 사용자 개요 편집 → 섹션별 관련 청크 검색·생성(`[n]`) → 조립·일관성 패스. 템플릿 선택.
+- outline-then-expand
+  1. 요약들로 개요 제안.
+  2. 사용자 개요 편집.
+  3. 섹션별 관련 청크 검색·생성(`[n]`).
+  4. 조립·일관성 패스.
+  - 템플릿 선택.
 
 ## 5. Report 구현
-- LLM 구조화 데이터 추출(rows) → Python 결정적 통계 계산 → LLM Vega-Lite 스펙 생성 → JSON 스키마 검증·수리 루프(≤5회) → react-vega 렌더 + 서사(`[n]`).
+- 흐름
+  1. LLM 구조화 데이터 추출(rows).
+  2. Python 결정적 통계 계산.
+  3. LLM Vega-Lite 스펙 생성.
+  4. JSON 스키마 검증·수리 루프(≤5회).
+  5. react-vega 렌더 + 서사(`[n]`).
 
 ## 6. 계보·재현성 기록
 - `succeeded` 시 출처(문서·청크)·프롬프트·`provider`/`model`/`seed`·디코딩 파라미터·차트를 계보에 스냅샷 기록(generations-schema.md).
