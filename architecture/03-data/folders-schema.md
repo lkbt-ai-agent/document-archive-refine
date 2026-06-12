@@ -29,3 +29,29 @@ CREATE INDEX ix_folders_parent_id ON archive.folders(parent_id);
   - 즉 폴더 1개 삭제 = 그 아래 서브트리의 모든 폴더·문서·청크가 DB에서 한 번에 사라진다.
 - MinIO 오브젝트는 CASCADE 대상 아님
   - 앱/worker가 별도 삭제(document.md 정합)
+
+## 3. 제약·인덱스
+- `parent_id` self-FK `ON DELETE CASCADE` — 부모 폴더 삭제 시 하위 폴더 연쇄 삭제(§2).
+- `uq_folder_sibling_name(parent_id, owner_id, name)` — 같은 부모·같은 소유자 아래에서 형제 폴더 이름 중복 금지.
+- `ix_folders_parent_id` — `parent_id` 기준 조회(자식 목록·재귀 CTE)를 빠르게 한다.
+
+## 4. 쿼리 (트리 조회·MOVE 사이클 검사)
+- 트리 조회: 소유자 전체 폴더를 재귀 CTE로 평면 리스트로 반환(도메인 동작은 folders.md §4).
+```sql
+WITH RECURSIVE tree AS (
+  SELECT id, parent_id, name FROM archive.folders WHERE owner_id=:u AND parent_id IS NULL
+  UNION ALL
+  SELECT f.id, f.parent_id, f.name FROM archive.folders f JOIN tree t ON f.parent_id=t.id
+) SELECT * FROM tree;
+```
+- 레벨별 lazy 조회: `SELECT ... FROM archive.folders WHERE parent_id = :id`.
+- MOVE 사이클 검사: 새 부모가 옮길 폴더의 후손이면 거부(도메인 동작은 folders.md §5).
+```sql
+WITH RECURSIVE descendants AS (
+  SELECT id FROM archive.folders WHERE id=:folder_id
+  UNION ALL
+  SELECT f.id FROM archive.folders f JOIN descendants d ON f.parent_id=d.id
+)
+SELECT EXISTS(SELECT 1 FROM descendants WHERE id=:new_parent_id);  -- TRUE면 거부
+```
+- MOVE 적용(검사 통과 후, 트랜잭션 내): `UPDATE archive.folders SET parent_id=:new_parent_id WHERE id=:folder_id`.

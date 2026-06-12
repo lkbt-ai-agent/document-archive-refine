@@ -2,9 +2,10 @@
 created: 2026-06-11
 updated: 2026-06-12
 status: approved
-overview: 문서 도메인 — 업로드/다운로드/삭제 기능·설계, MinIO 오브젝트 로직, PostgreSQL documents 로직.
+overview: 문서 도메인 - 업로드/다운로드/삭제 기능·설계, MinIO 오브젝트 로직, PostgreSQL documents 로직.
 refs: research/04 §2
 ---
+FIXME: 스키마, DB CRUD 정책에 관한 언급은 documents-schema.md 로 옮기고, document.md 에는 문서 기능 및 제약사항을 자연어로만 묘사하라.
 
 # 문서 (document)
 
@@ -15,6 +16,8 @@ refs: research/04 §2
   - **upload**: 브라우저가 MinIO로 직접 PUT
   - **upload confirm**: 검증 후 인제스트 job enqueue
 - 물리(MinIO)·논리(PostgreSQL) 책임은 각각 §3·§4.
+- 문서 메타데이터 추출은 ingestion.md 참고
+- 문서 검색 및 RAG 는 search-and-rag.md 참고
 
 ## 2. 설계 결정
 - presigned PUT/GET로 브라우저 ↔ MinIO 직접 전송
