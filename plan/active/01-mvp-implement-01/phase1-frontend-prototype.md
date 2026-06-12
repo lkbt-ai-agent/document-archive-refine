@@ -19,7 +19,7 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 ## 프로토타입
 - [x] C1 3패널 셸 + 핵심 동선 목업 + 라이트/다크 + 3단 반응형.
 - [x] C2 `web/README.md` — dev 구동 명령만, 가동 전 `npm run lint` 선행 명시.
-- [x] C3 Tailscale dev 접속 — `next.config.ts` `allowedDevOrigins`에 Mac mini 호스트 등록, tailnet 한정·공개 금지 (documents-minio.md §7).
+- [x] C3 Tailscale dev 접속 — `next.config.ts` `allowedDevOrigins`에 Mac mini 호스트 등록, tailnet 한정·공개 금지 (document-backend §7).
 
 ## 개정 1차 (C1 게이트 피드백)
 - [x] D1 하단 상세 패널 제거 → 우측 통합, Center는 목록 전용, "원본 보기" 버튼만 (§4·§8·§10).

@@ -57,14 +57,10 @@ CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata);
 - 문서 삭제 → 청크 연쇄 삭제
   - `documents` 한 행을 삭제하면, 그 문서를 참조하는(`document_chunks.document_id` FK) 모든 `document_chunks` 행이 `ON DELETE CASCADE`로 자동 삭제된다.
   - 즉 문서 1개를 지우면 그 문서에서 쪼갠 청크 N개가 DB에서 함께 사라진다
-- MinIO 오브젝트는 CASCADE 대상 아님
-  - 앱/worker가 별도 삭제(document.md 정합)
+- MinIO 오브젝트는 CASCADE 대상 아님(앱이 별도 삭제 — document-backend §2).
 - 생성 출처로 인용된 문서·청크의 삭제 차단은 `generations-schema.md` §2 참조.
 
 ## 3. 무결성·중복 (`sha256`)
-- 인제스트 중 `documents.sha256`을 계산해 채운다(본문 무결성 검증).
-- `ix_documents_sha256`로 동일 파일을 빠르게 찾는다.
-- 중복 파일 처리 규칙(식별만, 차단 안 함)은 document.md §4.
-
-## 4. 멱등 — 중복 upload confirm
-- 같은 문서에 upload confirm 쓰기가 중복으로 도착해도, 그 문서가 이미 `processing`/`ready`면 서버는 추가 처리 없이 무시한다(중복 인제스트 enqueue 방지).
+- `sha256` 컬럼: 파일 본문 해시(무결성 검증·동일 파일 식별).
+- `ix_documents_sha256` 인덱스로 동일 파일 조회를 가속한다.
+- 계산 시점은 document-backend §5, 중복 처리 규칙은 document.md §4.

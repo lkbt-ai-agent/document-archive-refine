@@ -26,8 +26,7 @@ CREATE INDEX ix_folders_parent_id ON archive.folders(parent_id);
 - 폴더 삭제 → 하위 폴더·문서 연쇄 삭제 (도메인 규칙은 folders.md §6)
   - `folders` 한 행을 삭제하면, 그 폴더를 부모로 가리키는(`folders.parent_id` self-FK) 모든 하위 `folders` 행이 `ON DELETE CASCADE`로 자동 삭제되고, 손자·증손자까지 재귀로 이어진다.
   - 각 폴더에 속한(`documents.folder_id` FK) `documents`도 함께 삭제되며, 문서→청크 연쇄는 `documents-schema.md`.
-- MinIO 오브젝트는 CASCADE 대상 아님
-  - 앱/worker가 별도 삭제(document.md 정합)
+- MinIO 오브젝트는 CASCADE 대상 아님(앱이 별도 삭제 — folders-backend §2).
 
 ## 3. 제약·인덱스
 - `parent_id` self-FK `ON DELETE CASCADE` — 부모 폴더 삭제 시 하위 폴더 연쇄 삭제(§2).
