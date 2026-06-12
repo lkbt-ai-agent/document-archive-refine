@@ -65,7 +65,7 @@ CREATE TABLE archive.generation_charts (
   - 즉 생성 1회 기록을 지우면 그 프롬프트·출처·차트 계보가 통째로 사라진다.
 - 산출물 문서 삭제 → 헤드는 유지, 링크만 끊김
   - 산출물로 materialize된 `documents` 행이 삭제되면, 이를 가리키던 `generations.output_document_id`가 `ON DELETE SET NULL`로 NULL이 된다.
-  - `generations` 헤드 행 자체는 남고 "산출물 내역"에서만 비노출된다.
+  - 그 의미(산출물 내역에서 비노출, 계보 헤드 행 유지)는 ai-outputs.md §9.
 - 출처(source) 문서 삭제 보호 (미해결)
   - `generation_source_documents.document_id`·`generation_source_chunks.chunk_id` FK는 현재 `ON DELETE` 미지정(=NO ACTION).
   - 어떤 생성의 출처로 인용된 원본 `documents`·`document_chunks` 행을 삭제하려 하면 이 FK 때문에 삭제가 **차단**된다 → 산출물 계보가 "깨지는" 게 아니라 원본 삭제 자체가 거부됨. 정책 확정은 §3.

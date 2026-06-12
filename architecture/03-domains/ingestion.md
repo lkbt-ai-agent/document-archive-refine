@@ -12,9 +12,9 @@ refs: research/01, research/04 §4
 - 업로드 확정된 문서에서 텍스트 추출·OCR·메타데이터 생성·임베딩을 수행해 검색 가능한 상태로 만든다.
 - 원본은 오브젝트 저장소, 결과는 데이터베이스에 둔다.
 
-## 2. 상태 & 스테이지
-- 상태: `uploaded → processing → ready | failed`.
-- 스테이지: `extracting → generating_meta → chunking → embedding`.
+## 2. 스테이지
+- 문서 상태(`uploaded→processing→ready|failed`) 정의는 document.md §4. 인제스트는 `processing` 동안 동작한다.
+- 스테이지(`documents.stage`): `extracting → generating_meta → chunking → embedding`.
 - 각 스테이지는 멱등이며, 실패하면 그 지점부터 재시작한다.
 
 ## 3. 파이프라인 단계

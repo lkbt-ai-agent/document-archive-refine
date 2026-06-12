@@ -15,8 +15,8 @@
 
 - `01-overview/` — System overview, tech stack, deployment topology.
 - `02-infrastructure/` — DB environment & spec, LLM runtime environment & spec, environment variables.
-- `03-data/` — DB schema, ERD/relations, indexes, migrations, data rules.
-- `04-domains/` — Business feature requirements, process flows, domain rules.
+- `03-domains/` — Business feature requirements, process flows, domain rules.
+- `04-data/` — DB schema, ERD/relations, indexes, migrations, data rules.
 - `05-backend/` — Backend implementation spec, API contracts, backend coding guide.
 - `06-frontend/` — Frontend implementation spec, UI/UX design, frontend coding guide.
 

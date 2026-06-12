@@ -19,8 +19,8 @@ refs: research/03
 | GET | `/generations?source_document_id=&kind=&user=` | "산출물 내역" — 원본 기준, `output_document_id` 존재 건만. |
 
 ## 2. 비동기 생성 흐름
-- `POST /generations` → api가 `generations` 헤드를 `queued`로 먼저 기록(생성 ID 확정).
-- arq enqueue 후 즉시 202. worker 픽업 → `running` → 워크플로우 → `succeeded`/`failed`.
+- 상태(`queued→running→succeeded|failed`) 정의는 ai-outputs.md §8.
+- `POST /generations` → 헤드를 `queued`로 기록(ID 확정) → arq enqueue 후 즉시 202 → worker가 `running` → 워크플로우 → `succeeded`/`failed`.
 - 멱등 키 `generation_id`. 진행은 `GET /generations/{id}` 폴링.
 
 ## 3. Summary 구현
@@ -38,6 +38,7 @@ refs: research/03
 - 모델/템플릿 변경이 과거 기록을 덮지 않게 행 단위 스냅샷.
 
 ## 7. 산출물 문서화 (materialization)
+- 개념·산출물 내역·삭제 정합의 의미는 ai-outputs.md §9. 여기서는 구현만 다룬다.
 - `succeeded` 시 worker가 산출물(Markdown; report는 차트 spec 포함)을 오브젝트 업로드 + `documents` 행 생성 → 인제스트(청킹·임베딩)까지 수행(document/ingestion 흐름 재사용).
 - `generations.output_document_id`에 결과 문서 id 기록. 출력 문서 삭제 시 `ON DELETE SET NULL`로 산출물 내역에서 비노출.
 - 멱등: worker 작업은 멱등 키로 중복 enqueue 안전.

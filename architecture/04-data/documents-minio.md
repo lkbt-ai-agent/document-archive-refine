@@ -33,9 +33,9 @@ refs: research/04 §2
 - 단, presigned GET 발급 전에 서버가 `owner_id`를 반드시 검사한다(document.md §5).
 
 ## 5. 고아 오브젝트 정리
-- 고아 = upload init으로 `object_key`·presigned PUT은 발급됐으나 upload confirm이 끝나지 않아, `documents` 행이 uploaded로 방치되거나 MinIO 오브젝트가 비어 있는 경우.
-- TTL 정책: presigned PUT은 5~15분 후 만료되어 그 뒤로는 업로드 자체가 불가능하다.
-- 정리 잡 정책: arq 주기 잡(예: 1시간마다)이 일정 기간(예: 24시간) 넘게 uploaded 상태인 행을 골라 `stat_object`로 오브젝트 부재를 확인한 뒤 그 `documents` 행을 삭제한다.
+- 고아(미완 업로드) 개념·정리 정책의 의미는 document.md §4. 여기서는 메커니즘만 정의한다.
+- TTL: presigned PUT은 5~15분 후 만료되어 그 뒤로는 업로드 자체가 불가능하다.
+- 정리 잡: arq 주기 잡(예: 1시간마다)이 일정 기간(예: 24시간) 넘게 uploaded 상태인 행을 골라 `stat_object`로 오브젝트 부재를 확인한 뒤 그 `documents` 행을 삭제한다.
 
 ## 6. 오브젝트 삭제
 - 문서 삭제 시 `object_key`를 먼저 확보한 뒤(document.md §4 DB 삭제 후), worker가 MinIO 오브젝트를 삭제한다(실패 시 재시도, 삭제 잡 멱등).

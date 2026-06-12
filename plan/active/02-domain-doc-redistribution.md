@@ -1,7 +1,7 @@
 ---
 created: 2026-06-12
 completed: 2026-06-12
-overview: 04-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재작성한다. 03-data=스키마/쿼리, 04-domains=상태·프로세스(자연어), 05-backend=도메인별 구현, 06-frontend=도메인별 구현.
+overview: 03-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재작성한다. 04-data=스키마/쿼리, 03-domains=상태·프로세스(자연어), 05-backend=도메인별 구현, 06-frontend=도메인별 구현.
 ---
 
 # 도메인 문서 관심사 재분배
@@ -9,13 +9,13 @@ overview: 04-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재�
 ## 0. 목표 & 레이어 규칙
 - 도메인 5개: folders / document / ingestion / search-and-rag / ai-outputs.
 - 각 도메인 내용을 레이어별 관심사로 분리한다.
-  - 03-data
+  - 04-data
     - PostgreSQL/MinIO 스키마·DDL·실 쿼리.
     - 이미 도메인별로 분리됨. 갭만 보강.
-  - 04-domains
+  - 03-domains
     - 상태 정의 + 프로세스 단계.
     - 자연어만. 구현 스펙·라이브러리·SQL·API 표 금지.
-    - 03-data 참조 가능.
+    - 04-data 참조 가능.
   - 05-backend
     - 도메인별 `<domain>-backend.md`.
     - 상태/프로세스의 백엔드 구현. API 규약, 모듈 호출 흐름.
@@ -29,10 +29,10 @@ overview: 04-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재�
   - 05·06은 단일 모놀리식(`backend-application.md`·`frontend-drive-ui.md`)이라 도메인 분리가 안 됐다.
 
 ## 1. 타깃 파일 트리
-- 03-data
+- 04-data
   - 유지: schema-rule, erd, users-schema, folders-schema, documents-schema, documents-minio, generations-schema
   - 신규: search-schema (키워드/의미/하이브리드 실 쿼리)
-- 04-domains
+- 03-domains
   - 유지(자연어로 정제): folders, document, ingestion, search-and-rag, ai-outputs
 - 05-backend
   - 공통 유지: `backend.md` (← backend-application 이름 변경)
@@ -46,18 +46,18 @@ overview: 04-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재�
   - `frontend.md`: 셸/레이아웃 맵·RSC 분리·react-query↔Zustand 경계·테마·반응형·브랜드.
 
 ## 2. 관심사 분류 기준 (무엇이 어디로)
-- CREATE TABLE/INDEX, 컬럼·제약, ENUM → 03-data `*-schema`
-- 실 SQL(키워드/RRF/CTE/upsert) → 03-data `*-schema`
-- 상태값 정의·전이 의미 → 04-domains(자연어)
-- 프로세스 단계 흐름 → 04-domains(자연어)
-- 도메인 규칙·제약(소유권, 사이클 금지, 인용 강제) → 04-domains(자연어)
+- CREATE TABLE/INDEX, 컬럼·제약, ENUM → 04-data `*-schema`
+- 실 SQL(키워드/RRF/CTE/upsert) → 04-data `*-schema`
+- 상태값 정의·전이 의미 → 03-domains(자연어)
+- 프로세스 단계 흐름 → 03-domains(자연어)
+- 도메인 규칙·제약(소유권, 사이클 금지, 인용 강제) → 03-domains(자연어)
 - 라이브러리·도구·파라미터 → 05-backend `<domain>-backend`
 - API 계약(경로·요청·응답) → 05-backend `<domain>-backend`
 - 백엔드 모듈 호출 흐름(router→service→repo→storage/ai/queue) → 05-backend `<domain>-backend`
 - 컴포넌트·react-query/Zustand·UX 동작 → 06-frontend `<domain>-frontend`
 - 횡단(레이어링·Provider 추상화 / 셸·테마·반응형) → 05/06 공통 문서
 
-## 3. Phase A — 03-data 보강
+## 3. Phase A — 04-data 보강
 - [x] A1 `search-schema.md` 신설
   - search-and-rag의 키워드 SQL·의미검색 식·`hybrid_search` RRF SQL을 이관.
   - 인덱스(PGroonga `documents.content`, HNSW `document_chunks`)는 documents-schema 참조.
@@ -67,17 +67,17 @@ overview: 04-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재�
 - [x] A3 folders 데이터 모델 설계근거 이관
   - 04 folders의 "인접 리스트+재귀 CTE 채택 / 대안 기각"을 folders-schema로 이동.
   - 04엔 동작만 남긴다.
-- [x] A4 검증 — 04-domains의 SQL 코드블록이 0개가 되도록 03-data가 모든 쿼리를 보유하는지 확인.
+- [x] A4 검증 — 03-domains의 SQL 코드블록이 0개가 되도록 04-data가 모든 쿼리를 보유하는지 확인.
 
-## 4. Phase B — 04-domains 정제 (자연어 상태·프로세스만)
+## 4. Phase B — 03-domains 정제 (자연어 상태·프로세스만)
 - 각 문서에서 SQL은 A로, API 표·라이브러리·파라미터는 C로 뺀다.
 - 남는 골격: 기능 요구사항 / 상태 정의 / 프로세스 단계 / 도메인 규칙 / (TODO).
 - `## 2. 설계 결정` 절은 항목별로 분해해 분산한다.
   - folders
-    - 인접 리스트+재귀 CTE 채택, 대안 기각 → 03-data folders-schema
+    - 인접 리스트+재귀 CTE 채택, 대안 기각 → 04-data folders-schema
     - MOVE=1행 update → 04 동작으로 잔류
   - document
-    - presigned 직접 전송, object key `docs/{uuid}`, 엔드포인트 단일화 → 03-data documents-minio
+    - presigned 직접 전송, object key `docs/{uuid}`, 엔드포인트 단일화 → 04-data documents-minio
   - ingestion
     - arq+Redis, pypdf·pdfplumber, KURE-v1 1024d 등 → 05 ingestion-backend
     - 차원 lock-in 원칙만 schema-rule
@@ -157,7 +157,7 @@ overview: 04-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재�
 - [x] E1 API 이전 참조 갱신
   - 04→05 이동으로 무효해지는 API 참조 전수 교정.
   - 대상: `search-and-rag §11`·`ai-outputs §10`·`folders §7`·`document §5`(API) → 각 `<domain>-backend.md`.
-- [x] E2 04-domains 절 번호 영향
+- [x] E2 03-domains 절 번호 영향
   - SQL/API 제거로 번호가 바뀌는 문서의 외부 참조 교정.
   - 가능하면 절을 유지해 번호를 보존한다.
 - [x] E3 06-frontend 분리 영향

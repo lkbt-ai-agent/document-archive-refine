@@ -12,7 +12,7 @@ refs: research/01, research/04 §4
 
 ## 1. 오케스트레이션 (arq)
 - `complete` → arq/Redis enqueue.
-- `pipeline/{worker,tasks}`가 extract → meta → chunk → embed → ready 순으로 실행. 실패 시 `failed` + error.
+- `pipeline/{worker,tasks}`가 extract → meta → chunk → embed → ready 순으로 실행(단계·상태 정의는 ingestion.md §2·§3·§4). 실패 시 `failed` + error.
 - 멱등 키 `(document_id, stage)`, 백오프 재시도. 페이지/스테이지 단위 멱등, 한 페이지 실패가 문서 전체 중단 안 함.
 - 진행 보고: `documents.status/stage` 갱신(프론트 폴링). 소요는 `documents.ingest_ms` 기록.
 

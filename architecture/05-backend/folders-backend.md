@@ -22,7 +22,7 @@ refs: research/04 §1
 ## 2. 모듈 흐름
 - `folders/router → service → repository`.
 - 트리 조회: repository가 재귀 CTE(folders-schema §4)로 평면 리스트 반환 → 프론트 트리 구성.
-- 이동(MOVE): service가 사이클 검사 쿼리(folders-schema §4)로 후손 여부 확인 → 통과 시 단일 UPDATE를 트랜잭션 안에서 수행.
+- 이동(MOVE): 사이클 방지 규칙은 folders.md §5, 검사 쿼리는 folders-schema §4. service가 후손 여부 확인 → 통과 시 단일 UPDATE를 트랜잭션 안에서 수행.
 - 삭제: `ON DELETE CASCADE`로 하위 폴더·문서·청크 연쇄. 삭제 대상 문서의 `object_key`를 먼저 수집해 storage로 오브젝트 삭제 위임(document-backend.md).
 
 ## 3. 검증·권한

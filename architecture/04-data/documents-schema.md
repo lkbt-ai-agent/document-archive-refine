@@ -62,9 +62,9 @@ CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata);
 - 생성 출처로 인용된 문서·청크의 삭제 차단은 `generations-schema.md` §2 참조.
 
 ## 3. 무결성·중복 (`sha256`)
-- 인제스트 중 `documents.sha256`을 계산해 채운다.
-- 용도: 파일 본문 무결성 검증 + 물리적으로 동일한 파일 식별. `ix_documents_sha256`로 조회를 가속한다.
-- 정책: 중복은 식별·표시만 하고 업로드를 차단하지 않는다(사용자가 같은 파일을 의도적으로 다시 올릴 수 있음).
+- 인제스트 중 `documents.sha256`을 계산해 채운다(본문 무결성 검증).
+- `ix_documents_sha256`로 동일 파일을 빠르게 찾는다.
+- 중복 파일 처리 규칙(식별만, 차단 안 함)은 document.md §4.
 
 ## 4. 멱등 — 중복 upload confirm
 - 같은 문서에 upload confirm 쓰기가 중복으로 도착해도, 그 문서가 이미 `processing`/`ready`면 서버는 추가 처리 없이 무시한다(중복 인제스트 enqueue 방지).

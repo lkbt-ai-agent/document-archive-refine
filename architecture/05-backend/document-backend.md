@@ -25,7 +25,7 @@ refs: research/04 §2
 ## 2. 모듈 흐름
 - `documents/router → service → repository`, service가 `storage`(minio_client)·`queue`(arq) 호출.
 - upload init: documents 행(`uploaded`)·`object_key` 생성 → storage가 presigned PUT 발급.
-- upload confirm: storage `stat_object`로 존재·크기 검증 → `processing` 전이 → 인제스트 enqueue(pipeline).
+- upload confirm: storage `stat_object`(documents-minio.md §3)로 존재·크기 검증 → `processing` 전이 → 인제스트 enqueue(pipeline).
 - download: `owner_id` 검사 → storage presigned GET 발급.
 - delete: `object_key` 수집 → DB 삭제(청크 CASCADE) → storage 오브젝트 삭제(재시도·멱등).
 
@@ -34,5 +34,5 @@ refs: research/04 §2
 - 주기 잡(arq)이 일정 기간 `uploaded`로 방치된 행을 `stat_object` 부재 확인 후 삭제(documents-minio.md §5).
 
 ## 4. 무결성
-- 인제스트 중 `sha256` 계산(중복 식별, 차단 안 함).
-- 멱등: 중복 upload confirm은 이미 `processing`/`ready`면 무시.
+- `sha256` 계산은 인제스트 중 수행. 중복 규칙은 document.md §4, 컬럼·인덱스는 documents-schema.md §3.
+- 멱등(중복 upload confirm 무시) 정책은 documents-schema.md §4.

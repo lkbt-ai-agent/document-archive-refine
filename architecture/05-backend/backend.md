@@ -10,7 +10,7 @@ refs: research/04 §0·§3, research/00 §0.2
 
 ## 1. 범위
 - 백엔드 모듈 구조 + Provider 추상화(로컬 llama ↔ 추후 Bedrock).
-- 도메인별 동작은 04-domains, 도메인별 구현은 `<domain>-backend.md`, 데이터는 03-data.
+- 도메인별 동작은 03-domains, 도메인별 구현은 `<domain>-backend.md`, 데이터는 04-data.
 
 ## 2. 설계 결정
 - 도메인 모듈(`fastapi-best-practices`) + async SQLAlchemy 2(psycopg3).
