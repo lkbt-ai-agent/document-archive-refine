@@ -50,3 +50,6 @@ refs: research/03
 - 장문 요약 지연/메모리
   - 해결: [ ]
   - 비고: HIERARCHICAL 분기(§3)로 완화, 부하 측정 필요.
+- 재현 정보 누락 방지
+  - 해결: [x]
+  - 비고: 성공 시 provider/model/seed 스냅샷 기록 강제(§6).
