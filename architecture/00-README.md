@@ -25,7 +25,7 @@ refs: research/, research/06-glossary
   - [generations-schema](./03-data/generations-schema.md) — 생성 계보 스키마
 - `04-domains/` — 비즈니스 기능·프로세스 플로우·도메인 규칙·기능별 API 계약
   - [folders](./04-domains/folders.md) — 폴더 트리 CRUD·MOVE
-  - [document-storage](./04-domains/document-storage.md) — MinIO presigned 업/다운로드
+  - [document](./04-domains/document.md) — 문서 도메인(MinIO presigned 업/다운로드 + documents 로직)
   - [ingestion](./04-domains/ingestion.md) — 추출·OCR·메타·청킹·임베딩
   - [search-and-rag](./04-domains/search-and-rag.md) — 하이브리드 검색·RAG
   - [ai-outputs](./04-domains/ai-outputs.md) — 요약/초안/보고서·계보

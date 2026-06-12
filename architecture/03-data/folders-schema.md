@@ -28,4 +28,4 @@ CREATE INDEX ix_folders_parent_id ON archive.folders(parent_id);
   - 동시에 삭제되는 각 폴더에 속한(`documents.folder_id` FK) 모든 `documents` 행도 `ON DELETE CASCADE`로 함께 삭제되고, 그 문서들의 청크는 다시 연쇄 삭제된다(문서→청크 연쇄는 `documents-schema.md` 참고).
   - 즉 폴더 1개 삭제 = 그 아래 서브트리의 모든 폴더·문서·청크가 DB에서 한 번에 사라진다.
 - MinIO 오브젝트는 CASCADE 대상 아님
-  - 앱/worker가 별도 삭제(document-storage 정합)
+  - 앱/worker가 별도 삭제(document.md 정합)

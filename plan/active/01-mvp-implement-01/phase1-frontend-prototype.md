@@ -10,7 +10,7 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - [x] A3 상태 소유 검증 — react-query(서버) vs Zustand(UI) 경계 (§6·§7).
 - [x] A4 API 계약 점검 — 도메인 문서(folders~ai-outputs) 엔드포인트 갭을 arch에 역반영.
 - [x] A5 디자인 토큰 — 라이트/다크 듀얼 토큰 + shadcn 후보, 값은 B2 이후 코드 (§9·§3).
-- [x] A6 presigned 3단계 업/다운로드 UX 플로우 정의 (document-storage §3).
+- [x] A6 presigned 3단계 업/다운로드 UX 플로우 정의 (document §3).
 
 ## 스캐폴드
 - [x] B1 Next.js 스캐폴드 (`create-next-app`, 프로젝트명 `web`).
@@ -19,7 +19,7 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 ## 프로토타입
 - [x] C1 3패널 셸 + 핵심 동선 목업 + 라이트/다크 + 3단 반응형.
 - [x] C2 `web/README.md` — dev 구동 명령만, 가동 전 `npm run lint` 선행 명시.
-- [x] C3 Tailscale dev 접속 — `next.config.ts` `allowedDevOrigins`에 Mac mini 호스트 등록, tailnet 한정·공개 금지 (document-storage §9).
+- [x] C3 Tailscale dev 접속 — `next.config.ts` `allowedDevOrigins`에 Mac mini 호스트 등록, tailnet 한정·공개 금지 (document §6).
 
 ## 개정 1차 (C1 게이트 피드백)
 - [x] D1 하단 상세 패널 제거 → 우측 통합, Center는 목록 전용, "원본 보기" 버튼만 (§4·§8·§10).

@@ -50,7 +50,7 @@ AI 산출물은 `generations.output_text`로만 두지 않고 **일반 문서와
 - 폴더 위치: 기본 원본(주 source) 문서와 동일 폴더(정책 추후 확정).
 - "산출물 내역"(원본 기준 목록): `generation_source_documents.role='source'`로 연결된 생성 중 `output_document_id` NOT NULL인 것만 표시. row 클릭 → Center가 그 출력 문서 폴더로 이동·선택.
 - 삭제 정합: Center에서 출력 문서 삭제 → `output_document_id` **`ON DELETE SET NULL`** → 해당 생성 "산출물 내역"에서 자동 비노출(계보 헤드 행은 감사 목적 유지).
-- 멱등: worker 작업은 멱등 키로 중복 enqueue 안전(document-storage Confirm과 동일 패턴).
+- 멱등: worker 작업은 멱등 키로 중복 enqueue 안전(document upload confirm과 동일 패턴).
 
 ## 10. API 계약
 | 메서드 | 경로 | 설명 |

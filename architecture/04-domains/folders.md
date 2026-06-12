@@ -47,7 +47,7 @@ SELECT EXISTS(SELECT 1 FROM descendants WHERE id=:new_parent_id);  -- TRUE면 �
 
 ## 6. 재귀 삭제
 - `ON DELETE CASCADE`로 하위 폴더·문서·청크 연쇄.
-- MinIO 오브젝트는 CASCADE 대상 아님 → service가 삭제 대상 문서의 `object_key`를 먼저 수집 → DB 삭제 후 worker가 오브젝트 삭제(document-storage 정합).
+- MinIO 오브젝트는 CASCADE 대상 아님 → service가 삭제 대상 문서의 `object_key`를 먼저 수집 → DB 삭제 후 worker가 오브젝트 삭제(document.md 정합).
 
 ## 7. API 계약
 | 메서드 | 경로 | 설명 |

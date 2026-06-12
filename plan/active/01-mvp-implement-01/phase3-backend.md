@@ -26,9 +26,9 @@ overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토
 - [ ] D2 MOVE + 사이클 방지(후손 검증), 형제 중복명 409.
 - [ ] D3 재귀 삭제 — `object_key` 수집 → DB CASCADE → worker MinIO 삭제.
 
-## 스토리지 (document-storage)
+## 스토리지 (document)
 - [ ] E1 MinIO 클라이언트(`secure=False`) 구성 — 버킷은 phase2 A4에서 보장.
-- [ ] E2 업로드 3단계 — Init(presigned PUT)/Upload/Confirm(`stat_object` 검증).
+- [ ] E2 업로드 3단계 — upload init(presigned PUT)/upload/upload confirm(`stat_object` 검증).
 - [ ] E3 다운로드 presigned GET(RFC 5987 한글명) + 발급 전 `owner_id` 검사.
 - [ ] E4 삭제 수명주기(멱등) + presign TTL 단축(5~15분) (§9).
 

@@ -57,5 +57,5 @@ CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata);
   - `documents` 한 행을 삭제하면, 그 문서를 참조하는(`document_chunks.document_id` FK) 모든 `document_chunks` 행이 `ON DELETE CASCADE`로 자동 삭제된다.
   - 즉 문서 1개를 지우면 그 문서에서 쪼갠 청크 N개가 DB에서 함께 사라진다
 - MinIO 오브젝트는 CASCADE 대상 아님
-  - 앱/worker가 별도 삭제(document-storage 정합)
+  - 앱/worker가 별도 삭제(document.md 정합)
 - 생성 출처로 인용된 문서·청크의 삭제 차단은 `generations-schema.md` §2 참조.

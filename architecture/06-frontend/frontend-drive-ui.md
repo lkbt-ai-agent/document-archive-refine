@@ -17,7 +17,7 @@ refs: research/04 §5
 
 ## 3. 설계 결정
 - react-query 1차 데이터 레이어 + Zustand UI 상태, RSC 셸 + Client 패널.
-- 파일 업/다운로드는 원격 MinIO presigned 직접 호출(document-storage). API는 `NEXT_PUBLIC_API_URL` 주입.
+- 파일 업/다운로드는 원격 MinIO presigned 직접 호출(document). API는 `NEXT_PUBLIC_API_URL` 주입.
 - 테마: `next-themes` + Tailwind `dark:` / shadcn CSS 변수 듀얼 토큰, 시스템 추종 + 수동 토글, FOUC 방지(`suppressHydrationWarning`).
 - 반응형: PC/태블릿/모바일 3단(Tailwind `lg`/`md`). 상세 §12.
 
@@ -86,11 +86,11 @@ react-query(목록/상세/트리 + 파이프라인·생성 폴링 + 캐시·낙�
 
 ## 9. 컴포넌트 선정·커스터마이징 전략
 - shadcn/ui MCP로 적합 컴포넌트 탐색·선정, 커스터마이징은 Tailwind. 빌딩블록: Resizable, tree-view, dropzone→presigned PUT, Lucide.
-- DocumentList: shadcn `Table` + **TanStack Table v8 헤드리스**(`useReactTable`/`getCoreRowModel`, `manualPagination: true`) — 서버사이드 페이지네이션 기준, 목록 계약 `GET /documents?folder_id=&limit=&cursor=`(document-storage §8) + react-query 바인딩. API·옵션은 context7 MCP로 v8 최신 문서 확인 후 작성.
+- DocumentList: shadcn `Table` + **TanStack Table v8 헤드리스**(`useReactTable`/`getCoreRowModel`, `manualPagination: true`) — 서버사이드 페이지네이션 기준, 목록 계약 `GET /documents?folder_id=&limit=&cursor=`(document §5) + react-query 바인딩. API·옵션은 context7 MCP로 v8 최신 문서 확인 후 작성.
 
 ## 10. 목록(Google Drive식) + 업로드/다운로드 + 원본 보기
 - 목록: 하위 폴더 행 + 문서 행(폴더 먼저). 폴더 행: 단일=인스펙터 토글(§7a)·더블=진입, 문서 행 클릭=Right 토글(§8b). AI 산출물도 일반 문서 행으로 표기(ai-outputs §9). 좌우 패딩, 목록 헤더 상단 border 없음.
-- 업로드: presigned 3단계(document-storage) UX 유지하되 MVP UI 미노출(`UploadDropzone` 보존). 진행률 + 인제스트 `status/stage` 폴링(ready/failed 정지).
+- 업로드: presigned 3단계(document) UX 유지하되 MVP UI 미노출(`UploadDropzone` 보존). 진행률 + 인제스트 `status/stage` 폴링(ready/failed 정지).
 - 원본 미리보기 영역 없음. DocumentDetail에 "원본 보기" 버튼만:
   - 텍스트류(`text/markdown`·`text/plain`): `OriginalViewerDialog` 마크다운 뷰어(인앱 열람).
   - 그 외(PDF·이미지·바이너리): presigned GET 다운로드(인앱 렌더 안 함).
