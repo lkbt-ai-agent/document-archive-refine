@@ -1,28 +1,44 @@
 ---
 created: 2026-06-11
-updated: 2026-06-11
-status: draft
-overview: 폴더·문서·청크·계보 전체 스키마와 Alembic 전략. 모든 테이블은 전용 스키마 archive에 둔다.
+updated: 2026-06-12
+status: approved
+overview: 도메인 전체 스키마와 Alembic 전략을 정의한다.
 refs: research/01 §5.4, research/03 §4, research/04 §1·§4b
 ---
 
 # 데이터 모델 & 마이그레이션
 
+FIXME: "## 1. 범위" 삭제.
 ## 1. 범위
-폴더·문서·청크·계보 전체 스키마와 Alembic 전략. 전용 스키마 `archive`(infrastructure §6).
+폴더·문서·청크·계보 전체 스키마와 Alembic 전략. 전용 스키마 `archive`(infrastructure §4).
 
 ## 2. 설계 결정
 - 임베딩 차원 **1024** 전 시스템 통일, HNSW cosine.
+  - HNSW: 근사 최근접 이웃(ANN) 벡터 인덱스(Hierarchical Navigable Small World)
+  - cosine: 코사인 유사도 기준 거리(`vector_cosine_ops`).
 - 계보는 행 단위 스냅샷(W3C PROV/Langfuse 정렬) — 모델/템플릿 변경이 과거 기록 미오염.
-- 전용 스키마 `archive` 격리, 확장은 `public`.
+  - W3C PROV: 출처(provenance) 표현용 W3C 표준 데이터 모델
+  - Langfuse: LLM 호출 추적·관측 플랫폼
+  - 두 방식의 계보 표현(누가·무엇으로·무엇을 생성했나)에 맞춰 설계.
+- 원격 공유 PostgreSQL DB(타 서비스와 같은 DB 공유, infrastructure §4) 안의 전용 스키마 `archive`에 테이블 격리, 확장은 같은 DB의 `public` 스키마.
 - `users`: MVP는 인증 범위 밖 → 최소 `users(id, created_at)` + 시드 1명, `owner_id`는 향후 멀티테넌트 대비 강제.
+  - 멀티테넌트(multi-tenant): 한 시스템 인스턴스를 여러 사용자·조직(테넌트)이 공유하되 데이터는 `owner_id`로 상호 격리하는 구조.
 
 ## 3. 관계 (ERD 대용)
-- `users` 1—N `folders` / `documents` (owns).
-- `folders` 1—N `folders` (self, parent) / `documents` (contains).
+- `users` 1—N `folders` (owns).
+- `users` 1—N `documents` (owns).
+- `folders` 1—N `folders` (self, parent).
+- `folders` 1—N `documents` (contains).
 - `documents` 1—N `document_chunks`.
-- `generations` 1—N `generation_prompts` / `_source_documents` / `_source_chunks` / `_charts`.
-- `generations` 0—1 `documents` (output materialize), N—1 `models` / `prompt_templates`.
+- `generations` 1—N `generation_prompts`.
+- `generations` 1—N `generation_source_documents`.
+- `generations` 1—N `generation_source_chunks`.
+- `generations` 1—N `generation_charts`.
+- `generations` N—1 `models`.
+- `generations` N—1 `prompt_templates`.
+- `generations` ↔ `documents`는 두 종류의 관계:
+  - 입력(출처): `generations` N—M `documents` (`generation_source_documents` 경유) — 한 생성이 여러 원본을 섞으면 다대다.
+  - 출력(산출물): `generations` 0—1 `documents` (`output_document_id`, materialize) — 생성 1회당 산출 문서 최대 1개, materialize 전이면 0.
 
 ## 4. 테이블 DDL (요약, 스키마=archive)
 
@@ -136,25 +152,40 @@ CREATE TABLE archive.generation_charts (
 - SQLAlchemy `MetaData(naming_convention={ix,uq,fk,pk,ck})`, `Mapped[]`+`mapped_column()`.
 - Pydantic v2 `ConfigDict(from_attributes=True)`, 상태는 `Literal[...]`.
 
-## 6. 확장 의존 & 격리
+## 6. PostgreSQL DB 확장 의존 & 격리
 - `vector` — 임베딩 저장·HNSW. 미가용 시 의미 검색 불가.
 - `pgroonga` — 한국어 키워드 검색. 미가용 시 `tsvector simple` 폴백(품질↓).
-- 확장은 `public`, 테이블은 `archive`. infrastructure §5 검증 선행.
+- 확장은 `public`, 테이블은 `archive`. §9 가용성 검증 선행.
 
 ## 7. Alembic 전략
-- `alembic init -t async`, `target_metadata=Base.metadata`, 모든 모델 import.
-- 확장/특수 인덱스(HNSW·PGroonga)·ENUM은 수동 마이그레이션.
-- `version_table_schema='archive'`. 원격 DB 대상 `alembic upgrade head`, 롤백 `downgrade`.
+- `alembic init -t async`로 비동기 템플릿 기반 Alembic을 초기화하고, `target_metadata=Base.metadata`로 변경 자동감지(autogenerate)가 비교할 기준 스키마를 지정한다. 이때 모든 모델 모듈을 import 해둬야 autogenerate가 테이블을 빠짐없이 인식한다.
+- 확장(`CREATE EXTENSION`)·특수 인덱스(HNSW·PGroonga 인덱스 객체)·ENUM 타입은 autogenerate가 자동 생성하지 못하거나 잘못 만든다 → 마이그레이션 스크립트에서 사람이 직접 `op.execute("CREATE INDEX ... USING hnsw ...")` 식으로 작성("수동 마이그레이션").
+- `version_table_schema='archive'` — Alembic이 적용 이력을 기록하는 `alembic_version` 테이블도 `public`이 아닌 `archive` 스키마에 둬 격리한다. 적용은 원격 DB 대상 `alembic upgrade head`(최신까지 전진), 되돌림은 `alembic downgrade`(이전 리비전으로 후퇴).
 
 ## 8. 무결성·삭제 정책
-- CASCADE: `folders`→하위 `folders`/`documents`→`document_chunks`. 계보 하위 테이블도 `generations` CASCADE.
-- **DB CASCADE는 MinIO 오브젝트를 지우지 않음** → 문서/폴더 삭제 시 앱·worker가 오브젝트 삭제 책임(document-storage 정합).
-- 삭제 흐름: 폴더 삭제 →(CASCADE) 하위 documents →(CASCADE) document_chunks; documents의 MinIO 오브젝트는 앱/worker가 별도 삭제.
+- CASCADE DELETE
+  - `folders` → 하위 `folders` / `documents` → `document_chunks`.
+  - 계보 하위 테이블도 `generations` CASCADE.
+  - documents의 MinIO 오브젝트는 앱/worker가 별도 삭제.
+- 출처(source) 문서 삭제 보호 (미해결)
+  - `generation_source_documents.document_id`·`generation_source_chunks.chunk_id` FK는 현재 `ON DELETE` 미지정(=NO ACTION).
+  - 어떤 생성의 출처로 인용된 원본·청크는 삭제가 **차단**된다 → 산출물 계보가 "깨지는" 게 아니라 원본 삭제 자체가 거부됨. 정책 확정은 §9.
 
 ## 9. 운영 배포 전 TODO
-- 확장 권한 (infrastructure §5 선행)
+- 확장 가용성·`CREATE` 권한 (선행 필수)
   - 해결: [ ]
-  - 비고: 배포 전 `CREATE EXTENSION` 권한 확인, 없으면 DBA 요청.
+  - 비고: 배포 전 아래 SQL로 가용성·권한 검증, 권한 거부 시 DBA에 사전 설치 요청.
+    ```sql
+    SELECT * FROM pg_available_extensions WHERE name IN ('vector','pgroonga');
+    CREATE EXTENSION IF NOT EXISTS vector;
+    CREATE EXTENSION IF NOT EXISTS pgroonga;
+    ```
+  - 미가용 영향: `vector` 없으면 의미 검색 불가, `pgroonga` 없으면 한국어 키워드 품질 저하(폴백 `tsvector simple`).
 - HNSW 빌드 비용
   - 해결: [ ]
   - 비고: 원격 리소스 여유 확인.
+- 출처 문서 삭제 시 계보 정책 (§8 참조)
+  - 해결: [ ]
+  - 비고:
+    - 현재 source FK가 NO ACTION이라 출처로 인용된 원본 삭제가 차단됨
+    - 권장: source FK를 `ON DELETE SET NULL`로 바꾸고 `document_id`/`chunk_id` nullable + 인용 텍스트 스냅샷 보존 → 원본 삭제해도 계보 유지. 확정 후 DDL 반영.

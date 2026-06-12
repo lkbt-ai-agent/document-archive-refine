@@ -112,7 +112,7 @@ react-query(목록/상세/트리 + 파이프라인·생성 폴링 + 캐시·낙�
 ## 13. 운영 배포 전 TODO
 - 브라우저→원격 MinIO presigned 호출 CORS
   - 해결: [ ]
-  - 비고: 버킷 CORS 설정 필요(infrastructure §7 연계).
+  - 비고: 버킷 CORS 설정 필요(infrastructure §5 연계).
 - 폴링 주기
   - 해결: [ ]
   - 비고: 인제스트·생성 폴링 간격 부하 보고 조정.

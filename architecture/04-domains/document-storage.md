@@ -28,7 +28,7 @@ refs: research/04 §2
 `docs/{uuid}`. 폴더 멤버십·표시명은 PG가 보유 → 폴더 이동/이름변경이 MinIO를 건드리지 않음.
 
 ## 6. MinIO 클라이언트
-원격 엔드포인트, `secure=False`, `.env` 자격증명, 버킷 1개. 버킷 보장은 부트스트랩(infrastructure §9). presign TTL 짧게(5~15분).
+원격 엔드포인트, `secure=False`, `.env` 자격증명, 버킷 1개. 버킷 보장은 부트스트랩(infrastructure §8). presign TTL 짧게(5~15분).
 
 ## 7. 검증·무결성·삭제 수명주기
 - Confirm 시 size/mime 확인, 인제스트 중 sha256 계산.

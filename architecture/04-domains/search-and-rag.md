@@ -9,7 +9,7 @@ refs: research/02
 # 검색 & RAG
 
 ## 1. 기능 요구사항
-- 키워드 검색 / 자연어 검색 / AI·임베딩 활용. infrastructure §5 확장 검증 전제. 대표 시나리오: "작년 내 연봉이 얼마였지?".
+- 키워드 검색 / 자연어 검색 / AI·임베딩 활용. data-model §9 확장 검증 전제. 대표 시나리오: "작년 내 연봉이 얼마였지?".
 
 ## 2. 설계 결정
 - 키워드 **PGroonga TokenBigram**(한국어 형태소 미지원 기본 FTS 대체).
@@ -68,7 +68,7 @@ GBNF `--json-schema`로 추출:
 - 프론트 UI: 검색 다이얼로그=`/search`(리스트), "RAG 질문"=`/search/ask`(생성 답변+인용). 검색 UI는 모드 선택 없이 항상 `hybrid` 호출 — `mode?`는 평가 게이트·향후 override용으로 API에만 유지, UI 미노출. `rag`는 §7 라우터 intent일 뿐 `/search` 모드 아님.
 
 ## 12. 운영 배포 전 TODO
-- 확장 의존(infrastructure §5 선행)
+- 확장 의존(data-model §9 선행)
   - 해결: [ ]
   - 비고: `vector`·`pgroonga` 가용성 확인.
 - 리랭커 추가 런타임
