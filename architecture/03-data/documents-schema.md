@@ -51,6 +51,7 @@ CREATE INDEX ix_chunks_hnsw ON archive.document_chunks
   USING hnsw (embedding vector_cosine_ops) WITH (m=16, ef_construction=200);
 CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata);
 ```
+- 인제스트 청크 적재는 멱등 upsert: `INSERT ... ON CONFLICT (document_id, chunk_index) DO UPDATE`로 재실행 시 중복 없이 갱신(구현은 ingestion-backend.md).
 
 ## 2. 무결성·삭제 정책
 - 문서 삭제 → 청크 연쇄 삭제

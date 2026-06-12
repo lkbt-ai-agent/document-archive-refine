@@ -1,65 +1,58 @@
 ---
 created: 2026-06-11
-updated: 2026-06-11
+updated: 2026-06-12
 status: draft
-overview: 업로드 확정 후 추출→메타→청킹→임베딩→저장의 비동기 인제스트 파이프라인.
+overview: 업로드 확정 후 추출→메타→청킹→임베딩→저장으로 문서를 검색 가능한 상태로 만드는 비동기 인제스트 프로세스.
 refs: research/01, research/04 §4
 ---
 
 # 문서 처리 파이프라인 (인제스트)
 
 ## 1. 기능 요구사항
-- 텍스트 추출 / OCR / 메타데이터 / 임베딩. 원본=원격 MinIO, 결과=원격 PG.
+- 업로드 확정된 문서에서 텍스트 추출·OCR·메타데이터 생성·임베딩을 수행해 검색 가능한 상태로 만든다.
+- 원본은 오브젝트 저장소, 결과는 데이터베이스에 둔다.
 
-## 2. 설계 결정
-- **arq + Redis**(BackgroundTasks 제외 — 상태추적·내구성).
-- PDF 추출 **pypdf(BSD) + pdfplumber(MIT) 표 보강**, PyMuPDF는 AGPL로 제외.
-- 임베딩 **KURE-v1 1024d 로컬 고정**(`--pooling cls`, 출력 L2 정규화됨 → 이중 정규화 금지).
+## 2. 상태 & 스테이지
+- 상태: `uploaded → processing → ready | failed`.
+- 스테이지: `extracting → generating_meta → chunking → embedding`.
+- 각 스테이지는 멱등이며, 실패하면 그 지점부터 재시작한다.
 
-## 3. 상태/스테이지
-- `status: uploaded → processing → ready | failed`.
-- `stage: extracting → generating_meta → chunking → embedding`. **각 stage 멱등·재시작.**
+## 3. 파이프라인 단계
+- 파일 타입 감지
+  - 파일 내용 기반으로 PDF/이미지/텍스트/마크다운을 구분한다(확장자는 신뢰하지 않는다).
+- 추출
+  - PDF는 본문 텍스트와 표를 추출한다.
+  - 텍스트가 거의 없는 스캔 페이지는 OCR로 보낸다.
+- OCR
+  - 페이지 단위로 처리하며 타임아웃·재시도를 적용한다.
+  - 한 페이지 실패는 격리해 다른 페이지에 영향을 주지 않는다.
+- 텍스트/마크다운
+  - 인코딩을 안전하게 해석한다(깨짐·크래시 금지).
+  - 마크다운은 구조(헤더 등)를 보존한다.
+- 메타데이터 생성
+  - 문서 자체 속성(쪽수·작성자·날짜)과 언어·키워드를 추출한다.
+  - 제목·요약·토픽·키워드를 생성한다(MVP는 읽기 전용 표시, 사용자 보정 없음).
+- 청킹
+  - 본문을 검색·임베딩에 맞는 크기로 분할한다.
+  - 표는 행 중간에서 자르지 않는다.
+- 임베딩·저장
+  - 각 청크를 임베딩해 저장한다.
+  - 재실행해도 중복되지 않도록 멱등으로 저장한다.
 
-## 4. 파일 타입 감지
-magic bytes(`filetype`/`python-magic`)로 PDF/이미지/TXT/MD 라우팅(확장자 불신).
+## 4. 오케스트레이션
+- 업로드 확정이 비동기 작업을 큐에 넣는다.
+- 워커가 추출→메타→청킹→임베딩→완료 순으로 진행하며 상태·스테이지를 갱신한다.
+- 한 페이지의 실패가 문서 전체를 중단시키지 않는다.
+- 진행 상태는 프론트가 폴링으로 확인하고, 완료/실패 시 멈춘다.
+- 파이프라인 소요 시간을 `documents.ingest_ms`에 기록한다(메타데이터 패널 표시).
 
-## 5. PDF 추출
-- 기본 텍스트: **pypdf** `extract_text()`. 표/복잡 레이아웃: **pdfplumber** 보강(Markdown 표 직렬화).
-- 페이지별 스캔 판별: `len(extract_text().strip()) < THRESHOLD` + `page.images` 유무.
-- OCR 입력: `page.images` 추출 또는 **pdf2image(Poppler)** 풀페이지 렌더 → §6.
+## 5. 도메인 규칙
+- 임베딩 차원은 전 시스템에서 고정한다. 차원을 바꾸면 전량 재임베딩이 필요하므로 변경하지 않는다.
 
-## 6. OCR
-PaddleOCR PP-OCRv5(기본) → Tesseract `kor`(폴백) → (선택) Qwen2.5-VL(어려운 페이지, llama-swap 온디맨드). 페이지 단위·타임아웃·재시도, 부분 실패 격리.
-
-## 7. TXT / MD
-- TXT 인코딩: charset-normalizer, **EUC-KR→CP949 안전 디코딩**(상위집합), 크래시 금지.
-- MD: 구조 보존(헤더 인지 청킹), 평문화 금지.
-
-## 8. 메타데이터 생성
-- intrinsic: pypdf/Tika(page_count·author·날짜).
-- NLP: 언어감지·키워드.
-- LLM: `--json-schema`로 `{title,summary,topics[],keywords[]}` — MVP는 읽기 전용 표시(사용자 보정 제외).
-
-## 9. 청킹
-재귀 분할 **512토큰/64오버랩**(실제 토크나이저로 측정), 표는 원자 단위(행 중간 분할 금지). (선택) Contextual Retrieval prefix.
-
-## 10. 임베딩 & 저장
-KURE-v1로 청크 임베딩(1024d) → `archive.document_chunks` insert. 멱등: `UNIQUE(document_id, chunk_index)` upsert.
-
-## 11. 오케스트레이션 (arq)
-1. `complete` → arq/Redis enqueue.
-2. extract → meta → chunk → embed → ready. 실패 시 `failed` + error.
-3. 진행 보고: `status/stage` 갱신 → 프론트 react-query 폴링(ready/failed 정지).
-4. 페이지/스테이지 멱등·백오프 재시도, 한 페이지 실패가 문서 전체 중단 안 함.
-5. 소요 시간: 파이프라인 시작~`ready` 경과를 `documents.ingest_ms`(`documents-schema.md`)에 기록 → 메타데이터 패널 표시.
-
-## 12. 운영 배포 전 TODO
-- pypdf 추출 품질(복잡 레이아웃)
-  - 해결: [x]
-  - 비고: pdfplumber 병용 기본화(§5).
-- pdf2image Poppler 의존
+## 6. 운영 배포 전 TODO
+- 복잡 레이아웃 추출 품질
   - 해결: [ ]
-  - 비고: 배포 환경 Poppler 설치 확인.
-- 임베딩 차원 1024 고정
+  - 비고: 추출 도구·전략은 ingestion-backend.md.
+- 임베딩 차원 고정
   - 해결: [ ]
-  - 비고: 변경 시 전량 재임베딩 — 차원 변경 금지 원칙.
+  - 비고: 변경 시 전량 재임베딩 — 차원 변경 금지 원칙(§5).

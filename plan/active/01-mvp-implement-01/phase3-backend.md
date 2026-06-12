@@ -1,10 +1,10 @@
 ---
 created: 2026-06-11
 completed: —
-overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토리지·인제스트·검색/RAG·산출물 (arch schema-rule·backend-application·domains 전반).
+overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토리지·인제스트·검색/RAG·산출물 (arch schema-rule·backend·domains 전반).
 ---
 
-## 기반 (backend-application)
+## 기반 (backend)
 - [ ] A1 모듈 스캐폴드 — `backend/src/{main,config,database,models}` + 도메인 패키지 (§3).
 - [ ] A2 설정 — pydantic-settings `.env` 로드, 환경별 분리 (§6).
 - [ ] A3 DB 와이어링 — async engine/sessionmaker, `get_session`, `expire_on_commit=False` (§5).
@@ -16,7 +16,7 @@ overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토
 - [ ] B3 수동 마이그레이션 — 확장·ENUM·HNSW·PGroonga 인덱스 (§7).
 - [ ] B4 `alembic upgrade head` 원격 적용 + `users` 시드 1명 (§2).
 
-## AI Provider (backend-application §8·§9)
+## AI Provider (backend §8·§9)
 - [ ] C1 `LLMClient`/`EmbeddingClient` Protocol + 팩토리(`LLM_PROVIDER`).
 - [ ] C2 `LlamaCppLLM`/`LlamaCppEmbedding` 구현(KURE-v1 로컬 고정).
 - [ ] C3 GBNF `--json-schema` 구조화 출력 공통 래퍼.

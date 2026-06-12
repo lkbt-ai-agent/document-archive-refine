@@ -55,3 +55,11 @@ WITH RECURSIVE descendants AS (
 SELECT EXISTS(SELECT 1 FROM descendants WHERE id=:new_parent_id);  -- TRUE면 거부
 ```
 - MOVE 적용(검사 통과 후, 트랜잭션 내): `UPDATE archive.folders SET parent_id=:new_parent_id WHERE id=:folder_id`.
+
+## 5. 설계 근거
+- 인접 리스트(`parent_id`) + 재귀 CTE를 채택했다.
+  - 폴더 이동이 해당 폴더 한 행의 `parent_id`만 바꾸는 단일 UPDATE로 끝난다(부모-자식 관계가 한 컬럼에만 담겨 하위 서브트리는 안 건드림).
+  - 재귀 CTE(`WITH RECURSIVE`)는 임시 결과 집합이 자기 자신을 반복 참조해 계층을 펼치는 SQL 표준 기능. 부모→자식→손자를 한 쿼리로 따라간다.
+  - 재귀 CTE는 원격 PostgreSQL 기본 기능이라 추가 확장이 필요 없다.
+- 기각한 대안: 머티리얼라이즈드 패스 / ltree / 네스티드 셋 / 클로저 테이블.
+  - 이동 시 서브트리 재작성이 필요하거나 복잡도가 높아 부적합.

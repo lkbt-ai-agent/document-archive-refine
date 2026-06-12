@@ -1,11 +1,11 @@
 ---
 created: 2026-06-11
 completed: —
-overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목업 프로토타입으로 동선 검수(라이트/다크·3단 반응형 전제, frontend-drive-ui).
+overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목업 프로토타입으로 동선 검수(라이트/다크·3단 반응형 전제, frontend).
 ---
 
 ## 설계 검증
-- [x] A1 컴포넌트 맵 검증 — 누락/변경만 arch 역반영 (frontend-drive-ui §4).
+- [x] A1 컴포넌트 맵 검증 — 누락/변경만 arch 역반영 (frontend §4).
 - [x] A2 와이어프레임 — 저충실도 ASCII 레이아웃, 고충실도는 C1 (§12).
 - [x] A3 상태 소유 검증 — react-query(서버) vs Zustand(UI) 경계 (§6·§7).
 - [x] A4 API 계약 점검 — 도메인 문서(folders~ai-outputs) 엔드포인트 갭을 arch에 역반영.
@@ -40,22 +40,22 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - [x] E5 좌/우 패널 헤더 토글 버튼 (§8·§12).
 - [x] E6 모바일 풀스크린 다이얼로그 상단 정렬 수정 (§12).
 - [x] E7 목록 테이블 = shadcn Table + TanStack 헤드리스, 서버 페이지네이션(context7 확인) (§4·§9·§10).
-- [x] E8 검색=retrieval / RAG=생성 역할 분리, 검색 "RAG" 배지 제거 (§11, search-and-rag §11).
+- [x] E8 검색=retrieval / RAG=생성 역할 분리, 검색 "RAG" 배지 제거 (§11, search-backend §1).
 - [x] E9 RAG 프롬프트 입력 = 자동 개행 textarea(1줄→최대 n줄 후 스크롤) (§11).
 
 ## 개정 3차
 - [x] F1 우측 패널 모바일 = 전체 화면 Sheet(side=right) (§8b·§12).
 - [x] F2 우측 패널 row 클릭 토글(재클릭=닫힘) (§8b).
 - [x] F3 좌/우 패널 헤더 닫기 버튼 삭제, 개폐 일원화 (§8·§8b).
-- [x] F4 검색=하이브리드 고정·모드 뱃지 제거(`mode?`는 백엔드 유지·UI 미노출) (§11, search-and-rag §11).
+- [x] F4 검색=하이브리드 고정·모드 뱃지 제거(`mode?`는 백엔드 유지·UI 미노출) (§11, search-backend §1).
 
 ## 개정 4차
 - [x] G1 Center 폴더 row "⋯" 드롭다운, 공용 `FolderActions` 추출 (§8a·§4·§10).
 - [x] G2 폴더 row 단일=인스펙터 토글·더블=진입, 인스펙터 문서/폴더 확장 (§8·§8b·§7a).
 - [x] G3 "AI 질문" → "RAG 질문" 명칭 변경 (§11).
-- [x] G4 소요 시간 표시 — 검색/RAG/메타데이터/생성, 응답에 `elapsed_ms` (§11·§7a, search-and-rag §11).
+- [x] G4 소요 시간 표시 — 검색/RAG/메타데이터/생성, 응답에 `elapsed_ms` (§11·§7a, search-backend §1).
 - [x] G5 AI 산출물=1급 문서("산출물 내역"), materialize + row 클릭 이동, 삭제 시 비노출 (ai-outputs, generations-schema.md, §11).
 - [x] G6 우클릭 컨텍스트 메뉴 = "⋯" 동일 액션(shadcn context-menu) (§8a).
-- [x] G7 AI 산출물 계보 패널 — 부모 링크·모델/seed·프롬프트, `/generations/{id}/lineage` (§7a, ai-outputs §6·§10).
+- [x] G7 AI 산출물 계보 패널 — 부모 링크·모델/seed·프롬프트, `/generations/{id}/lineage` (§7a, ai-outputs §6, ai-outputs-backend §1).
 
 > 🚦 Phase 2 진입 전: C1 + 개정 D~G 반영본으로 UI 동선 사용자 재검수 필수.

@@ -14,4 +14,4 @@ overview: 원격 PG/MinIO 연결 검증 + 로컬 런타임(Redis·llama) 기동 
 - [ ] B1 Redis 기동(로컬 Docker `redis:7-alpine`) + `REDIS_URL` (§6).
 - [ ] B2 llama-server 기동 — 생성 8080 / 임베딩 8081 (§7).
 - [ ] B3 api·worker·web·redis만 프로세스화(PG·MinIO 정의 금지) (§8).
-- [ ] B4 헬스체크 — PG/MinIO/Redis/llama, PG/MinIO 실패 시 fail-fast (backend-application §11).
+- [ ] B4 헬스체크 — PG/MinIO/Redis/llama, PG/MinIO 실패 시 fail-fast (backend §11).

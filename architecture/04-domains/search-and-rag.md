@@ -1,76 +1,57 @@
 ---
 created: 2026-06-11
-updated: 2026-06-11
+updated: 2026-06-12
 status: draft
-overview: 키워드(PGroonga)+의미(pgvector)+하이브리드(RRF)+자연어 질의+RAG 답변. 단일 원격 PG에서 동작.
+overview: 키워드·의미·하이브리드 검색과 자연어 질의·RAG 답변의 도메인 정의. 실 쿼리는 search-schema, 구현은 search-backend.
 refs: research/02
 ---
 
 # 검색 & RAG
 
 ## 1. 기능 요구사항
-- 키워드 검색 / 자연어 검색 / AI·임베딩 활용. schema-rule §5 확장 검증 전제. 대표 시나리오: "작년 내 연봉이 얼마였지?".
+- 키워드 검색 / 자연어(의미) 검색 / 하이브리드 / RAG 질의응답.
+- 확장 검증 전제는 `schema-rule.md` §5. 대표 시나리오: "작년 내 연봉이 얼마였지?".
 
-## 2. 설계 결정
-- 키워드 **PGroonga TokenBigram**(한국어 형태소 미지원 기본 FTS 대체).
-- 융합 **RRF k=50 단일 SQL**(스케일 독립, 점수 아닌 순위 융합).
-- 자연어 질의 **GBNF 추출 + Python 날짜해석**, `owner_id` 항상 강제.
+## 2. 검색 종류
+- 키워드 검색: 본문 텍스트를 한국어 키워드로 찾는다.
+- 의미 검색: 질문을 임베딩해 벡터 유사도로 찾는다.
+- 하이브리드: 키워드·의미 결과를 순위 융합해 합친다. 기본 검색은 하이브리드.
+- 실 쿼리는 `search-schema.md`, 파라미터·구현은 `search-backend.md`.
 
-## 3. 키워드 검색
-```sql
-SELECT id, pgroonga_score(tableoid, ctid) AS score
-FROM archive.documents WHERE content &@~ :q AND owner_id=:u
-ORDER BY score DESC LIMIT 20;
-```
-PGroonga 미설치 시 폴백 `to_tsvector('simple', content)`(품질↓). 인덱스 대상=`documents.content`(문서 단위).
+## 3. 자연어 질의 해석
+- 한국어 질문에서 의도(키워드/의미/RAG)·재작성 질의·키워드·기간·폴더를 구조화해 추출한다.
+- 상대적 날짜("작년" 등)는 요청 시각을 기준으로 절대 범위로 환산한다.
+- "내"는 항상 소유자 스코프로 강제한다.
 
-## 4. 의미 검색
-질문을 KURE-v1로 임베딩 → `embedding <=> :q_vec`(cosine 거리) ASC, HNSW 인덱스 사용.
+## 4. RAG 파이프라인
+1. 질문을 라우팅·추출한다.
+2. 키워드 의도면 키워드 검색 결과 리스트를 돌려준다.
+3. 의미/RAG 의도면 임베딩→하이브리드 융합→(선택) 리랭크→컨텍스트 조립→인용 강제 생성→답변+출처.
+4. 컨텍스트는 청크 본문 + 제목·날짜·폴더·청크 식별자로 조립하고, 인용 번호와 청크의 매핑을 저장한다.
 
-## 5. 하이브리드 융합 (RRF)
-단일 SQL `hybrid_search(q_text, q_vec, k=50, n=20, 필터)` — 키워드·벡터를 각각 순위화 후 `1/(k+rank)` 합산. 폴더/날짜/`owner_id` 필터 포함.
-```sql
-SELECT COALESCE(kw.id, vec.id) AS document_id,
-       COALESCE(1.0/(50+kw.rnk),0)+COALESCE(1.0/(50+vec.rnk),0) AS score
-FROM kw FULL OUTER JOIN vec ON kw.id=vec.id ORDER BY score DESC LIMIT :n;
-```
+## 5. 리랭킹 (선택)
+- 상위 결과를 재정렬해 정밀도를 높인다.
+- day-1 비활성, Recall 평가 후 투입.
 
-## 6. 리랭킹 (선택·토글)
-bge-reranker-v2-m3(`llama-server --reranking`, `/v1/rerank`), top-50→top-5. day-1 비활성, Recall 평가 후 투입.
+## 6. 인용·환각 억제
+- 시스템 규칙: 제공된 문서에만 근거하고, 없으면 "찾을 수 없습니다"로 답한다.
+- 문장마다 인용 번호를 강제한다.
+- 주입 순서: 시스템 규칙 → 컨텍스트 → 질문(마지막).
 
-## 7. 자연어→구조화 질의
-GBNF `--json-schema`로 추출:
-```json
-{ "intent":"keyword|semantic|rag", "rewritten_query":"...",
-  "keywords":["..."], "time_ref":"last_year|...", "folder":null }
-```
-날짜 계산은 Python(상대어→절대 범위, 기준일=요청 시각). `"내"`=`owner_id` 스코프 강제.
+## 7. 검색 평가 게이트
+- 한국어 골든셋(쿼리→정답 문서)으로 Recall@5/@20을 측정한다.
+- 벡터only/하이브리드/+리랭크별로 비교하고, 인용 존재를 이진 체크한다.
+- CI에서 결정적으로 돌린다.
 
-## 8. RAG 파이프라인
-1. 한국어 쿼리 → 라우팅+추출(GBNF).
-2. keyword → PGroonga+필터 → 결과 리스트.
-3. semantic/rag → embed → `hybrid_search` RRF → (선택) 리랭크 → 컨텍스트 조립 → 인용 강제 생성 → 답변+출처.
-4. 컨텍스트 조립: 청크 본문 + `{제목,날짜,폴더,chunk_id}`, `[n]↔chunk_id` 매핑 저장.
+## 8. 도메인 규칙
+- 모든 검색·질의는 소유자 스코프를 강제한다.
+- 검색 UI는 항상 하이브리드로 동작한다(모드 선택 노출 없음).
+- 검색은 결과 리스트(retrieval), RAG 질문은 답변 생성으로 역할을 분리한다.
 
-## 9. 인용·환각 억제
-한국어 시스템 프롬프트: "제공된 문서에만 근거, 없으면 '찾을 수 없습니다'". 문장마다 `[n]` 인용 강제. 주입 순서: 시스템 규칙 → 컨텍스트 → 질문(마지막).
-
-## 10. 검색 평가 게이트
-~50개 한국어 골든셋(쿼리→정답 doc_id). **Recall@5/@20**을 벡터only/하이브리드/+리랭크별 측정. 인용 존재 이진 체크. CI에서 결정적.
-
-## 11. API 계약
-| 메서드 | 경로 | 설명 |
-|---|---|---|
-| POST | `/search` | `{q, mode?, filters{folder,date}, limit}` → `{results[], elapsed_ms}`. `mode∈{keyword,semantic,hybrid}`, 기본 `hybrid`. (rag 아님) |
-| POST | `/search/ask` | RAG 질의 → `{answer, citations[{n,chunk_id,document_id}], elapsed_ms}`. 프론트 "RAG 질문" 전용. |
-
-- 소요 시간: 두 응답 모두 `elapsed_ms`(서버 처리 시간) 포함 — 검색=retrieval, ask=RAG 전체. 프론트는 초 단위 표기. (생성 소요는 `generations.latency_ms`, 인제스트 소요는 `documents.ingest_ms` — `generations-schema.md`·`documents-schema.md`.)
-- 프론트 UI: 검색 다이얼로그=`/search`(리스트), "RAG 질문"=`/search/ask`(생성 답변+인용). 검색 UI는 모드 선택 없이 항상 `hybrid` 호출 — `mode?`는 평가 게이트·향후 override용으로 API에만 유지, UI 미노출. `rag`는 §7 라우터 intent일 뿐 `/search` 모드 아님.
-
-## 12. 운영 배포 전 TODO
+## 9. 운영 배포 전 TODO
 - 확장 의존(schema-rule §5 선행)
   - 해결: [ ]
   - 비고: `vector`·`pgroonga` 가용성 확인.
 - 리랭커 추가 런타임
   - 해결: [ ]
-  - 비고: 투입 시 포트/메모리 확보, Recall 평가(§10) 후 결정.
+  - 비고: 투입 시 포트/메모리 확보, Recall 평가(§7) 후 결정.
