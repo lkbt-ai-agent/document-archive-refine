@@ -22,6 +22,7 @@ refs: research/, research/06-glossary
   - [users-schema](./03-data/users-schema.md) — 사용자 스키마
   - [folders-schema](./03-data/folders-schema.md) — 폴더 스키마
   - [documents-schema](./03-data/documents-schema.md) — 문서·청크 스키마
+  - [documents-minio](./03-data/documents-minio.md) — 문서 MinIO 오브젝트 로직·운영
   - [generations-schema](./03-data/generations-schema.md) — 생성 계보 스키마
 - `04-domains/` — 비즈니스 기능·프로세스 플로우·도메인 규칙·기능별 API 계약
   - [folders](./04-domains/folders.md) — 폴더 트리 CRUD·MOVE
