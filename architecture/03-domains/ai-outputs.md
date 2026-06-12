@@ -2,7 +2,7 @@
 created: 2026-06-11
 updated: 2026-06-12
 status: draft
-overview: 요약/초안/보고서 워크플로우, 계보(lineage) 개념, 비동기 생성, 산출물의 1급 문서화. 구현은 ai-outputs-backend.
+overview: 요약/초안/보고서 워크플로우, 계보(lineage) 개념, 비동기 생성, 산출물의 1급 문서화.
 refs: research/03
 ---
 
@@ -10,7 +10,7 @@ refs: research/03
 
 ## 1. 기능 요구사항
 - 요약/초안/보고서 AI 산출물 워크플로우 + 계보 메타데이터.
-- 생성은 Provider 추상화(`backend.md`)로 실행하고 provider/model을 스냅샷으로 기록한다.
+- 생성마다 provider/model을 스냅샷으로 기록한다.
 
 ## 2. 설계 결정
 - 차트는 선언형 스펙으로 만들고 코드 실행은 하지 않는다.
@@ -30,7 +30,6 @@ refs: research/03
 
 ## 6. 계보 데이터 모델
 - 한 생성이 헤드 한 행이고, 하위에 출처·프롬프트·차트가 연결된다.
-- 테이블 DDL은 `generations-schema.md`.
 
 ## 7. 재현성
 - seed·디코딩 파라미터·렌더된 프롬프트·모델 식별·provider를 저장해 동일 조건 재실행을 가능하게 한다.
@@ -39,7 +38,7 @@ refs: research/03
 - 생성은 수십 초~수 분 걸리므로 비동기로 처리한다.
 - 요청 시 헤드를 `queued`로 먼저 기록하고 즉시 접수 응답하며, 워커가 이어받아 진행한다.
 - 상태: `queued → running → succeeded | failed`.
-- 클라이언트는 폴링으로 진행을 표시한다.
+- 진행 상태는 조회로 확인할 수 있다.
 
 ## 9. 산출물의 문서화 (1급 문서)
 - AI 산출물은 일반 문서와 동일하게 `documents` 행 + 오브젝트로 저장돼 목록·검색·RAG 대상이 된다.
@@ -54,4 +53,4 @@ refs: research/03
   - 비고: 성공 시 provider/model/seed 스냅샷 기록 강제(§7).
 - 장문 요약 지연/메모리
   - 해결: [ ]
-  - 비고: 재귀 분기로 완화, 부하 측정 필요(구현은 ai-outputs-backend.md).
+  - 비고: 재귀 분기로 완화, 부하 측정 필요.
