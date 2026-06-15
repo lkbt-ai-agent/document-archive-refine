@@ -1,7 +1,7 @@
 ---
 created: 2026-06-11
-updated: 2026-06-12
-status: draft
+updated: 2026-06-15
+status: approved
 overview: 업로드된 문서를 검색 가능한 상태로 만드는 비동기 인제스트 프로세스를 정의한다.
 refs: research/01, research/04 §4
 ---
@@ -13,9 +13,9 @@ refs: research/01, research/04 §4
 - 원본은 오브젝트 저장소, 결과는 데이터베이스에 둔다.
 
 ## 2. 스테이지
-- 문서 상태(`uploaded→processing→ready|failed`) 정의는 document.md §4. 인제스트는 `processing` 동안 동작한다.
 - 스테이지(`documents.stage`): `extracting → generating_meta → chunking → embedding`.
 - 각 스테이지는 멱등이며, 실패하면 그 지점부터 재시작한다.
+- 문서 상태(`uploaded→processing→ready|failed`) 정의는 document.md §4. 인제스트는 문서 상태가 `processing` 일 동안에만 동작한다.
 
 ## 3. 파이프라인 단계
 - 파일 타입 감지
@@ -42,10 +42,10 @@ refs: research/01, research/04 §4
 ## 4. 오케스트레이션
 - 업로드 확정이 비동기 작업을 큐에 넣는다.
 - 워커는 다음 순서로 진행하며 상태·스테이지를 갱신한다.
-  1. 추출
-  2. 메타
-  3. 청킹
-  4. 임베딩
+  1. 텍스트 추출 (OCR 포함)
+  2. 메타데이터 생성
+  3. 본문 청킹
+  4. 본문 청크 임베딩
   5. 완료
 - 한 페이지의 실패가 문서 전체를 중단시키지 않는다.
 - 진행 상태(`status`/`stage`)는 조회로 확인할 수 있고, 완료/실패 시 갱신이 종료된다.

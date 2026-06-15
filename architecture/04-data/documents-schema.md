@@ -24,18 +24,16 @@ CREATE TABLE archive.documents (
   doc_created_at TIMESTAMPTZ, doc_modified_at TIMESTAMPTZ,
   -- AI 생성 메타(MVP 읽기 전용 표시; 사용자 보정 제외)
   llm_title TEXT, llm_summary TEXT, topics TEXT[], keywords TEXT[],
-  content TEXT,                                  -- PGroonga 인덱스 대상
   ingest_ms INT,                                 -- 인제스트 소요(ms), 성능 표시용
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),  -- 등록일(화면 노출 기준)
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()   -- 내부 감사용(화면 미노출)
 );
 CREATE INDEX ix_documents_folder_id ON archive.documents(folder_id);
 CREATE INDEX ix_documents_sha256 ON archive.documents(sha256);
-CREATE INDEX ix_documents_content_pgroonga ON archive.documents USING pgroonga (content);
 ```
 
 ### document_chunks (벡터, 스키마=archive)
-- `embedding` 컬럼의 `vector` 타입과 HNSW 인덱스는 `public` 스키마의 `vector` 확장에 의존(schema-rule §3).
+- `embedding`(의미 검색)은 `public` 스키마 `vector` 확장의 HNSW, `content`(키워드 검색)는 PGroonga 인덱스를 쓴다(확장 의존은 schema-rule §3).
 ```sql
 CREATE TABLE archive.document_chunks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -49,6 +47,7 @@ CREATE TABLE archive.document_chunks (
 );
 CREATE INDEX ix_chunks_hnsw ON archive.document_chunks
   USING hnsw (embedding vector_cosine_ops) WITH (m=16, ef_construction=200);
+CREATE INDEX ix_chunks_content_pgroonga ON archive.document_chunks USING pgroonga (content);
 CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata);
 ```
 - 인제스트 청크 적재는 멱등 upsert: `INSERT ... ON CONFLICT (document_id, chunk_index) DO UPDATE`로 재실행 시 중복 없이 갱신한다.

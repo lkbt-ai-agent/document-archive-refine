@@ -1,6 +1,6 @@
 ---
 created: 2026-06-11
-updated: 2026-06-12
+updated: 2026-06-15
 status: draft
 overview: 3패널 Drive UI 셸(레이아웃·서버/클라 분리·데이터/상태 경계·테마·반응형)을 정의한다.
 refs: research/04 §5
@@ -98,7 +98,7 @@ ThemeProvider (next-themes, attribute="class" defaultTheme="system" enableSystem
 ## 13. 운영 배포 전 TODO
 - 브라우저→원격 MinIO presigned 호출 CORS
   - 해결: [ ]
-  - 비고: 버킷 CORS 설정 필요(infrastructure §5 연계).
+  - 비고: 버킷 CORS 설정 필요(infrastructure §4 연계).
 - 폴링 주기
   - 해결: [ ]
   - 비고: 인제스트·생성 폴링 간격 부하 보고 조정.

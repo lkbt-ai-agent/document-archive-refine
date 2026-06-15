@@ -1,6 +1,6 @@
 ---
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-15
 status: draft
 overview: 문서 도메인의 백엔드 구현(API·presigned·정리 잡·보안)을 정의한다.
 refs: research/04 §2
@@ -30,7 +30,7 @@ refs: research/04 §2
 - delete: `object_key` 수집 → DB 삭제(청크 CASCADE) → storage 오브젝트 삭제(재시도·멱등).
 
 ## 3. presigned 메커니즘
-- MinIO 클라이언트 연결·버킷 보장은 infrastructure §6. presign TTL은 짧게(5~15분).
+- MinIO 클라이언트 연결은 infrastructure §4, 버킷 보장은 §7. presign TTL은 짧게(5~15분).
 - 업로드: presigned PUT 발급 → 브라우저가 MinIO에 직접 PUT → upload confirm이 `stat_object`로 검증.
   - `stat_object`: 오브젝트 본문을 내려받지 않고 메타데이터(존재 여부·크기·etag·content-type)만 조회하는 호출. 업로드 완료·크기 일치를 가볍게 확인한다.
 - 다운로드: presigned GET 발급, 응답 `Content-Disposition`에 한국어 원본 파일명(RFC 5987). 발급 전 `owner_id` 검사.
@@ -51,7 +51,7 @@ refs: research/04 §2
 > presigned URL은 서명만 맞으면 통과하고 발급 후엔 앱 인증을 우회한다. 현 배포(http·공인 IP)에선 실제 위험이라 별도 관리.
 - 🔴 평문 전송(http) — presigned URL·파일 본문 평문 노출, 스니핑·민감문서 탈취 가능(최대 위험)
   - 해결: [ ]
-  - 비고: 운영 전 TLS 적용(MinIO 앞 https 종단/리버스 프록시) 또는 VPN·내부망 한정(infrastructure §9 연계).
+  - 비고: 운영 전 TLS 적용(MinIO 앞 https 종단/리버스 프록시) 또는 VPN·내부망 한정(infrastructure §8 연계).
 - 링크 유출 = 권한 유출
   - 해결: [x]
   - 비고: TTL 5~15분 + 발급 시 `owner_id` 검사 + 로그에 URL 미기록.

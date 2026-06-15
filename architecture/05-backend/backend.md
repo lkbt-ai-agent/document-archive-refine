@@ -1,6 +1,6 @@
 ---
 created: 2026-06-11
-updated: 2026-06-12
+updated: 2026-06-15
 status: draft
 overview: 백엔드 공통 구조·레이어링·세션·API 규약·AI Provider 추상화를 정의한다.
 refs: research/04 §0·§3, research/00 §0.2
@@ -45,7 +45,7 @@ async def get_session():
     async with async_session() as s:
         yield s
 ```
-- 트랜잭션은 service 단위. `search_path=archive,public`(infrastructure §4).
+- 트랜잭션은 service 단위. `search_path=archive,public`(infrastructure §3).
 
 ## 6. 설정/구성
 - pydantic-settings로 `.env` 로드 → 원격 PG/MinIO/Redis/llama URL·Provider 선택 주입.
