@@ -2,7 +2,7 @@
 - Front matter must match `example.md`.
 - `overview` is exactly one sentence describing the doc's role.
 - Keep prose terse. One idea per bullet.
-- Use bullets or `###` for subtopics. Do not use "—".
+- Use bullets or `###` for subtopics. Do not use "—" and "·".
 - `## n.` are stable cross-ref IDs (`§n`). Never renumber. Append only.
 - Layers: `01` (highest) → `06` (lowest). Reference upward only.
 - Express flows as lists, not `→` chains.
