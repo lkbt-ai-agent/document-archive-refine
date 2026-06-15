@@ -12,37 +12,48 @@ refs: research/01 §5.4, research/04 §4b
 
 ### documents
 ```sql
-CREATE TABLE archive.documents (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  folder_id UUID REFERENCES archive.folders(id) ON DELETE CASCADE,
-  owner_id UUID NOT NULL REFERENCES archive.users(id),
-  object_key TEXT NOT NULL UNIQUE, bucket TEXT NOT NULL,
-  original_filename TEXT NOT NULL,
-  mime_type TEXT, size_bytes BIGINT, sha256 CHAR(64),
-  status TEXT NOT NULL DEFAULT 'uploaded', stage TEXT, error TEXT,
-  page_count INT, author TEXT, language TEXT,
-  doc_created_at TIMESTAMPTZ, doc_modified_at TIMESTAMPTZ,
-  -- AI 생성 메타(MVP 읽기 전용 표시; 사용자 보정 제외)
-  llm_title TEXT, llm_summary TEXT, topics TEXT[], keywords TEXT[],
-  ingest_ms INT,                                 -- 인제스트 소요(ms), 성능 표시용
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),  -- 등록일(화면 노출 기준)
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()   -- 내부 감사용(화면 미노출)
+CREATE TABLE archive.documents (                                        -- 문서
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),         -- 문서 ID
+  folder_id         UUID REFERENCES archive.folders(id) ON DELETE CASCADE,  -- 소속 폴더 ID
+  owner_id          UUID NOT NULL REFERENCES archive.users(id),         -- 소유자 ID
+  object_key        TEXT NOT NULL UNIQUE,                               -- 오브젝트 키
+  bucket            TEXT NOT NULL,                                      -- 버킷명
+  original_filename TEXT NOT NULL,                                      -- 원본 파일명
+  mime_type         TEXT,                                               -- MIME 타입
+  size_bytes        BIGINT,                                             -- 파일 크기(바이트)
+  sha256            CHAR(64),                                           -- 본문 SHA-256 해시
+  status            TEXT NOT NULL DEFAULT 'uploaded',                   -- 처리 상태
+  stage             TEXT,                                               -- 처리 단계
+  error             TEXT,                                               -- 오류 메시지
+  page_count        INT,                                                -- 쪽수
+  author            TEXT,                                               -- 작성자
+  language          TEXT,                                               -- 언어
+  doc_created_at    TIMESTAMPTZ,                                        -- 원본 생성일
+  doc_modified_at   TIMESTAMPTZ,                                        -- 원본 수정일
+  llm_title         TEXT,                                               -- AI 추출 제목(읽기 전용)
+  llm_summary       TEXT,                                               -- AI 추출 요약(읽기 전용)
+  topics            TEXT[],                                             -- AI 추출 토픽(읽기 전용)
+  keywords          TEXT[],                                             -- AI 추출 키워드(읽기 전용)
+  ingest_ms         INT,                                                -- 인제스트 소요(ms)
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),                 -- 등록 일시(화면 노출)
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()                  -- 수정 일시(내부 감사용)
 );
 CREATE INDEX ix_documents_folder_id ON archive.documents(folder_id);
 CREATE INDEX ix_documents_sha256 ON archive.documents(sha256);
 ```
 
 ### document_chunks (벡터, 스키마=archive)
-- `embedding`(의미 검색)은 `public` 스키마 `vector` 확장의 HNSW, `content`(키워드 검색)는 PGroonga 인덱스를 쓴다(확장 의존은 schema-rule §3).
+- `embedding`(의미 검색)은 `archive_ext` 스키마 `vector` 확장의 HNSW, `content`(키워드 검색)는 PGroonga 인덱스를 쓴다(확장 의존은 data-overview §3).
 ```sql
-CREATE TABLE archive.document_chunks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id UUID NOT NULL REFERENCES archive.documents(id) ON DELETE CASCADE,
-  parent_doc_id UUID,
-  chunk_index INT NOT NULL,
-  content TEXT NOT NULL, context TEXT,
-  metadata JSONB,
-  embedding vector(1024) NOT NULL,
+CREATE TABLE archive.document_chunks (                                  -- 문서 청크
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),             -- 청크 ID
+  document_id   UUID NOT NULL REFERENCES archive.documents(id) ON DELETE CASCADE,  -- 문서 ID
+  parent_doc_id UUID,                                                   -- 상위 문서 ID(부모 청킹)
+  chunk_index   INT NOT NULL,                                           -- 청크 순번
+  content       TEXT NOT NULL,                                          -- 청크 본문
+  context       TEXT,                                                   -- 청크 컨텍스트
+  metadata      JSONB,                                                  -- 청크 메타데이터
+  embedding     vector(1024) NOT NULL,                                  -- 임베딩 벡터(1024d)
   UNIQUE (document_id, chunk_index)
 );
 CREATE INDEX ix_chunks_hnsw ON archive.document_chunks

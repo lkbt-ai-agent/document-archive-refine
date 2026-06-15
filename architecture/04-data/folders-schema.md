@@ -10,14 +10,14 @@ refs: research/04 §1
 
 ## 1. 테이블 DDL (인접 리스트, 스키마=archive)
 ```sql
-CREATE TABLE archive.folders (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  parent_id UUID REFERENCES archive.folders(id) ON DELETE CASCADE,  -- root=NULL
-  owner_id UUID NOT NULL REFERENCES archive.users(id),
-  name TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT uq_folder_sibling_name UNIQUE (parent_id, owner_id, name)
+CREATE TABLE archive.folders (                                          -- 폴더
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),                -- 폴더 ID
+  parent_id  UUID REFERENCES archive.folders(id) ON DELETE CASCADE,     -- 상위 폴더 ID(루트=NULL)
+  owner_id   UUID NOT NULL REFERENCES archive.users(id),                -- 소유자 ID
+  name       TEXT NOT NULL,                                             -- 폴더명
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),                        -- 생성 일시
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),                        -- 수정 일시
+  CONSTRAINT uq_folder_sibling_name UNIQUE (parent_id, owner_id, name)  -- 형제 폴더명 유일
 );
 CREATE INDEX ix_folders_parent_id ON archive.folders(parent_id);
 ```

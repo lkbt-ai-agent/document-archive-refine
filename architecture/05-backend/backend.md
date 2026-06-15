@@ -45,7 +45,7 @@ async def get_session():
     async with async_session() as s:
         yield s
 ```
-- 트랜잭션은 service 단위. `search_path=archive,public`(infrastructure §3).
+- 트랜잭션은 service 단위. `search_path=archive,archive_ext`(infrastructure §3).
 
 ## 6. 설정/구성
 - pydantic-settings로 `.env` 로드 → 원격 PG/MinIO/Redis/llama URL·Provider 선택 주입.
@@ -88,7 +88,7 @@ class BedrockLLM(LLMClient): ...         # 추후
 ## 12. 운영 배포 전 TODO
 - 드라이버 일관성(psycopg3)
   - 해결: [x]
-  - 비고: infrastructure·schema-rule과 정합 확인.
+  - 비고: infrastructure·data-overview과 정합 확인.
 - Bedrock 실구현
   - 해결: [ ]
   - 비고: MVP는 인터페이스만, 실구현 제외.

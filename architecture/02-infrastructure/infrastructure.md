@@ -33,12 +33,13 @@ refs: research/00 §0, research/04 §6
 
 ### 공유 스키마 격리
 - 새 DB를 만들지 않고 스키마로만 격리
-- 전용 스키마 `archive`에 모든 테이블 생성, 연결 시 `search_path=archive,public`(확장은 public).
+- 전용 스키마 `archive`에 모든 테이블 생성, 확장은 전용 `archive_ext`. 연결 시 `search_path=archive,archive_ext`.
 - Alembic `version_table_schema='archive'`로 버전 테이블도 격리.
 
 ## 4. DB·MinIO
 ### 연결
 - `minio` SDK: 원격 엔드포인트, `secure=False`(http).
+- 버킷 1개만 사용
 - 버킷 멱등 생성은 부트스트랩에서 수행(§7).
 - presign 단순화: 원격 공인 IP 단일 엔드포인트라 서버·브라우저 동일 URL 사용.
 

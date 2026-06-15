@@ -1,7 +1,7 @@
 ---
 created: 2026-06-11
 completed: —
-overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토리지·인제스트·검색/RAG·산출물 (arch schema-rule·backend·domains 전반).
+overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토리지·인제스트·검색/RAG·산출물 (arch data-overview·backend·domains 전반).
 ---
 
 ## 기반 (backend)
@@ -10,7 +10,7 @@ overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토
 - [ ] A3 DB 와이어링 — async engine/sessionmaker, `get_session`, `expire_on_commit=False` (§5).
 - [ ] A4 공통 규약 — 에러 모델/핸들러, 페이지네이션, CORS, `owner_id` 스코프 강제 (§7).
 
-## 데이터 모델 (schema-rule)
+## 데이터 모델 (data-overview)
 - [ ] B1 SQLAlchemy 모델 — Base, folders/documents/document_chunks/계보 (§4·§5).
 - [ ] B2 Alembic(`-t async`) 초기화, `version_table_schema='archive'` (§7).
 - [ ] B3 수동 마이그레이션 — 확장·ENUM·HNSW·PGroonga 인덱스 (§7).

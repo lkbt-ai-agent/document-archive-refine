@@ -42,7 +42,7 @@ refs: research/02
 - 인용 존재 이진 체크. CI에서 결정적.
 
 ## 7. 운영 배포 전 TODO
-- 확장 의존(schema-rule §5 선행)
+- 확장 의존(data-overview §5 선행)
   - 해결: [ ]
   - 비고: `vector`·`pgroonga` 가용성 확인.
 - 리랭커 추가 런타임

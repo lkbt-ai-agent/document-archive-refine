@@ -27,7 +27,7 @@ overview: 도메인을 최상위 추상으로 두고 데이터·백엔드·프�
   - 검색 종류·인용·환각 억제 규칙 → search-and-rag.md
   - 생성 상태(queued/running…)·산출물 문서화 → ai-outputs.md
 - 순수 데이터 구조는 데이터(04)가 소유한다(도메인에 대응 개념 없음).
-  - DDL·컬럼 타입·인덱스 파라미터·명명 규약 → 각 *-schema, schema-rule
+  - DDL·컬럼 타입·인덱스 파라미터·명명 규약 → 각 *-schema, data-overview
   - 실 쿼리(키워드/의미/RRF/CTE/upsert) → *-schema, search-schema
   - 고아 정리의 TTL·잡 구현, stat_object 같은 물리 메커니즘 → documents-minio
 - 원칙: "무엇/왜"는 도메인, "어떻게(구조·쿼리·메커니즘)"는 데이터.

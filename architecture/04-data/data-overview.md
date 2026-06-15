@@ -8,7 +8,7 @@ refs: research/01 §5.4, research/03 §4, research/04 §1·§4b
 
 # 데이터 모델 & 마이그레이션
 - 본 문서는 전 도메인 공통의 횡단 관심사를 정의한다.
-- 도메인 간 전체적인 관계는 `erd.md` 에 정의한다.
+- 도메인 간 전체적인 관계는 `data-erd.md` 에 정의한다.
 - 특정 도메인에 특화된 스키마, 정책, DDL 은 `domain-schema.md` 처럼 별도 파일로 분리한다.
 
 ## 1. 설계 결정
@@ -21,7 +21,7 @@ refs: research/01 §5.4, research/03 §4, research/04 §1·§4b
   - 두 방식의 계보 표현(누가·무엇으로·무엇을 생성했나)에 맞춰 설계.
 - 원격 공유 PostgreSQL DB 의 스키마 구분
   - 테이블: `archive`
-  - 확장: `public`
+  - 확장: `archive_ext`
 - `users`는 인증 범위 밖(MVP) — 상세는 `users-schema.md`.
 
 ## 2. 명명 규약 & Base
@@ -35,19 +35,22 @@ refs: research/01 §5.4, research/03 §4, research/04 §1·§4b
 ## 3. PostgreSQL DB 확장 의존 & 격리
 - `vector`: 임베딩 저장·HNSW. 미가용 시 의미 검색 불가
 - `pgroonga`: 한국어 키워드 검색. 미가용 시 `tsvector simple` 폴백(품질↓)
-- 확장 스키마: `public` (§5 가용성 검증 선행)
+- 확장 스키마: `archive_ext` (§5 가용성 검증 선행)
 - 테이블 스키마: `archive`
 
 ## 4. Alembic 전략
-- 초기화: `alembic init -t async` + `target_metadata=Base.metadata` + 모든 모델 import.
+### 초기화
+- `alembic init -t async` + `target_metadata=Base.metadata` + 모든 모델 import.
   - `-t async`: 비동기 드라이버(psycopg async)에 맞는 `env.py` 템플릿으로 생성.
   - `target_metadata=Base.metadata`: 변경 자동감지(autogenerate)가 모델 정의와 실제 DB를 비교하는 기준.
-  - 모든 모델 import: import 안 된 모델은 metadata에 빠져 autogenerate가 누락 → 진입점에서 전 모델을 import해야 테이블을 빠짐없이 인식.
-- 수동 마이그레이션: 확장·특수 인덱스(HNSW·PGroonga 인덱스 객체)·ENUM 타입은 autogenerate가 처리 못 함.
+  - 모든 모델 import: import 안 된 모델은 metadata에 빠져 autogenerate가 누락되므로, 진입점에서 전 모델을 import해야 테이블을 빠짐없이 인식한다.
+### 수동 마이그레이션
+- 확장·특수 인덱스(HNSW·PGroonga 인덱스 객체)·ENUM 타입은 autogenerate가 처리 못 함.
   - 이유: 이들은 SQLAlchemy 메타데이터로 표현되지 않거나 부정확하게 감지된다.
   - 대응: 마이그레이션 스크립트에서 사람이 직접 `op.execute("CREATE INDEX ... USING hnsw ...")` 식으로 작성.
-- 버전 격리·적용: `version_table_schema='archive'`.
-  - 적용 이력 테이블 `alembic_version`도 `public`이 아닌 `archive` 스키마에 둬 격리.
+### 버전 격리·적용
+- `version_table_schema='archive'`.
+  - 적용 이력 테이블 `alembic_version` 는 `archive` 스키마에 둬 격리.
   - 적용은 `alembic upgrade head`(최신 리비전까지 전진), 되돌림은 `alembic downgrade`(이전 리비전으로 후퇴).
 
 ## 5. 운영 배포 전 TODO
@@ -56,8 +59,9 @@ refs: research/01 §5.4, research/03 §4, research/04 §1·§4b
   - 비고: 배포 전 아래 SQL로 가용성·권한 검증, 권한 거부 시 DBA에 사전 설치 요청.
     ```sql
     SELECT * FROM pg_available_extensions WHERE name IN ('vector','pgroonga');
-    CREATE EXTENSION IF NOT EXISTS vector;
-    CREATE EXTENSION IF NOT EXISTS pgroonga;
+    CREATE SCHEMA IF NOT EXISTS archive_ext;
+    CREATE EXTENSION IF NOT EXISTS vector SCHEMA archive_ext;
+    CREATE EXTENSION IF NOT EXISTS pgroonga SCHEMA archive_ext;
     ```
   - 미가용 영향: `vector` 없으면 의미 검색 불가, `pgroonga` 없으면 한국어 키워드 품질 저하(폴백 `tsvector simple`).
 - HNSW 빌드 비용

@@ -30,7 +30,7 @@ overview: 03-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재�
 
 ## 1. 타깃 파일 트리
 - 04-data
-  - 유지: schema-rule, erd, users-schema, folders-schema, documents-schema, documents-minio, generations-schema
+  - 유지: data-overview, data-erd, users-schema, folders-schema, documents-schema, documents-minio, generations-schema
   - 신규: search-schema (키워드/의미/하이브리드 실 쿼리)
 - 03-domains
   - 유지(자연어로 정제): folders, document, ingestion, search-and-rag, ai-outputs
@@ -80,7 +80,7 @@ overview: 03-domains에 뒤섞인 관심사를 4개 레이어로 재분배·재�
     - presigned 직접 전송, object key `docs/{uuid}`, 엔드포인트 단일화 → 04-data documents-minio
   - ingestion
     - arq+Redis, pypdf·pdfplumber, KURE-v1 1024d 등 → 05 ingestion-backend
-    - 차원 lock-in 원칙만 schema-rule
+    - 차원 lock-in 원칙만 data-overview
   - search-and-rag
     - PGroonga TokenBigram, RRF k=50, GBNF → 05 search-backend (k=50은 search-schema 쿼리와 함께)
     - `owner_id` 항상 강제 → 04 도메인 규칙으로 잔류

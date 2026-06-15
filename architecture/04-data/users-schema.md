@@ -10,9 +10,9 @@ refs: research/04 §1
 
 ## 1. 테이블 DDL (스키마=archive)
 ```sql
-CREATE TABLE archive.users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+CREATE TABLE archive.users (                       -- 사용자
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),  -- 사용자 ID
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()           -- 생성 일시
 );
 ```
 

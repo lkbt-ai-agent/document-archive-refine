@@ -45,7 +45,7 @@ refs: research/01, research/04 §4
 
 ## 9. 설계 결정
 - arq + Redis 채택(BackgroundTasks 제외 — 상태추적·내구성).
-- 임베딩 KURE-v1 1024d 로컬 고정(차원 lock-in, schema-rule).
+- 임베딩 KURE-v1 1024d 로컬 고정(차원 lock-in, data-overview).
 
 ## 10. 운영 배포 전 TODO
 - pdf2image Poppler 의존
