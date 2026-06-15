@@ -45,7 +45,7 @@ refs: research/03
   1. LLM 구조화 데이터 추출(rows).
   2. Python 결정적 통계 계산.
   3. LLM Vega-Lite 스펙 생성.
-  4. JSON 스키마 검증·수리 루프(≤5회).
+  4. JSON 스키마 검증·수리 루프(≤5회). 5회 실패 시 해당 차트만 제외하고 생성은 계속(ai-outputs.md §5).
   5. react-vega 렌더 + 서사(`[n]`).
 
 ## 6. 계보·재현성 기록
@@ -55,13 +55,14 @@ refs: research/03
 ## 7. 산출물 문서화 (materialization)
 - 개념·산출물 내역·삭제 정합의 의미는 ai-outputs.md §9. 여기서는 구현만 다룬다.
 - `succeeded` 시 worker가 산출물(Markdown; report는 차트 spec 포함)을 오브젝트 업로드 + `documents` 행 생성 → 인제스트(청킹·임베딩)까지 수행(document/ingestion 흐름 재사용).
+- 산출물 `documents.folder_id`는 주 원본 문서와 같은 폴더로 설정한다(생성 후 일반 문서처럼 이동 가능).
 - `generations.output_document_id`에 결과 문서 id 기록. 출력 문서 삭제 시 `ON DELETE SET NULL`로 산출물 내역에서 비노출.
 - 멱등: worker 작업은 멱등 키로 중복 enqueue 안전.
 
 ## 8. 운영 배포 전 TODO
 - 차트 수리 루프 한도
   - 해결: [x]
-  - 비고: ≤5회 후 실패 처리(§5).
+  - 비고: 수리 ≤5회 실패 시 해당 차트만 제외하고 생성은 계속(§5).
 - 장문 요약 지연/메모리
   - 해결: [ ]
   - 비고: HIERARCHICAL 분기(§3)로 완화, 부하 측정 필요.
