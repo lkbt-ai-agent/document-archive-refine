@@ -116,7 +116,7 @@ SELECT EXISTS(SELECT 1 FROM descendants WHERE id = :new_parent_id);  -- FALSE �
 3. Confirm: `POST /documents/{id}/complete`. stat_object 검증, status=processing, arq 파이프라인 enqueue.
 4. Download: `GET /documents/{id}/download`. presigned GET(Content-Disposition에 한국어 원본명) 반환, 브라우저가 직접 fetch.
 
-> **Docker 함정**: presigned URL에 MinIO 엔드포인트 호스트가 박힌다. 컨테이너 내부명(`minio:9000`)은 브라우저에서 해석 불가하다. 따라서 브라우저 도달 가능 엔드포인트(`localhost:9000`)로 서명하고, 서버측 SDK 호출은 내부명을 쓴다.
+> **단일 엔드포인트**: MinIO는 원격 공인 IP 단일 엔드포인트다. 서버 SDK 호출과 브라우저 도달 URL이 동일하므로 presign을 그 단일 엔드포인트로 서명하면 된다(서버/브라우저 엔드포인트 분리 불필요).
 
 ### object key 설계: 폴더 경로와 분리
 
@@ -147,7 +147,8 @@ backend/
 │   ├── search/   {router,service}              # 하이브리드 검색
 │   ├── generations/{router,schemas,models,service}  # AI 산출물 + 계보
 │   ├── storage/  {minio_client,service}        # presign/stat/delete
-│   └── pipeline/ {worker,tasks,llama_client}    # arq
+│   ├── pipeline/ {worker,tasks}                 # arq
+│   └── ai/       {provider,llama_client,bedrock_client,schemas}  # Provider 추상화
 ├── docker-compose.yml / Dockerfile / pyproject.toml(uv+ruff)
 ```
 
@@ -158,14 +159,14 @@ class Base(AsyncAttrs, DeclarativeBase):
         "ix":"ix_%(column_0_label)s","uq":"uq_%(table_name)s_%(column_0_name)s",
         "fk":"fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
         "pk":"pk_%(table_name)s","ck":"ck_%(table_name)s_%(constraint_name)s"})
-engine = create_async_engine(settings.DATABASE_URL)        # postgresql+asyncpg://
+engine = create_async_engine(settings.DATABASE_URL)        # postgresql+psycopg://
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 async def get_session():
     async with async_session() as s: yield s
 ```
 
-- `postgresql+asyncpg` 필수(드라이버 틀리면 이벤트루프 블록). `expire_on_commit=False`. SA2 `Mapped[...]`+`mapped_column()`.
-- Alembic: `alembic init -t async`, `target_metadata=Base.metadata`, 모든 모델 import, 명명 규칙으로 안정적 제약명.
+- DSN은 `postgresql+psycopg`(psycopg3 async). psycopg3가 비동기를 지원하므로 asyncpg 전환 불필요. `expire_on_commit=False`. SA2 `Mapped[...]`+`mapped_column()`.
+- Alembic: `alembic init -t async`(psycopg async 템플릿), `target_metadata=Base.metadata`, 모든 모델 import, 명명 규칙으로 안정적 제약명. `version_table_schema='archive'`로 버전 테이블 격리.
 
 ---
 
@@ -259,7 +260,7 @@ CREATE INDEX ix_documents_sha256 ON documents(sha256);
 >
 > - macOS의 Docker 컨테이너는 Metal GPU에 접근할 수 없다.
 > - llama.cpp를 Docker로 돌리면 Mac에서 GPU 가속을 못 받아 CPU로만 동작해 매우 느려진다.
-> - 권장 구성: 인프라(Postgres, MinIO, Redis)는 Docker로, 모델 서버(llama-server)는 Mac 호스트에서 네이티브로 실행한다.
+> - 확정 구성: PostgreSQL과 MinIO는 원격이라 compose에 정의하지 않는다. 로컬 Docker는 Redis(+api/worker/web)만, 모델 서버(llama-server)는 Mac 호스트에서 네이티브로 실행한다.
 > - Docker 안의 API는 `host.docker.internal`로 호스트의 llama-server에 접속한다.
 > - 추후 AWS Bedrock으로 전환하면 이 로컬 llama-server 의존이 사라지고 Provider만 바꾸면 된다 (§0).
 
@@ -280,37 +281,25 @@ llama-server -m ./models/kure-v1-q8_0.gguf --embeddings --pooling cls -ngl 99 \
 
 ### 6.2 인프라는 Docker Compose
 
+PostgreSQL과 MinIO는 원격이라 compose에 정의하지 않는다(`.env`의 `DATABASE_URL`/`MINIO_ENDPOINT`로 주입). compose는 Redis와 api/worker/web만 정의한다.
+
 ```yaml
 services:
-  db:
-    image: groonga/pgroonga:latest-alpine-17 # PGroonga 포함 이미지(pgvector도 함께 설치 필요 → 아래 주의)
-    environment:
-      { POSTGRES_USER: app, POSTGRES_PASSWORD: app, POSTGRES_DB: archive }
-    ports: ["5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
-    healthcheck:
-      { test: ["CMD", "pg_isready", "-U", "app"], interval: 5s, retries: 10 }
   redis: { image: redis:7-alpine, ports: ["6379:6379"] }
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment: { MINIO_ROOT_USER: minio, MINIO_ROOT_PASSWORD: minio123 }
-    ports: ["9000:9000", "9001:9001"] # 9000 브라우저 도달 가능해야 함(presigned)
-    volumes: ["miniodata:/data"]
   api:
     build: ./backend
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
-      DATABASE_URL: postgresql+asyncpg://app:app@db:5432/archive
+      DATABASE_URL: postgresql+psycopg://app:app@<remote-pg>:5432/<db> # 원격, search_path=archive,archive_ext
       REDIS_URL: redis://redis:6379
-      MINIO_INTERNAL_ENDPOINT: minio:9000
-      MINIO_PUBLIC_ENDPOINT: localhost:9000 # presign은 이걸로
+      MINIO_ENDPOINT: <remote-public-ip>:9000 # 원격 단일 엔드포인트(서버와 브라우저 동일, presign 동일 URL)
+      MINIO_BUCKET: <bucket>
       LLM_PROVIDER: llamacpp # 추후 bedrock 으로 교체(→ §0)
       EMBEDDING_PROVIDER: llamacpp
       LLAMA_CHAT_URL: http://host.docker.internal:8080 # ★ 호스트의 네이티브 llama-server
       LLAMA_EMBED_URL: http://host.docker.internal:8081
     extra_hosts: ["host.docker.internal:host-gateway"] # Linux 호환용(Mac은 기본 제공)
-    depends_on: { db: { condition: service_healthy }, redis: {}, minio: {} }
+    depends_on: { redis: {} }
     ports: ["8000:8000"]
   worker: # arq 파이프라인(같은 이미지, 호스트 llama-server 접속)
     build: ./backend
@@ -318,21 +307,17 @@ services:
     environment:
       LLAMA_EMBED_URL: http://host.docker.internal:8081
     extra_hosts: ["host.docker.internal:host-gateway"]
-    depends_on: [db, redis, minio]
+    depends_on: [redis]
   web:
     build: ./frontend
     command: npm run dev
     environment: { NEXT_PUBLIC_API_URL: http://localhost:8000 }
     ports: ["3000:3000"]
-volumes: { pgdata, miniodata }
 ```
 
-- **PGroonga + pgvector 한 DB**: 둘 다 필요한데 단일 공식 이미지는 없다.
-  - (a) `groonga/pgroonga` 이미지에 pgvector를 추가 설치.
-  - (b) 두 확장이 모두 든 커스텀 이미지를 빌드(권장). 인프라 결정 포인트.
-  - `CREATE EXTENSION vector; CREATE EXTENSION pgroonga;` 둘 다 활성화.
-- 부트 시 일회성 잡 실행: `mc mb`(MinIO 버킷 생성) + `alembic upgrade head`(마이그레이션).
-- **대안**: 빠른 시작을 원하면 인프라까지 전부 로컬 설치(Postgres+pgvector+PGroonga, MinIO, Redis를 Homebrew)해도 된다. 핵심은 llama-server만큼은 네이티브(Metal)라는 점.
+- **공유 스키마 격리**: 원격은 새 DB가 아니라 공유 DB 안의 스키마로 격리한다. 테이블은 `archive`, 확장은 `archive_ext`, 연결은 `search_path=archive,archive_ext`, Alembic은 `version_table_schema='archive'`.
+- **PGroonga + pgvector**: 원격 DB의 `archive_ext` 스키마에 `vector`, `pgroonga` 둘 다 활성화. 부트스트랩에서 가용성과 권한 검증 후 `CREATE EXTENSION ... SCHEMA archive_ext`. 미가용 시 의미 검색 불가(vector), 키워드 품질 저하(pgroonga 폴백 `tsvector simple`).
+- 부트스트랩(앱 최초 기동 시 1회 멱등): `alembic upgrade head`(마이그레이션) + MinIO 버킷 멱등 생성 + DB 확장 활성 확인.
 
 ---
 
@@ -342,9 +327,9 @@ volumes: { pgdata, miniodata }
 | ---------- | ------------------------------------------------------------------------------- |
 | 폴더 트리  | 인접 리스트 `parent_id` + 재귀 CTE, `ON DELETE CASCADE`, MOVE 사이클 검증       |
 | 스토리지   | MinIO + presigned PUT/GET, key `docs/{uuid}`(폴더 경로 분리)                    |
-| 백엔드     | 도메인 모듈, async SA2(asyncpg, `expire_on_commit=False`), Alembic async        |
+| 백엔드     | 도메인 모듈, async SA2(psycopg3, `expire_on_commit=False`), Alembic async       |
 | 파이프라인 | arq+Redis, status/stage 멱등                                                    |
 | 진행       | react-query 폴링                                                                |
 | 메타       | intrinsic+NLP+LLM, 편집가능, `ai_generations`, pgvector 청크                    |
 | 프론트     | RSC 셸 + Client 패널, react-query, Zustand, shadcn Resizable+tree-view+dropzone |
-| 인프라     | pgvector+PGroonga DB, MinIO, llama×2, Redis, api+worker, Next.js                |
+| 인프라     | 원격 PG(archive/archive_ext, pgvector+PGroonga)+원격 MinIO(단일 엔드포인트), 호스트 llama×2, 로컬 Redis, api+worker, Next.js |

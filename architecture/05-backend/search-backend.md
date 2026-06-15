@@ -24,14 +24,14 @@ refs: research/01-mvp-research/02
 - 라우팅
   - keyword: 키워드 SQL → 결과 리스트.
   - semantic: 임베딩(EmbeddingClient) → 의미(벡터) 검색 → 결과 리스트.
-  - rag: 임베딩 → 의미 검색 → (선택) 리랭크 → 컨텍스트 조립 → 인용 강제 생성 → 답변.
+  - rag: 임베딩 → 의미 검색 → (MVP 제외) 리랭크 → 컨텍스트 조립 → 인용 강제 생성 → 답변.
 
 ## 3. 검색 구현
 
 - 키워드(희소): 청크 단위 PGroonga TokenBigram(한국어), 미설치 시 `to_tsvector('simple')` 폴백. 쿼리는 search-schema §1.
 - 의미(밀집): 질문 임베딩 → HNSW cosine. 쿼리는 search-schema §2.
 
-## 4. 리랭킹 (선택)
+## 4. 리랭킹 (MVP 제외)
 
 - bge-reranker-v2-m3(`llama-server --reranking`, `/v1/rerank`), top-50 → top-5.
 - day-1 비활성, Recall 평가 후 투입.

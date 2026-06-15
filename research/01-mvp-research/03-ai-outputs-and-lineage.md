@@ -29,7 +29,7 @@ requirement TODO 해소: Summary/Draft/Report 워크플로우 / 계보 메타데
 | ------------ | ------------------- | ---------- | -------------------- | -------------- | ------------- |
 | Stuff        | 윈도우 초과 시 실패 | 1콜 최속   | 최고                 | 쉬움           | 들어가면 최선 |
 | Map-Reduce   | 무한 확장           | 낮음(병렬) | 양호(경계 손실 가능) | 청크 단위 추적 | 장문 기본     |
-| Refine       | 무한 확장           | 높음(순차) | 더 좋음              | 어려움         | 보류          |
+| Refine       | 무한 확장           | 높음(순차) | 더 좋음              | 어려움         | MVP 미채택(architecture 확정) |
 | Hierarchical | 초장문/멀티문서     | 중         | 양호(구조)           | 트리 인용      | 매우 김       |
 
 ### 결정: "들어가면 stuff, 아니면 map-reduce, 매우 길면 hierarchical"
@@ -40,7 +40,8 @@ doc_tokens >  0.6 * ctx  → MAP-REDUCE (map: 청크별 요약+chunk_id / reduce
 > ~50 청크              → HIERARCHICAL (섹션 그룹 재귀 reduce)
 ```
 
-- Refine는 순차 루프라 로컬 MVP엔 느리고 인용성 저하. "서사형 요약" 명시 요청 시에만 사용.
+- Refine는 순차 루프라 로컬 MVP엔 느리고 인용성 저하. MVP 미채택(architecture 확정).
+  - 당초 "서사형 요약" 명시 요청 시에만 사용하려 했으나, architecture에서 Summary 라우팅을 stuff / map_reduce / hierarchical로만 확정하며 refine 제외.
 - **한국어 프롬프트:**
   - map: 청크별 핵심 5개 이하 번호 목록(전문용어 원형 유지)에 `chunk_id` 태그.
   - reduce: "다음 요약들에서 핵심을 추출해 한국어 불릿으로 최종 요약 작성".
@@ -68,25 +69,26 @@ doc_tokens >  0.6 * ctx  → MAP-REDUCE (map: 청크별 요약+chunk_id / reduce
 | ------------------- | ----------------------------------- | -------------------- | ----------- |
 | 원샷 RAG            | 단순                                | 구조 이탈, 장문 약함 | 백업        |
 | Outline-then-expand | 통제성, 섹션 병렬, 환각↓            | 2+ 패스              | 권장        |
-| 템플릿/구조 채움    | 통제성, 예측 레이아웃, 도메인 환각↓ | 자유도↓              | 공문류 권장 |
+| 템플릿/구조 채움    | 통제성, 예측 레이아웃, 도메인 환각↓ | 자유도↓              | MVP 미채택(architecture 확정) |
 | RAS(구조화)         | 최고 grounding                      | 무거움               | 이후        |
 
-### 결정: 선택 템플릿 위 outline-then-expand
+### 결정: outline-then-expand (gen_method `outline_expand`)
 
 ```
-1. 사용자 문서 선택 + (선택)템플릿(보고서/제안서/공문/메모)
+1. 사용자 문서 선택
 2. 개요 패스: 문서 요약들로 섹션 목록 제안 → 사용자 개요 편집(통제성!)
 3. 섹션별 확장: 섹션 관련 청크 검색 → 섹션 생성, [n] 인용
 4. 조립 + 라이트 일관성 패스
 5. 저장: 개요, 섹션별 출처청크, 전체 계보
 ```
 
+- architecture 확정: Draft는 `outline_expand` 단일 방식. 템플릿 선택 단계 / `template_fill` 미채택.
 - 통제 레버:
-  - 템플릿 선택.
   - 편집 가능한 개요(최고 레버, 저비용).
   - 톤/길이.
   - "근거 문서로만 작성" 토글.
   - 인용 요구.
+  - 템플릿 선택 레버: MVP 미채택(architecture 확정).
 - §1과 동일한 `[n]` 인용 메커니즘 재사용.
 
 ---
@@ -182,28 +184,28 @@ CREATE TABLE prompt_templates (
 );
 
 CREATE TYPE artifact_kind AS ENUM ('summary','draft','report');
-CREATE TYPE gen_method AS ENUM ('stuff','map_reduce','refine','hierarchical','outline_expand','template_fill');
-CREATE TYPE job_status AS ENUM ('queued','running','succeeded','failed','canceled');
+CREATE TYPE gen_method AS ENUM ('stuff','map_reduce','hierarchical','outline_expand','report_pipeline');
+CREATE TYPE job_status AS ENUM ('queued','running','succeeded','failed');
 
 -- 생성 실행(Activity = 계보 헤드 = Langfuse trace)
 CREATE TABLE generations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   kind artifact_kind NOT NULL, method gen_method,
   status job_status NOT NULL DEFAULT 'queued',
-  -- agent/app
+  -- agent
   user_id UUID REFERENCES users(id),
-  app_name TEXT NOT NULL DEFAULT 'doc-archive', app_version TEXT, client TEXT,
   -- model/provider (스냅샷)  -- provider 예: 'llama.cpp'(로컬) | 'aws-bedrock'(추후 클라우드)
   model_id BIGINT REFERENCES models(id), provider TEXT,
   -- 디코딩 파라미터(스냅샷, 불변)  -- temperature/top_p/top_k = 출력의 무작위성/창의성 조절(높을수록 다양/창의적), seed = 고정 시 같은 결과 재현
   temperature REAL, top_p REAL, top_k INT, seed BIGINT,
-  max_tokens INT, repeat_penalty REAL, stop_sequences TEXT[], decode_params JSONB,
+  max_tokens INT, decode_params JSONB,
   -- 검색 설정 스냅샷
   embedding_model TEXT, retrieval_k INT, retrieval_params JSONB,
   -- 사용량/시간
   prompt_tokens INT, completion_tokens INT, total_tokens INT, latency_ms INT,
   -- 결과 + 진행
   output_text TEXT, output_meta JSONB, error TEXT,
+  output_document_id UUID REFERENCES documents(id) ON DELETE SET NULL,  -- 산출물 materialize 결과 문서(삭제 시 NULL)
   progress_pct INT DEFAULT 0, progress_step TEXT,   -- 'map 4/12','section 배경'
   created_at TIMESTAMPTZ DEFAULT now(), started_at TIMESTAMPTZ, finished_at TIMESTAMPTZ
 );
@@ -215,26 +217,29 @@ CREATE TABLE generation_prompts (
   step TEXT, step_index INT,           -- 'map','reduce','section:배경'
   template_id BIGINT REFERENCES prompt_templates(id),
   rendered_prompt TEXT NOT NULL, rendered_system TEXT, raw_response TEXT,
-  prompt_tokens INT, completion_tokens INT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- 출처 문서(PROV used / wasDerivedFrom)
 CREATE TABLE generation_source_documents (
-  generation_id UUID REFERENCES generations(id) ON DELETE CASCADE,
-  document_id UUID REFERENCES documents(id),
-  role TEXT,                           -- 'primary','context','template_example'
-  PRIMARY KEY (generation_id, document_id)
+  id BIGSERIAL PRIMARY KEY,
+  generation_id UUID NOT NULL REFERENCES generations(id) ON DELETE CASCADE,
+  document_id UUID REFERENCES documents(id) ON DELETE SET NULL,  -- 원본 삭제 시 NULL
+  role TEXT,                           -- 출처 역할 예: 'primary','context'
+  cited_title TEXT,                    -- 인용 시점 문서 제목 스냅샷
+  UNIQUE (generation_id, document_id)
 );
 
 -- 출처 청크 + 인용 매핑(미세 추적)
 CREATE TABLE generation_source_chunks (
   id BIGSERIAL PRIMARY KEY,
-  generation_id UUID REFERENCES generations(id) ON DELETE CASCADE,
-  chunk_id UUID REFERENCES document_chunks(id),
-  document_id UUID REFERENCES documents(id),
+  generation_id UUID NOT NULL REFERENCES generations(id) ON DELETE CASCADE,
+  chunk_id UUID REFERENCES document_chunks(id) ON DELETE SET NULL,  -- 원본 청크 삭제 시 NULL
+  document_id UUID REFERENCES documents(id) ON DELETE SET NULL,     -- 원본 문서 삭제 시 NULL
   citation_index INT,                  -- 사용자/모델에 보인 [n]
-  retrieval_rank INT, similarity REAL, used_in_step TEXT
+  retrieval_rank INT, similarity REAL, used_in_step TEXT,
+  cited_text TEXT,                     -- 인용 청크 본문 스냅샷(원본 삭제 후에도 근거 보존)
+  cited_title TEXT                     -- 인용 시점 문서 제목 스냅샷
 );
 CREATE INDEX ON generation_source_chunks (generation_id);
 
@@ -251,8 +256,13 @@ CREATE TABLE generation_charts (
 ```
 
 - 이 스키마는 requirement의 계보 요구를 모두 충족한다(출처 문서, 출처 청크, 프롬프트, 모델, Provider, 파라미터, 생성 시각).
-- 추가로 seed, token usage, 앱 버전, 검색 설정, 렌더 프롬프트, 차트 데이터까지 담아 재현, 감사, C2PA 준비를 만족한다.
+- 추가로 seed, token usage, 검색 설정, 렌더 프롬프트, 차트 데이터까지 담아 재현, 감사, C2PA 준비를 만족한다.
 - 모델/템플릿 변경이 과거 기록을 덮지 않도록 행에 스냅샷.
+- `generations.output_document_id`: 산출물을 1급 문서(`documents` 행)로 materialize한 결과를 가리킨다. 출력 문서 삭제 시 `ON DELETE SET NULL`(계보 헤드 행은 감사 목적 유지).
+- **출처(source) 문서/청크 삭제는 허용된다(삭제 차단 아님).**
+  - 출처 FK(`generation_source_documents.document_id`, `generation_source_chunks.chunk_id`/`document_id`)는 `ON DELETE SET NULL`.
+  - 원본 삭제 시 인용 행은 남고 해당 FK만 NULL이 되며, 스냅샷(`cited_text`/`cited_title`)으로 근거와 계보를 보존한다.
+  - 생성 시 `document_chunks.content`를 `cited_text`에 복사해 둔다.
 
 > **Provider 이식성(portability)이 곧 감사 가능성:**
 >
@@ -304,7 +314,7 @@ GET  /generations?user=&kind=  → 이력 목록("AI 생성 이력 요약")
 | ----------- | -------------------------------------------------------------------------------------- |
 | 요약        | stuff, map-reduce, hierarchical 라우팅, refine 제외, 청크+문서 2단 저장, 한국어 불릿   |
 | 인용        | `Source [n]:` 번호화, `citation_index`와 `chunk_id` 매핑, 3종 산출물 공통              |
-| 초안        | 선택 템플릿 위 outline-then-expand, 편집 가능 개요가 핵심 레버                         |
+| 초안        | outline-then-expand(`outline_expand`) 단일, 편집 가능 개요가 핵심 레버(템플릿 선택 미채택) |
 | 보고서 차트 | Vega-Lite 선언형(코드 실행 X), 스키마 검증+수리, 통계는 Python                         |
 | 계보        | `generations` 헤드 + 하위 4테이블, seed+디코딩 파라미터+렌더 프롬프트+모델 해시 스냅샷 |
 | 비동기      | arq+Redis, 진행/결과/이력 단일 테이블, 프론트 폴링                                     |

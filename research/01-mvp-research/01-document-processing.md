@@ -111,12 +111,15 @@ def decode_text(b: bytes) -> str:
 
 ## 3. OCR (한국어)
 
-OCR은 두 갈래로 한다:
+- 결론(architecture 확정): MVP OCR은 CPU 전통 엔진만 쓴다. PaddleOCR PP-OCRv5(기본) + Tesseract `kor`(폴백).
+- VLM(Qwen2.5-VL 등) OCR 경로는 MVP 미채택(추후 검토). 조사 기록은 §3.2에 보존.
 
-- CPU에서 도는 전통 엔진: 가볍고 빠름, 기본값.
-- AI 모델(VLM)을 쓰는 방식: 무겁지만 어려운 레이아웃에 강함.
+> 아래는 두 갈래(전통 엔진 / VLM)를 모두 조사한 기록이다. MVP 채택은 전통 엔진 한정이며, VLM은 추후 검토 대상으로만 남긴다.
 
-> 왜?(초보자 설명) 대부분의 페이지는 전통 OCR이면 충분하고 메모리도 거의 안 쓴다. VLM은 표, 복잡한 레이아웃 같은 어려운 페이지에만 선택적으로 꺼내 쓴다(아래 §3.2의 메모리 주의 참고).
+- CPU에서 도는 전통 엔진: 가볍고 빠름, MVP 채택.
+- AI 모델(VLM)을 쓰는 방식: 무겁지만 어려운 레이아웃에 강함. MVP 미채택(추후 검토).
+
+> 왜?(초보자 설명) 대부분의 페이지는 전통 OCR이면 충분하고 메모리도 거의 안 쓴다. VLM은 표, 복잡한 레이아웃 같은 어려운 페이지에 강하지만 MVP에서는 쓰지 않는다(아래 §3.2의 메모리 주의 참고).
 
 ### 3.1 전통 엔진
 
@@ -128,8 +131,9 @@ OCR은 두 갈래로 한다:
 | Surya              | O(90+)       | 높음(레이아웃)   | GPU 빠름  | 확인要          | 확인要     | GPU시 강력(Marker/Docling 기반) |
 | docTR              | X(라틴 중심) | -                | -         | -               | -          | 한국어 제외                     |
 
-### 3.2 VLM OCR (llama.cpp에서 직접 - 런타임 재사용)
+### 3.2 VLM OCR (llama.cpp에서 직접 - 런타임 재사용) - MVP 미채택(architecture 확정), 추후 검토
 
+- 이 절 전체는 MVP 미채택 경로다. architecture가 OCR을 전통 엔진(PaddleOCR + Tesseract)으로 확정했다. 아래는 추후 검토를 위한 조사 기록으로만 보존한다.
 - VLM을 OCR에 쓰는 방식.
 - llama.cpp에서 돌리려면 모델 본체(GGUF)와 함께 mmproj(이미지를 토큰으로 바꿔주는 보조 파일)가 필요하다.
 
@@ -155,7 +159,7 @@ llama-server -hf ggml-org/Qwen2.5-VL-7B-Instruct-GGUF   # /v1/chat/completions �
 > - 일반 PC의 그래픽 카드 전용 메모리(VRAM)가 아니라 CPU, GPU가 같은 메모리를 공유하는 구조라, 한 모델이 메모리를 점유하면 그만큼 다른 모델 몫이 줄어든다.
 > - macOS가 ~3~4GB를 먼저 쓰므로 모델에 쓸 수 있는 실제 예산은 24GB보다 작다.
 > - OCR용 VLM(Qwen2.5-VL-7B Q4 ~6GB + mmproj)은 상주시키지 말고 필요할 때만 로드(예: `llama-swap`으로 on-demand 스왑)한다. 생성 모델, 임베딩 모델과 메모리를 나눠 쓰는 부담을 피하기 위함이다. 메모리가 공유 자원이라 세 모델을 동시에 올리려 하면 압박이 크다.
-> - 기본 OCR(PaddleOCR / Tesseract, CPU)은 메모리를 거의 안 쓰므로 항상 켜 두는 기본값으로 유지하고, VLM은 어려운 페이지에만 꺼내 쓴다.
+> - 기본 OCR(PaddleOCR / Tesseract, CPU)은 메모리를 거의 안 쓰므로 항상 켜 두는 기본값이다(MVP 채택). VLM을 추후 도입한다면 어려운 페이지에만 on-demand로 꺼내 쓰는 형태가 될 것이다(MVP 미채택).
 
 > 제공자(Provider) 노트(선택).
 >
@@ -164,10 +168,11 @@ llama-server -hf ggml-org/Qwen2.5-VL-7B-Instruct-GGUF   # /v1/chat/completions �
 
 ### 3.3 OCR 권고 (MVP)
 
-- PaddleOCR PP-OCRv5(한국어) 기본, Tesseract `kor` 폴백.
-- Qwen2.5-VL-7B는 표/복잡 레이아웃 등 어려운 페이지에만 선택 적용.
-- 24GB 통합 메모리에서는 상주가 아니라 on-demand 로드(§3.2)로 쓴다.
-- 단 7B 한국어≈78%는 "이해" 수준이지 완벽 전사가 아님. 고정밀이 필요한 32B/72B급은 24GB 로컬에 부담이라 향후 AWS Bedrock 등 클라우드 Provider로 위임 고려.
+- 결정(architecture 확정): PaddleOCR PP-OCRv5(한국어) 기본 + Tesseract `kor` 폴백만 쓴다.
+- 폴백 트리거: PaddleOCR이 실패하거나 품질이 낮은 페이지를 Tesseract `kor`로 재처리.
+- Qwen2.5-VL-7B 선택 적용은 MVP 미채택(추후 검토). 아래는 추후 검토용 참고 기록이다.
+  - 7B 한국어≈78%는 "이해" 수준이지 완벽 전사가 아님. 고정밀이 필요한 32B/72B급은 24GB 로컬에 부담이라 향후 AWS Bedrock 등 클라우드 Provider로 위임 고려.
+  - 도입 시 24GB 통합 메모리에서는 상주가 아니라 on-demand 로드(§3.2)로 써야 한다.
 
 > PM4Bench 한국어 수치(77.6/94.8)는 단일 출처(검색 요약)라 인용 전 재확인 권장.
 
@@ -230,13 +235,14 @@ DMS 관행에 따라 시스템(불변) / 기술-의미(생성, 편집가능)로 
 - 한국어 주의: 교착어라 한글 1자 ≈ XLM-R 서브워드 1.5–3토큰. "512토큰"은 영어보다 적은 한글 수다. 문자 수가 아니라 실제 모델 토크나이저로 측정.
 - 라이브러리: LangChain `RecursiveCharacterTextSplitter`/`MarkdownHeaderTextSplitter`(기본), Chonkie(56개국어, 추후 semantic), unstructured(PDF/DOCX 구조 파싱).
 
-### 5.3 무엇을 임베딩할까 - 청크 + (선택) contextual prefix
+### 5.3 무엇을 임베딩할까 - 청크 본문 (contextual prefix는 MVP 미적용)
 
-- 기본: 청크 본문 + 임베딩 + 메타데이터를 행 단위로 pgvector 저장. `parent_doc_id`로 주변 컨텍스트 반환(간이 parent-document retriever).
-- 고ROI 옵션(Week 2 여유 시): Anthropic Contextual Retrieval(맥락 보강 검색).
-  - 청크 임베딩 전에 "이 청크가 문서 어디에 속하는지" 한 줄 컨텍스트를 로컬 LLM으로 생성해 prepend(조각 앞에 붙임).
-  - Anthropic 보고 기준 top-20 검색 실패율 5.7%에서 2.9%로(-49%).
-  - 로컬 LLM 사용 시 비용 0.
+- 결정(architecture 확정): 청크 본문 + 임베딩 + 메타데이터를 행 단위로 pgvector 저장. `parent_doc_id`로 주변 컨텍스트 반환(간이 parent-document retriever). Contextual prefix는 쓰지 않는다.
+- Contextual Retrieval(맥락 보강 검색): MVP 미적용(architecture 확정), 추후 검토.
+  - 미적용 사유: 청크마다 LLM 호출이 추가돼 로컬 추론 인제스트 비용이 큼. 검색 품질이 부족하다고 측정되면 도입 검토.
+  - 기법: 청크 임베딩 전에 "이 청크가 문서 어디에 속하는지" 한 줄 컨텍스트를 로컬 LLM으로 생성해 prepend(조각 앞에 붙임).
+  - 벤치마크(참고 보존): Anthropic 보고 기준 top-20 검색 실패율 5.7%에서 2.9%로(-49%).
+  - 로컬 LLM 사용 시 API 비용은 0이나, 청크당 추론 시간 비용이 인제스트에 누적됨.
 - 표: Markdown 표로 직렬화해 원자 단위로 임베딩(행 중간 분할 금지, 헤더 행 반복). 사례상 RAG 정확도 ~20% 개선.
 
 ### 5.4 pgvector 스키마/인덱스
@@ -251,7 +257,6 @@ CREATE TABLE document_chunks (
   parent_doc_id UUID,
   chunk_index   INT NOT NULL,
   content       TEXT NOT NULL,        -- 청크 본문 저장(필수)
-  context       TEXT,                 -- 선택: contextual prefix
   metadata      JSONB,                -- {page, lang, section, tags...}
   embedding     vector(1024) NOT NULL,
   UNIQUE (document_id, chunk_index)
@@ -263,7 +268,8 @@ CREATE INDEX ON document_chunks USING gin (metadata);
 
 - HNSW > IVFFlat(RAG 기본): 더 나은 속도/재현율, 학습 단계 불필요.
   - 왜?(초보자 설명) 벡터 수가 많으면 전부 일일이 비교하기엔 느리므로, 가까운 후보만 빠르게 좁혀 찾는 색인이 필요하다.
-- 거리: cosine(`<=>`). 정규화 벡터라 내적(`<#>`)도 동치이며 약간 빠름.
+- 거리: cosine(`<=>`, `vector_cosine_ops`). architecture 확정. (참고: 정규화 벡터라 내적 `<#>`도 수학적으로 동치이며 약간 빠르나, 채택 연산자는 cosine이다.)
+- `context` 컬럼은 제거됨(architecture 확정). Contextual Retrieval 미적용(§5.3)에 맞춰 스키마에서 뺐다.
 - 1024-dim은 HNSW 한계(2000) 이내라 `halfvec` 불필요(대규모 시 저장 절반 옵션).
 - 메타 필터는 `jsonb`+GIN, 강한 필터 시 partial HNSW 또는 `hnsw.iterative_scan`.
 
@@ -282,7 +288,7 @@ CREATE INDEX ON document_chunks USING gin (metadata);
 - `stage`: `extracting`, `generating_meta`, `chunking`, `embedding`.
 - 페이지/스테이지 단위 멱등(같은 작업을 여러 번 실행해도 결과가 한 번과 동일), 재시작.
   - 한 페이지 실패가 문서 전체를 죽이지 않게 함.
-  - OCR 타임아웃은 백오프 재시도, VLM 호출은 횟수 제한.
+  - OCR 타임아웃은 백오프 재시도. (VLM은 MVP 미채택이라 호출 제한 정책은 추후 검토.)
   - 왜?(초보자 설명) 작업이 중간에 실패해 다시 돌려도 청크, 임베딩이 중복으로 쌓이지 않게 하려는 것이다.
 - 참고 구현: `CatchTheTornado/text-extract-api`(FastAPI+Celery+Redis+다중 OCR).
 
@@ -295,7 +301,7 @@ CREATE INDEX ON document_chunks USING gin (metadata);
 | 타입 감지  | `filetype`/`python-magic` (magic bytes)                                                |
 | PDF        | pypdf(BSD) 텍스트 + pdfplumber(MIT) 표 보강, 페이지별 OCR 폴백 (PyMuPDF는 AGPL로 제외) |
 | 스캔 판별  | 페이지별 `len(extract_text())<threshold` + `page.images` 유무                          |
-| OCR        | PaddleOCR PP-OCRv5(ko) 기본 + Tesseract ko 폴백 + (선택)Qwen2.5-VL-7B                  |
+| OCR        | PaddleOCR PP-OCRv5(ko) 기본 + Tesseract ko 폴백 (VLM/Qwen2.5-VL은 MVP 미채택, 추후 검토) |
 | TXT 인코딩 | charset-normalizer, EUC-KR을 CP949로 디코딩                                            |
 | MD         | Markdown 유지, 헤더 인지 청킹                                                          |
 | 표         | Markdown 직렬화, 원자 임베딩                                                           |

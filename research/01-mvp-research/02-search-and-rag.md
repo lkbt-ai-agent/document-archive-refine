@@ -51,36 +51,47 @@ requirement TODO 해소: 키워드 검색 / 자연어 검색 설계 / AI와 임�
 
 - 사전 설치나 텍스트 정규화 없이 한국어 키워드 검색이 바로 동작하는 유일한 옵션.
 - MeCab 사전 설치 리스크 회피(2주 MVP에 적합). 정밀 불만 시 추후 TokenMecab.
-- pgvector와 같은 DB에서 공존해 하이브리드(§2)에 유리.
+- pgvector와 같은 DB에서 공존(검색 모드 공유).
+- 키워드 검색 대상은 청크 본문(`document_chunks.content`), 청크 단위(architecture 확정).
+- 소유자 필터는 상위 문서를 경유해 건다(`document_chunks.document_id`가 가리키는 `documents`의 `owner_id`).
 
 ```sql
--- 한국어 키워드 검색: "연봉"이 들어간 문서를 bigram으로 찾아 점수순 정렬
+-- 한국어 키워드 검색: "연봉"이 들어간 청크를 bigram으로 찾아 점수순 정렬, 소유자는 상위 문서 경유
 CREATE EXTENSION IF NOT EXISTS pgroonga;
-CREATE INDEX idx_docs_pgroonga ON documents USING pgroonga (content);
+CREATE INDEX idx_chunks_pgroonga ON document_chunks USING pgroonga (content);
 -- "연봉" 이 연봉이/연봉은/연봉을 매칭(bigram)
-SELECT id, title, pgroonga_score(tableoid, ctid) AS score
-FROM documents WHERE content &@~ '연봉'
+SELECT c.document_id, c.id AS chunk_id, pgroonga_score(c.tableoid, c.ctid) AS score
+FROM document_chunks c
+WHERE c.content &@~ '연봉'
+  AND c.document_id IN (SELECT id FROM documents WHERE owner_id = :u)
 ORDER BY score DESC LIMIT 20;
 ```
 
-> PGroonga 미설치 시 폴백: `to_tsvector('simple', content)`+GIN + 앱단 소문자/bigram 확장. 한국어 품질은 확연히 낮음. pg_trgm 의존 금지.
+> PGroonga 미설치 시 폴백: `to_tsvector('simple', c.content)`+GIN + 앱단 소문자/bigram 확장. 한국어 품질은 확연히 낮음. pg_trgm 의존 금지.
 
 ---
 
-## 2. 의미 검색 + 하이브리드 융합 (RRF)
+## 2. 의미 검색 (하이브리드 융합과 RRF는 MVP 미채택)
 
 > - 의미 검색: 질문을 임베딩해 벡터가 가까운 청크를 찾기.
 > - 임베딩: 텍스트 의미를 숫자 목록(벡터)으로 변환.
 > - 하이브리드 검색: 키워드+의미 합치기.
 
-### 왜 하이브리드인가
+### 결정 (architecture 확정)
+
+- MVP는 키워드/의미를 사용자가 고르는 별도 모드로 둔다(`mode∈{keyword,semantic}`, 기본 semantic). 키워드 검색 자체는 §1대로 유지.
+- RAG 검색 단계는 의미 검색 단독을 쓴다(청크 코사인 유사도 top-k).
+- 하이브리드 융합과 RRF는 MVP 미채택. 아래 비교와 SQL은 채택 안 한 설계로 기록만 한다.
+- 의미 검색 SQL은 §2의 hybrid_search 대신 search-schema §2의 단일 벡터 쿼리(`embedding <=> :q_vec`).
+
+### 왜 하이브리드인가 (검토 배경, MVP 미채택)
 
 - `pgroonga_score`/`ts_rank`는 문서 단위 점수라 희귀어 변별 불가(전역 IDF 없음. IDF=흔한 단어는 덜, 희귀 단어는 더 중요하게 치는 가중치).
 - 진짜 BM25(키워드 검색 랭킹 표준 알고리즘)는 TF 포화+IDF+길이정규화.
 - 벡터 검색은 의미/패러프레이즈는 잡지만 정확 토큰(이름, 숫자, "연봉")을 놓침.
 - 따라서 둘을 합치는 게 표준.
 
-### 융합: RRF가 정답
+### 융합: RRF (MVP 미채택, architecture 확정)
 
 - BM25 점수와 cosine(코사인) 점수는 스케일이 달라 더할 수 없다.
 - RRF(점수 체계가 다른 두 검색 결과를 순위만으로 합치는 표준 기법)는 점수가 아닌 순위를 융합해 스케일 독립.
@@ -93,7 +104,9 @@ ORDER BY score DESC LIMIT 20;
 | 가중 RRF          | 숫자/이름 쿼리에 lexical 가중  | 노브 추가         | 선택 |
 | 가중 raw-score 합 | 크기 활용                      | 취약(스케일 상이) | 회피 |
 
-### 단일 SQL `hybrid_search()` (폴더/날짜 필터 포함)
+### 단일 SQL `hybrid_search()` (MVP 미채택, architecture 확정)
+
+> 아래는 채택하지 않은 융합 설계의 참고 구현이다. MVP 의미 검색은 search-schema §2의 단일 벡터 쿼리를 쓴다.
 
 ```sql
 -- 키워드 결과(kw)와 벡터 결과(vec)를 각각 순위 매겨 RRF로 합치는 쿼리 (폴더/날짜로 먼저 필터링)
@@ -132,9 +145,24 @@ $$ LANGUAGE sql STABLE;
 
 > `<=>`는 pgvector의 cosine 거리 연산자(코사인 거리=두 벡터가 같은 방향일수록 작아짐, 작을수록 가까움)라 `ORDER BY ... ASC`가 정확. 실제 운영에서는 이 벡터 비교를 빠르게 하려고 HNSW 인덱스를 건다.
 
+### MVP 채택 의미 검색 SQL (단일 벡터 쿼리)
+
+- 융합 없이 청크 코사인 거리만 정렬. 소유자 필터는 상위 문서 경유.
+
+```sql
+-- 질문 임베딩 :q_vec로 청크 코사인 거리 정렬, 소유자는 상위 문서 경유
+SELECT document_id, id AS chunk_id, embedding <=> :q_vec AS distance
+FROM document_chunks
+WHERE document_id IN (SELECT id FROM documents WHERE owner_id = :u)
+ORDER BY embedding <=> :q_vec ASC
+LIMIT 50;
+```
+
+> HNSW 인덱스(`vector_cosine_ops`) 사용. 폴더/날짜 필터는 위 서브쿼리에 조건을 더해 적용.
+
 ---
 
-## 3. 리랭킹 (선택, 토글)
+## 3. 리랭킹 (MVP 제외)
 
 > 리랭킹/리랭커 = 1차로 찾은 후보를 더 정밀한 모델로 다시 채점해 상위 몇 개만 남기는 단계.
 
@@ -150,9 +178,9 @@ $$ LANGUAGE sql STABLE;
 
 판정:
 
-- day-1 핵심 경로에서 제외하되 1-플래그 토글로 준비.
-- Recall@k 평가(§6)에서 "정답이 top-50엔 들지만 top-5엔 없음"이면 그때 bge-reranker-v2-m3(Q4_K_M) 투입.
-- 한국어 정밀 중요+GPU 여유면 dragonkue-ko.
+- MVP 제외(architecture 확정). 핵심 경로에서 구현하지 않는다.
+- 추후 Recall@k 평가(§6)에서 "정답이 top-50엔 들지만 top-5엔 없음"으로 나오면 그때 bge-reranker-v2-m3(Q4_K_M) 도입을 검토한다.
+- 도입 시 한국어 정밀이 중요하고 GPU 여유가 있으면 dragonkue-ko.
 
 ```python
 # 후보 문서들을 리랭커 서버에 보내 쿼리와의 관련도로 다시 정렬, 상위 top_n개만 받음
@@ -172,8 +200,8 @@ def rerank(query, docs, top_n=5, url="http://127.0.0.1:8082/v1/rerank"):
 | 쿼리 라우팅(키워드/의미/RAG) | 채택           | UI 2모드와 동일 로직 재사용  |
 | 메타데이터 필터(폴더/날짜)   | 채택(최고 ROI) | "작년" 류 구현의 핵심        |
 | 라이트 쿼리 재작성/확장      | 채택(경량)     | 조사 제거, "내/작년" 해소    |
-| 하이브리드+RRF               | 채택           | §2                           |
-| 리랭킹                       | 토글           | §3                           |
+| 하이브리드+RRF               | 미채택         | §2. RAG는 의미검색 단독      |
+| 리랭킹                       | MVP 제외       | §3                           |
 | HyDE                         | 제외           | 쿼리당 +1 전체 생성, 지연 큼 |
 | 쿼리 분해(멀티홉)            | 제외           | 아카이브 QA는 대부분 단일홉  |
 
@@ -183,17 +211,17 @@ def rerank(query, docs, top_n=5, url="http://127.0.0.1:8082/v1/rerank"):
 
 1. 쿼리의 의도를 파악(GBNF=출력 형식을 강제하는 문법).
 2. 키워드면 바로 검색.
-3. 의미/RAG면 임베딩+하이브리드+(선택)리랭크 후 근거를 인용하며 답변 생성.
+3. 의미/RAG면 임베딩+의미 검색 후 근거를 인용하며 답변 생성(하이브리드/RRF는 미채택, 리랭크는 MVP 제외).
 
 상세 단계:
 
 1. 라우팅+추출 (로컬 LLM 1콜, GBNF JSON): `{ intent, rewritten_query, keywords[], filters{folder?,date_from?,date_to?} }`
 2. intent=keyword:
-   - PGroonga `&@~` + 필터로 결과(LLM 생성 없음).
+   - PGroonga `&@~`(청크 본문) + 필터로 결과(LLM 생성 없음).
 3. intent=semantic/rag:
    - `embed(rewritten_query)`[KURE-v1]
-   - `hybrid_search(RRF, top-30, 폴더/날짜 필터)`
-   - (선택) 리랭크 top-30을 top-5로
+   - 의미 검색(청크 코사인, top-30, 폴더/날짜 필터). 하이브리드/RRF 미채택(§2)
+   - 리랭크는 MVP 제외(§3)
    - 컨텍스트 조립(청크본문 + {제목,날짜,폴더,chunk_id})
    - 인용 강제 생성으로 답변 + 출처 리스트
 
@@ -241,10 +269,9 @@ def resolve_range(time_ref, today=date(2026,6,9)):
 
 흐름:
 
-1. `hybrid_search(q_vec=embed("연봉 급여 계약"), q_text="연봉", f_from=2025-01-01, f_to=2025-12-31)`
-2. 리랭크
-3. 근로계약서 발견
-4. "작년 연봉은 ₩XX,XXX,XXX원입니다 [1]".
+1. 의미 검색(`q_vec=embed("연봉 급여 계약")`, 폴더/날짜 필터 `f_from=2025-01-01, f_to=2025-12-31`, 소유자 강제). 하이브리드/RRF 미채택(§2).
+2. 근로계약서 발견
+3. "작년 연봉은 ₩XX,XXX,XXX원입니다 [1]".
 
 추가 규칙:
 
@@ -258,8 +285,8 @@ def resolve_range(time_ref, today=date(2026,6,9)):
 - Recall@k (Hit Rate@k): 골든(=사람이 미리 정해둔 정답) doc가 검색 상위 k개 안에 드는 비율. 값이 높을수록 "정답을 잘 끌어온다"는 뜻이며, 골든 답변 불필요, (쿼리, 정답 doc_id) 쌍만 있으면 됨.
 - 레시피:
   1. 실제 아카이브에서 약 50개 한국어 쿼리 골든셋(연봉 시나리오, 시간/엔티티 쿼리 포함) 작성.
-  2. Recall@5/@20을 (벡터only / 하이브리드 / +리랭크)별 측정.
-  3. 각 레이어 가치 판정.
+  2. Recall@5/@20을 키워드, 의미(벡터only)별 측정. 하이브리드/+리랭크 변형은 MVP 미측정(추후 도입 검토 시 비교 항목으로 추가).
+  3. 각 모드 가치 판정.
 - CI에서 돌 만큼 싸고 결정적. Ragas(faithfulness 등)는 MVP 이후.
 - 답변 품질 경량 체크: 답변이 검색된 청크를 인용하는가(이진, LLM judge 불필요).
 
@@ -271,8 +298,8 @@ def resolve_range(time_ref, today=date(2026,6,9)):
 | ---------------- | --------------------------------------------------------------------------- |
 | 키워드           | PGroonga TokenBigram                                                        |
 | 임베딩           | KURE-v1(1024) pgvector HNSW cosine                                          |
-| 검색             | 하이브리드 PGroonga+pgvector, RRF k=50, 단일 SQL                            |
-| 리랭커           | bge-reranker-v2-m3(토글, `--reranking`). Qwen3-Reranker GGUF 제외           |
-| 파이프라인       | Advanced-lite: 라우팅+메타필터+라이트재작성+하이브리드+인용. HyDE/분해 제외 |
+| 검색             | 키워드/의미 별도 모드, RAG 의미검색 단독. 하이브리드/RRF 미채택            |
+| 리랭커           | MVP 제외(추후 Recall 평가서 도입 검토). 후보 bge-reranker-v2-m3            |
+| 파이프라인       | Advanced-lite: 라우팅+메타필터+라이트재작성+의미검색+인용. 하이브리드/RRF, HyDE/분해 제외 |
 | 자연어 질의 변환 | GBNF 추출, Python 날짜해석, SQL 폴더/날짜 필터                              |
 | 평가             | 약 50 골든쌍, Recall@5/@20 + 인용존재 체크                                  |

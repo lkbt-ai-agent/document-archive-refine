@@ -30,15 +30,16 @@ requirement에 명시된 두 가지 전제를 모든 모델 및 메모리 결정
   | macOS + 앱    | -                      | -      | ~3–4 GB     |
   | 생성          | A.X 4.0 Light 7B       | Q4_K_M | ~4.9 GB     |
   | 임베딩        | KURE-v1                | Q8     | ~1 GB       |
-  | OCR(선택)     | Qwen2.5-VL-7B + mmproj | Q4     | ~6 GB       |
   | KV 캐시, 여유 | -                      | -      | 가변        |
 
+- 결론(architecture 확정): 로컬 AI 런타임은 llama-server 2 인스턴스만 상주한다(8080 생성, 8081 임베딩). OCR은 CPU 기반 PaddleOCR + Tesseract로 처리하며 추가 GPU 메모리를 쓰지 않는다.
 - 권장 운용:
-  - 생성(Q4_K_M) + 임베딩은 상시 상주가 현실적이고 안전하다.
-  - OCR VLM은 인제스트할 때만 필요하므로 상주시키지 않는다. `llama-swap`으로 온디맨드 로드/언로드(TTL 자동 해제)를 권장한다.
-  - 통합 메모리는 공유 자원이라 3종을 동시에 꽉 채우면 KV 캐시나 OS와 충돌할 수 있다.
-- 생성 모델 양자화는 §1.1 참고(3종 동시 운용 시 Q4_K_M, 단독 상주 시 Q5_K_M).
+  - 생성(Q4_K_M) + 임베딩만 상시 상주한다.
+  - OCR은 PaddleOCR/Tesseract가 CPU에서 돌므로 메모리 예산에 별도 VLM 항목이 없다.
+  - 통합 메모리는 공유 자원이라 두 모델을 운용할 때도 KV 캐시와 OS 여유를 남긴다.
+- 생성 모델 양자화는 §1.1 참고(생성+임베딩 동시 운용 시 Q4_K_M, 단독 상주 시 Q5_K_M).
 - PaddleOCR/Tesseract는 CPU 기반이라 메모리를 거의 쓰지 않으므로 기본 OCR로 두기에 부담이 없다.
+- VLM OCR(Qwen2.5-VL-7B + mmproj, ~6GB) 및 `llama-swap` 온디맨드 스왑 구상은 MVP 미채택(architecture 확정), 추후 검토. 채택 시 세 번째 인스턴스 상주/스왑과 메모리 충돌을 재평가해야 한다.
 
 ### 0.2 Provider 추상화: 로컬(llama.cpp)과 추후 AWS Bedrock
 
@@ -49,7 +50,7 @@ requirement에 명시된 두 가지 전제를 모든 모델 및 메모리 결정
 - 무엇을 어디로 보낼지(권장):
   - **임베딩**: 로컬 고정 권장. Provider를 바꾸면 임베딩 차원과 의미 공간이 달라져 기존 벡터와 호환되지 않는다(전체 재임베딩 필요). KURE-v1(1024차원)을 그대로 유지.
   - **생성(LLM)**: 교체가 쉽다(단순 API 호출). 더 강한 한국어 품질이 필요하면 추후 생성만 Bedrock(예: Claude)로 전환 가능.
-  - **OCR(VLM)**: 무거우면 Bedrock 등 클라우드로 뺄 수 있으나 MVP는 로컬 PaddleOCR 기본.
+  - **OCR**: MVP는 로컬 PaddleOCR + Tesseract(CPU)로 확정. VLM 기반 OCR을 클라우드로 빼는 구상은 MVP 미채택, 추후 검토.
 - 계보(Lineage)에 Provider 기록:
   - 모든 AI 산출물은 어떤 Provider와 모델로 만들었는지 저장한다([03-ai-outputs-and-lineage.md](./03-ai-outputs-and-lineage.md) §4 참고).
   - 로컬과 Bedrock을 섞어 써도 재현 및 감사가 가능하다.
@@ -101,15 +102,18 @@ requirement.md의 `Models` 섹션 3개 TODO(OCR / Embedding / Generation)에 대
   - bge-m3의 sparse/ColBERT 멀티벡터는 llama.cpp가 dense만 지원(이슈 #14404).
   - sparse 키워드 검색은 PGroonga로 별도 처리한다([02 문서](./02-search-and-rag.md) 참고).
 
-### 1.3 OCR 모델: PaddleOCR PP-OCRv5 + Tesseract + (선택) Qwen2.5-VL
+### 1.3 OCR 모델: PaddleOCR PP-OCRv5 + Tesseract
 
-2단 구성:
+- 결론(architecture 확정): OCR 스택은 PaddleOCR PP-OCRv5(기본) + Tesseract `kor`(폴백) 2단 구성이다. VLM/Qwen2.5-VL은 MVP 채택 스택이 아니다.
 
 | 계층 | 모델                        | 용도                           | 비고                                                                           |
 | ---- | --------------------------- | ------------------------------ | ------------------------------------------------------------------------------ |
 | 기본 | PaddleOCR PP-OCRv5(한국어)  | 이미지, 스캔 PDF 페이지        | Apache 2.0, 한국어 정확도/속도 균형 최상. v4는 한국어 rec 모델 없음, v5 사용   |
 | 폴백 | Tesseract `kor`             | 단순/깨끗한 스캔               | Apache-2.0, 설치 간단하고 무마찰                                               |
-| 선택 | Qwen2.5-VL-7B GGUF + mmproj | 복잡 레이아웃, 표, 혼합 페이지 | llama.cpp 공식 지원. 한국어 OCR 7B≈78%(PM4Bench), 정밀 전사가 아닌 "이해" 수준 |
+
+- MVP 미채택(architecture 확정), 추후 검토: Qwen2.5-VL-7B GGUF + mmproj(복잡 레이아웃, 표, 혼합 페이지용 VLM).
+  - llama.cpp 공식 지원. 한국어 OCR 7B≈78%(PM4Bench), 정밀 전사가 아닌 "이해" 수준.
+  - 채택 시 세 번째 llama 인스턴스 또는 `llama-swap` 온디맨드 스왑이 필요하므로 메모리 예산(§0.1)을 재평가해야 한다.
 
 - 제외:
   - GOT-OCR2.0: `GOTQwenForCausalLM` 아키텍처를 llama.cpp가 미지원, 로드 불가.
@@ -133,23 +137,23 @@ requirement.md의 `Models` 섹션 3개 TODO(OCR / Embedding / Generation)에 대
   - arq worker (Redis): enqueue로 호출
   - PostgreSQL + pgvector + PGroonga: SQL
   - MinIO (S3): presign, 원본 파일 저장
-  - llama.cpp (llama-server): HTTP
+  - llama.cpp (llama-server): HTTP, 2 인스턴스만 (architecture 확정)
     - :8080 생성(A.X 4.0 Light)
     - :8081 임베딩(KURE-v1)
-    - (선택) VLM via llama-swap
+    - OCR은 CPU 기반 PaddleOCR/Tesseract로 처리하므로 별도 llama 인스턴스 없음
 - arq worker 역할:
   - 파이프라인: 추출, 메타, 청크, 임베딩
   - AI작업: 요약, 초안, 보고서
 
-- llama.cpp 2 인스턴스 분리:
+- llama.cpp 2 인스턴스 분리 (architecture 확정):
   - `--embeddings`는 임베딩 전용 모드라 생성 모델과 한 프로세스로 못 쓴다.
-  - 포트 8080(생성)과 8081(임베딩) 분리.
-  - VLM(OCR)은 인제스트 시에만 필요하므로 `llama-swap`으로 핫스왑(TTL 자동 언로드) 권장.
+  - 포트 8080(생성)과 8081(임베딩) 분리. 로컬 AI 런타임은 이 2 인스턴스가 전부다.
+  - OCR은 PaddleOCR/Tesseract(CPU)로 처리하므로 세 번째 llama 인스턴스나 `llama-swap`이 필요 없다. VLM 핫스왑 구상은 MVP 미채택, 추후 검토.
 - 실행 위치(Mac 중요):
   - llama-server는 Mac 호스트에서 네이티브로 실행해야 Metal GPU 가속을 받는다.
   - Docker 컨테이너에 넣으면 Metal 접근이 안 돼 CPU-only로 느려진다.
   - 따라서 인프라(DB/MinIO/Redis)만 Docker, 모델은 호스트. 상세 [04 §6](./04-architecture.md).
-- 메모리 예산(Mac 24GB 통합 메모리): 생성 + 임베딩 상주, OCR VLM은 온디맨드 스왑. 상세 §0.1.
+- 메모리 예산(Mac 24GB 통합 메모리): 생성 + 임베딩만 상주, OCR은 CPU 기반 PaddleOCR/Tesseract. 상세 §0.1.
 
 ---
 
