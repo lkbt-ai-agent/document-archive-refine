@@ -1,7 +1,7 @@
 ---
 created: 2026-06-12
 updated: 2026-06-12
-status: draft
+status: approved
 overview: 검색(키워드·의미)의 실 SQL을 정의한다.
 refs: research/02
 ---

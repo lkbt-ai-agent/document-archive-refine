@@ -11,8 +11,8 @@ refs: research/03 §4, research/04 §4b
 ## 1. 테이블 DDL (요약, 스키마=archive)
 ```sql
 CREATE TYPE archive.artifact_kind AS ENUM ('summary','draft','report');  -- 산출물 종류
-CREATE TYPE archive.gen_method AS ENUM ('stuff','map_reduce','refine','hierarchical','outline_expand','template_fill');  -- 생성 방식
-CREATE TYPE archive.job_status AS ENUM ('queued','running','succeeded','failed','canceled');  -- 작업 상태
+CREATE TYPE archive.gen_method AS ENUM ('stuff','map_reduce','hierarchical','outline_expand','report_pipeline');  -- 생성 방식
+CREATE TYPE archive.job_status AS ENUM ('queued','running','succeeded','failed');  -- 작업 상태
 
 CREATE TABLE archive.models (                              -- 모델 레지스트리(정적)
   id             BIGSERIAL PRIMARY KEY,                    -- 모델 ID
