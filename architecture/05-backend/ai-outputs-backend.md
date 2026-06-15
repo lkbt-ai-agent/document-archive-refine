@@ -49,12 +49,12 @@ refs: research/03
   5. react-vega 렌더 + 서사(`[n]`).
 
 ## 6. 계보·재현성 기록
-- `succeeded` 시 출처(문서·청크)·프롬프트·`provider`/`model`/`seed`·디코딩 파라미터·차트를 계보에 스냅샷 기록(generations-schema.md).
+- `generations.status`가 `succeeded`가 되면 출처(문서·청크)·프롬프트·`provider`/`model`/`seed`·디코딩 파라미터·차트를 계보에 스냅샷 기록(generations-schema.md).
 - 모델/템플릿 변경이 과거 기록을 덮지 않게 행 단위 스냅샷.
 
 ## 7. 산출물 문서화 (materialization)
 - 개념·산출물 내역·삭제 정합의 의미는 ai-outputs.md §9. 여기서는 구현만 다룬다.
-- `succeeded` 시 worker가 산출물(Markdown; report는 차트 spec 포함)을 오브젝트 업로드 + `documents` 행 생성 → 인제스트(청킹·임베딩)까지 수행(document/ingestion 흐름 재사용).
+- `generations.status`가 `succeeded`가 되면 worker가 산출물(Markdown; report는 차트 spec 포함)을 오브젝트 업로드 + `documents` 행 생성 → 인제스트(청킹·임베딩)까지 수행(document/ingestion 흐름 재사용).
 - 산출물 `documents.folder_id`는 주 원본 문서와 같은 폴더로 설정한다(생성 후 일반 문서처럼 이동 가능).
 - `generations.output_document_id`에 결과 문서 id 기록. 출력 문서 삭제 시 `ON DELETE SET NULL`로 산출물 내역에서 비노출.
 - 멱등: worker 작업은 멱등 키로 중복 enqueue 안전.

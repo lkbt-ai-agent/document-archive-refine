@@ -54,7 +54,6 @@ CREATE TABLE archive.document_chunks (                                  -- 문�
   parent_doc_id UUID,                                                   -- 상위 문서 ID(부모 청킹)
   chunk_index   INT NOT NULL,                                           -- 청크 순번
   content       TEXT NOT NULL,                                          -- 청크 본문
-  context       TEXT,                                                   -- 청크 컨텍스트
   metadata      JSONB,                                                  -- 청크 메타데이터
   embedding     vector(1024) NOT NULL,                                  -- 임베딩 벡터(1024d)
   UNIQUE (document_id, chunk_index)

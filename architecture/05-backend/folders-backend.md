@@ -8,8 +8,6 @@ refs: research/04 §1
 
 # 폴더 백엔드
 
-- 공통 구조·레이어링은 `backend.md`. 도메인 동작은 `folders.md`, 실 쿼리는 `folders-schema.md`.
-
 ## 1. API 계약
 | 메서드 | 경로 | 설명 |
 |---|---|---|

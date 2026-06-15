@@ -8,8 +8,6 @@ refs: research/04 §2
 
 # 문서 백엔드
 
-- 공통 구조는 `backend.md`. 도메인 동작은 `document.md`, 테이블 스키마는 `documents-schema.md`, 오브젝트 키 레이아웃은 `documents-minio.md`.
-
 ## 1. API 계약
 | 메서드 | 경로 | 설명 |
 |---|---|---|

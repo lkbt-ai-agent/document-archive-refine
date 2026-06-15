@@ -8,8 +8,6 @@ refs: research/02
 
 # 검색 & RAG 백엔드
 
-- 공통 구조·구조화 출력은 `backend.md`. 도메인 정의는 `search-and-rag.md`, 실 쿼리는 `search-schema.md`.
-
 ## 1. API 계약
 | 메서드 | 경로 | 설명 |
 |---|---|---|
