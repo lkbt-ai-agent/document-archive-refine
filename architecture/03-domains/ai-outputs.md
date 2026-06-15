@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-15
 status: approved
 overview: AI 산출물(요약/초안/보고서)의 워크플로우·계보·비동기 생성·문서화를 정의한다.
-refs: research/03
+refs: research/01-mvp-research/03
 ---
 
 # AI 산출물 & 계보(Lineage)

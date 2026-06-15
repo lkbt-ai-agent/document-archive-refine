@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-15
 status: approved
 overview: 업로드된 문서를 검색 가능한 상태로 만드는 비동기 인제스트 프로세스를 정의한다.
-refs: research/01, research/04 §4
+refs: research/01-mvp-research/01, research/01-mvp-research/04 §4
 ---
 
 # 문서 처리 파이프라인 (인제스트)

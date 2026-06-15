@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-12
 status: approved
 overview: 스키마 횡단 규칙을 정의한다.
-refs: research/01 §5.4, research/03 §4, research/04 §1·§4b
+refs: research/01-mvp-research/01 §5.4, research/01-mvp-research/03 §4, research/01-mvp-research/04 §1·§4b
 ---
 
 # 데이터 모델 & 마이그레이션

@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-15
 status: approved
 overview: 원격 DB·MinIO 연결, 환경변수·시크릿, Redis·llama 런타임, DB 확장 검증을 정의한다.
-refs: research/00 §0, research/04 §6
+refs: research/01-mvp-research/00 §0, research/01-mvp-research/04 §6
 ---
 
 # 인프라 & 환경 구성

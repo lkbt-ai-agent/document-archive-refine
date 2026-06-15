@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 폴더 도메인의 백엔드 구현(API·모듈 흐름)을 정의한다.
-refs: research/04 §1
+refs: research/01-mvp-research/04 §1
 ---
 
 # 폴더 백엔드

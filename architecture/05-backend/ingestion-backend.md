@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 인제스트 파이프라인의 백엔드 구현(arq 워커·추출/OCR/메타/청킹/임베딩)을 정의한다.
-refs: research/01, research/04 §4
+refs: research/01-mvp-research/01, research/01-mvp-research/04 §4
 ---
 
 # 인제스트 백엔드 (워커)

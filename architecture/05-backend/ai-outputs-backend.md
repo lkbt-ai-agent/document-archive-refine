@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: AI 산출물·계보 도메인의 백엔드 구현(API·워크플로우·비동기 생성·계보 기록)을 정의한다.
-refs: research/03
+refs: research/01-mvp-research/03
 ---
 
 # AI 산출물 & 계보 백엔드

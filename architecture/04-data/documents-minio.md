@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 문서 오브젝트의 MinIO 저장 레이아웃 — object key 규약.
-refs: research/04 §2
+refs: research/01-mvp-research/04 §2
 ---
 
 # 문서 오브젝트 저장 레이아웃 (MinIO)

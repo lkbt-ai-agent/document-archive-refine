@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-12
 status: approved
 overview: 문서를 업로드하면 AI가 읽고 이해해 검색·RAG·요약/초안/보고서를 제공하는 한국어 문서 아카이브.
-refs: research/00, research/04
+refs: research/01-mvp-research/00, research/01-mvp-research/04
 ---
 
 # 시스템 개요

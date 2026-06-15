@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 도메인 엔티티 간 관계(ERD 대용)를 정의한다.
-refs: research/01 §5.4, research/03 §4
+refs: research/01-mvp-research/01 §5.4, research/01-mvp-research/03 §4
 ---
 
 # 관계 (ERD 대용)

@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 폴더 테이블 스키마(인접 리스트)와 폴더 단위 삭제 정책을 정의한다.
-refs: research/04 §1
+refs: research/01-mvp-research/04 §1
 ---
 
 # 폴더 스키마

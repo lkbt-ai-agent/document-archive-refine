@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-15
 status: draft
 overview: 3패널 Drive UI 셸(레이아웃·서버/클라 분리·데이터/상태 경계·테마·반응형)을 정의한다.
-refs: research/04 §5
+refs: research/01-mvp-research/04 §5
 ---
 
 # 프론트엔드 셸 (3-Panel Drive UI)

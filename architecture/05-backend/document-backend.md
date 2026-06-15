@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-15
 status: approved
 overview: 문서 도메인의 백엔드 구현(API·presigned·정리 잡·보안)을 정의한다.
-refs: research/04 §2
+refs: research/01-mvp-research/04 §2
 ---
 
 # 문서 백엔드

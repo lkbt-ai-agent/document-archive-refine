@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-12
 status: approved
 overview: 폴더 트리의 생성·이름변경·이동·삭제·조회를 정의하는 폴더 도메인.
-refs: research/04 §1
+refs: research/01-mvp-research/04 §1
 ---
 
 # 폴더 관리

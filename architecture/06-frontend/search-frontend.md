@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: draft
 overview: 검색·RAG 도메인의 프론트 구현(검색/RAG 다이얼로그·인용·소요)을 정의한다.
-refs: research/04 §5
+refs: research/01-mvp-research/04 §5
 ---
 
 # 검색 & RAG 프론트엔드

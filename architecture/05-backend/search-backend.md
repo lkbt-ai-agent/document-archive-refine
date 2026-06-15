@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 검색·RAG 도메인의 백엔드 구현(API·질의 파싱·검색·생성)을 정의한다.
-refs: research/02
+refs: research/01-mvp-research/02
 ---
 
 # 검색 & RAG 백엔드

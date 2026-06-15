@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 문서·청크 테이블 스키마(인덱스 포함)와 삭제 정책을 정의한다.
-refs: research/01 §5.4, research/04 §4b
+refs: research/01-mvp-research/01 §5.4, research/01-mvp-research/04 §4b
 ---
 
 # 문서·청크 스키마

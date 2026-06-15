@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 사용자 테이블 스키마와 MVP 인증·소유권 설계를 정의한다.
-refs: research/04 §1
+refs: research/01-mvp-research/04 §1
 ---
 
 # 사용자 스키마

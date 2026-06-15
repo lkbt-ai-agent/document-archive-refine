@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-15
 status: approved
 overview: 문서 도메인 — 업로드/다운로드/삭제 프로세스와 documents 레코드 상태.
-refs: research/04 §2
+refs: research/01-mvp-research/04 §2
 ---
 
 # 문서 (document)

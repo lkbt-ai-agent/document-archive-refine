@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: draft
 overview: 문서 도메인의 프론트 구현(목록·업/다운로드·원본 보기·상세·폴링)을 정의한다.
-refs: research/04 §5
+refs: research/01-mvp-research/04 §5
 ---
 
 # 문서 프론트엔드

@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-15
 status: approved
 overview: 키워드·의미 검색과 RAG 답변의 도메인 정의.
-refs: research/02
+refs: research/01-mvp-research/02
 ---
 
 # 검색 & RAG

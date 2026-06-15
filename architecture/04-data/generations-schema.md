@@ -3,7 +3,7 @@ created: 2026-06-12
 updated: 2026-06-12
 status: approved
 overview: 생성 계보(generations 헤드 + 하위 테이블) 스키마와 출처 삭제 정책을 정의한다.
-refs: research/03 §4, research/04 §4b
+refs: research/01-mvp-research/03 §4, research/01-mvp-research/04 §4b
 ---
 
 # 생성 계보 스키마

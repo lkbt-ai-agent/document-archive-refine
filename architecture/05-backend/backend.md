@@ -3,7 +3,7 @@ created: 2026-06-11
 updated: 2026-06-15
 status: approved
 overview: 백엔드 공통 구조·레이어링·세션·API 규약·AI Provider 추상화를 정의한다.
-refs: research/04 §0·§3, research/00 §0.2
+refs: research/01-mvp-research/04 §0·§3, research/01-mvp-research/00 §0.2
 ---
 
 # 백엔드 공통 구조 & Provider 추상화
