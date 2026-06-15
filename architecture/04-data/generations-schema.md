@@ -74,21 +74,25 @@ CREATE TABLE archive.generation_prompts (                  -- 생성 프롬프�
   rendered_system TEXT,                                     -- 렌더된 시스템 프롬프트
   raw_response    TEXT);                                    -- 원시 응답
 
-CREATE TABLE archive.generation_source_documents (         -- 생성 출처 문서(N:M)
-  generation_id UUID REFERENCES archive.generations(id) ON DELETE CASCADE,  -- 생성 ID
-  document_id   UUID REFERENCES archive.documents(id),     -- 출처 문서 ID
-  role          TEXT,                                      -- 출처 역할
-  PRIMARY KEY (generation_id, document_id));
+CREATE TABLE archive.generation_source_documents (         -- 생성 출처 문서
+  id            BIGSERIAL PRIMARY KEY,                      -- 행 ID
+  generation_id UUID NOT NULL REFERENCES archive.generations(id) ON DELETE CASCADE,  -- 생성 ID
+  document_id   UUID REFERENCES archive.documents(id) ON DELETE SET NULL,  -- 출처 문서 ID(삭제 시 NULL)
+  role          TEXT,                                       -- 출처 역할
+  cited_title   TEXT,                                       -- 인용 시점 문서 제목 스냅샷
+  UNIQUE (generation_id, document_id));
 
 CREATE TABLE archive.generation_source_chunks (            -- 생성 출처 청크
   id             BIGSERIAL PRIMARY KEY,                     -- 행 ID
-  generation_id  UUID REFERENCES archive.generations(id) ON DELETE CASCADE,  -- 생성 ID
-  chunk_id       UUID REFERENCES archive.document_chunks(id),  -- 출처 청크 ID
-  document_id    UUID REFERENCES archive.documents(id),     -- 출처 문서 ID
+  generation_id  UUID NOT NULL REFERENCES archive.generations(id) ON DELETE CASCADE,  -- 생성 ID
+  chunk_id       UUID REFERENCES archive.document_chunks(id) ON DELETE SET NULL,  -- 출처 청크 ID(삭제 시 NULL)
+  document_id    UUID REFERENCES archive.documents(id) ON DELETE SET NULL,  -- 출처 문서 ID(삭제 시 NULL)
   citation_index INT,                                       -- 인용 번호
   retrieval_rank INT,                                       -- 검색 순위
   similarity     REAL,                                      -- 유사도
-  used_in_step   TEXT);                                     -- 사용 단계
+  used_in_step   TEXT,                                      -- 사용 단계
+  cited_text     TEXT,                                      -- 인용 청크 본문 스냅샷
+  cited_title    TEXT);                                     -- 인용 시점 문서 제목 스냅샷
 
 CREATE TABLE archive.generation_charts (                   -- 생성 차트
   id              BIGSERIAL PRIMARY KEY,                    -- 차트 ID
@@ -109,30 +113,12 @@ CREATE TABLE archive.generation_charts (                   -- 생성 차트
 - 산출물 문서 삭제 → 헤드는 유지, 링크만 끊김
   - 산출물로 materialize된 `documents` 행이 삭제되면, 이를 가리키던 `generations.output_document_id`가 `ON DELETE SET NULL`로 NULL이 된다.
   - 그 의미(산출물 내역에서 비노출, 계보 헤드 행 유지)는 ai-outputs.md §9.
-- 출처(source) 문서 삭제 보호 (미해결)
-  - `generation_source_documents.document_id`·`generation_source_chunks.chunk_id` FK는 현재 `ON DELETE` 미지정(=NO ACTION).
-  - 어떤 생성의 출처로 인용된 원본 `documents`·`document_chunks` 행을 삭제하려 하면 이 FK 때문에 삭제가 **차단**된다 → 산출물 계보가 "깨지는" 게 아니라 원본 삭제 자체가 거부됨. 정책 확정은 §3.
+- 출처(source) 문서·청크 삭제 → 인용 행 보존, 링크만 끊김
+  - 출처 FK(`generation_source_documents.document_id`, `generation_source_chunks.chunk_id`·`document_id`)는 `ON DELETE SET NULL`.
+  - 원본 `documents`·`document_chunks`를 삭제하면 인용 행의 해당 FK만 NULL이 되고, 인용 행과 스냅샷(`cited_text`·`cited_title`)은 남는다.
+  - 따라서 원본 삭제는 차단되지 않으며(보관함에서 삭제 가능), 계보·근거는 스냅샷으로 유지된다.
 
 ## 3. 운영 배포 전 TODO
-- FIXME: 해당 내용을 설계에 반영 (@architecture/ 문서 내에 적용)
-- 출처 문서 삭제 시 계보 정책 (§2 참조)
-  - 해결: [ ]
-  - 비고:
-    - 문제
-      - 출처 FK(`generation_source_documents.document_id`·`generation_source_chunks.chunk_id`)가 현재 `ON DELETE` 미지정
-      - 한 번이라도 어떤 생성의 출처로 인용된 원본 문서·청크는 그 인용 행이 참조를 잡고 있어 삭제가 거부된다.
-      - 즉 사용자가 보관함에서 원본 문서를 지울 수 없는 상태가 된다.
-    - 권장 방향
-      - 출처 FK를 `ON DELETE SET NULL`로 바꾸고 `document_id`/`chunk_id` 컬럼을 nullable로 만든다.
-      - 원본을 삭제해도 인용 행 자체는 남고, 그 행의 `document_id`/`chunk_id`만 NULL이 된다.
-      - 결과적으로 "원본은 이제 없음" 상태로 표시된다.
-    - 인용 텍스트 스냅샷 보존 방법
-      - FK만 끊으면 "무엇을 인용했는지"가 사라진다.
-      - 그래서 생성 시점에 인용한 청크 본문(필요 시 문서 제목·메타도)을 인용 행에 **그대로 복사해 두는 비정규화 컬럼**을 추가한다.
-        - 예: `generation_source_chunks.cited_text TEXT` (선택적으로 `cited_title TEXT`·`cited_metadata JSONB`).
-      - 이 컬럼은 생성 시 `document_chunks.content` 값을 읽어 인용 행에 저장한다.
-      - 따라서 원본 청크가 나중에 삭제돼도(=`chunk_id` NULL) 인용 행 안에 본문 사본이 남아 계보·근거 추적이 유지된다.
-    - 확정 후 DDL 반영
-      - 스냅샷 컬럼 추가.
-      - 출처 FK `ON DELETE SET NULL`로 변경.
-      - `document_id`/`chunk_id` nullable 마이그레이션.
+- 출처 문서 삭제 시 계보 정책
+  - 해결: [x]
+  - 비고: 설계 반영 완료 — 출처 FK를 `ON DELETE SET NULL`(+nullable)로, 인용 스냅샷(`cited_text`·`cited_title`) 컬럼 추가를 §1 DDL·§2 정책에 적용. 생성 시 `document_chunks.content`를 스냅샷에 복사해 원본 삭제 후에도 계보·근거 유지.
