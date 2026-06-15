@@ -9,8 +9,8 @@ refs: research/04 §0·§3, research/00 §0.2
 # 백엔드 공통 구조 & Provider 추상화
 
 ## 1. 범위
-- 백엔드 모듈 구조 + Provider 추상화(로컬 llama ↔ 추후 Bedrock).
-- 도메인별 동작은 03-domains, 도메인별 구현은 `<domain>-backend.md`, 데이터는 04-data.
+- 도메인 비종속 공통(구조, 레이어, 세션, API 규약, Provider 추상화)을 정의한다.
+- 도메인별 API와 흐름은 각 도메인 `*-backend.md`.
 
 ## 2. 설계 결정
 - 도메인 모듈(`fastapi-best-practices`) + async SQLAlchemy 2(psycopg3).
@@ -33,7 +33,8 @@ backend/src/
 ```
 
 ## 4. 레이어링
-- `router → service → repository → model`. Pydantic 스키마 ↔ ORM 분리.
+- `router → service → repository → model`
+- Pydantic 스키마 ↔ ORM 분리.
 - service에서 storage(MinIO)·ai(Provider)·queue(arq/Redis) 호출.
 - 조인/집계/트리는 SQL 우선, CPU 무거운 작업(추출·임베딩·생성)은 worker로.
 
@@ -71,7 +72,7 @@ class LlamaCppEmbedding(EmbeddingClient): ...  # LLAMA_EMBED_URL /v1/embeddings 
 class BedrockLLM(LLMClient): ...         # 추후
 ```
 - 선택: `LLM_PROVIDER`/`EMBEDDING_PROVIDER`로 팩토리 분기.
-- 생성마다 `provider`/`model`/디코딩 파라미터를 계보(ai-outputs-backend.md)에 기록.
+- 생성별 provider/model 기록은 §11.
 
 ## 9. 구조화 출력
 - llama.cpp `--json-schema`(GBNF) 호출 래퍼를 ai 모듈에 공통화한다.
@@ -82,13 +83,10 @@ class BedrockLLM(LLMClient): ...         # 추후
 - 멱등 키: 인제스트=`(document_id, stage)`, 생성=`generation_id`.
 
 ## 11. 공통 횡단
-- 로깅·관측: 토큰/지연 기록(계보 연동).
+- 로깅·관측: 생성마다 provider/model·디코딩 파라미터·토큰·지연을 계보(ai-outputs-backend.md)에 기록.
 - 헬스체크: 원격 PG/MinIO/Redis/llama 연결 점검. 기동 시 PG/MinIO 도달 실패는 fail-fast(핵심 의존).
 
 ## 12. 운영 배포 전 TODO
-- 드라이버 일관성(psycopg3)
-  - 해결: [x]
-  - 비고: infrastructure·data-overview과 정합 확인.
 - Bedrock 실구현
   - 해결: [ ]
   - 비고: MVP는 인터페이스만, 실구현 제외.

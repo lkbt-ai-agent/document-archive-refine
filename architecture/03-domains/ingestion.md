@@ -13,9 +13,13 @@ refs: research/01, research/04 §4
 - 원본은 오브젝트 저장소, 결과는 데이터베이스에 둔다.
 
 ## 2. 스테이지
-- 스테이지(`documents.stage`): `extracting → generating_meta → chunking → embedding`.
+- 스테이지 컬럼(`documents.stage`)은 인제스트 진행 지점을 다음 순서로 기록한다(상세 단계는 §3).
+  - `extracting`: 파일 타입을 판별하고 본문 텍스트와 표를 추출한다(스캔 페이지는 OCR로 보낸다).
+  - `generating_meta`: 문서 속성(쪽수·작성자·날짜)과 언어·키워드를 추출하고 제목·요약·토픽을 생성한다.
+  - `chunking`: 본문을 검색·임베딩에 맞는 크기로 분할한다(표는 행 중간에서 자르지 않는다).
+  - `embedding`: 각 청크를 임베딩해 저장한다.
 - 각 스테이지는 멱등이며, 실패하면 그 지점부터 재시작한다.
-- 문서 상태(`uploaded→processing→ready|failed`) 정의는 document.md §4. 인제스트는 문서 상태가 `processing` 일 동안에만 동작한다.
+- 문서 상태(`uploaded`/`processing`/`ready`/`failed`) 정의는 document.md §4. 인제스트는 문서 상태가 `processing` 일 동안에만 동작한다.
 
 ## 3. 파이프라인 단계
 - 파일 타입 감지

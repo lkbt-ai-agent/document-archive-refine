@@ -8,8 +8,6 @@ refs: research/03
 
 # AI 산출물 & 계보 백엔드
 
-- 공통 구조·Provider 추상화는 `backend.md`. 도메인 정의는 `ai-outputs.md`, 계보 DDL은 `generations-schema.md`.
-
 ## 1. API 계약
 | 메서드 | 경로 | 설명 |
 |---|---|---|
@@ -19,7 +17,7 @@ refs: research/03
 | GET | `/generations?source_document_id=&kind=&user=` | "산출물 내역" — 원본 기준, `output_document_id` 존재 건만. |
 
 ## 2. 비동기 생성 흐름
-- 상태(`queued→running→succeeded|failed`) 정의는 ai-outputs.md §8.
+- 상태 정의는 ai-outputs.md §8.
 - 흐름
   1. `POST /generations` → 헤드를 `queued`로 기록(ID 확정).
   2. arq enqueue 후 즉시 202 반환.
@@ -41,7 +39,6 @@ refs: research/03
   2. 사용자 개요 편집.
   3. 섹션별 관련 청크 검색·생성(`[n]`).
   4. 조립·일관성 패스.
-  - 템플릿 선택.
 
 ## 5. Report 구현
 - 흐름

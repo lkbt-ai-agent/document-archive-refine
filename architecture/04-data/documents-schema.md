@@ -12,6 +12,9 @@ refs: research/01 §5.4, research/04 §4b
 
 ### documents
 ```sql
+CREATE TYPE archive.doc_status AS ENUM ('uploaded','processing','ready','failed');  -- 문서 처리 상태
+CREATE TYPE archive.doc_stage AS ENUM ('extracting','generating_meta','chunking','embedding');  -- 인제스트 단계
+
 CREATE TABLE archive.documents (                                        -- 문서
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),         -- 문서 ID
   folder_id         UUID REFERENCES archive.folders(id) ON DELETE CASCADE,  -- 소속 폴더 ID
@@ -22,8 +25,8 @@ CREATE TABLE archive.documents (                                        -- 문�
   mime_type         TEXT,                                               -- MIME 타입
   size_bytes        BIGINT,                                             -- 파일 크기(바이트)
   sha256            CHAR(64),                                           -- 본문 SHA-256 해시
-  status            TEXT NOT NULL DEFAULT 'uploaded',                   -- 처리 상태
-  stage             TEXT,                                               -- 처리 단계
+  status            archive.doc_status NOT NULL DEFAULT 'uploaded',     -- 처리 상태
+  stage             archive.doc_stage,                                  -- 인제스트 단계
   error             TEXT,                                               -- 오류 메시지
   page_count        INT,                                                -- 쪽수
   author            TEXT,                                               -- 작성자
