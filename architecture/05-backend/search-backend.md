@@ -1,6 +1,6 @@
 ---
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-16
 status: approved
 overview: 검색·RAG 도메인의 백엔드 구현(API·질의 파싱·검색·생성)을 정의한다.
 refs: research/01-mvp-research/02
@@ -20,7 +20,7 @@ refs: research/01-mvp-research/02
 ## 2. 모듈 흐름
 
 - `search/router → service`.
-- 질의 파싱: 구조화 출력(GBNF, backend.md §9)으로 `{intent, rewritten_query, keywords, time_ref, folder}` 추출. 날짜는 Python으로 절대 범위 환산, `owner_id` 강제.
+- 질의 파싱 단계에서는 구조화 출력(GBNF, backend.md §9)을 사용해 사용자의 한국어 질문에서 의도(`intent`), 재작성 질의(`rewritten_query`), 키워드(`keywords`), 기간 표현(`time_ref`), 폴더(`folder`)를 하나의 구조로 추출한다. 이때 기간 표현은 Python에서 요청 시각을 기준으로 절대 날짜 범위로 환산하고, 모든 질의에는 `owner_id` 스코프를 강제로 적용한다.
 - 라우팅
   - keyword: 키워드 SQL → 결과 리스트.
   - semantic: 임베딩(EmbeddingClient) → 의미(벡터) 검색 → 결과 리스트.
