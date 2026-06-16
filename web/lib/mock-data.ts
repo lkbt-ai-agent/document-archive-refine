@@ -170,6 +170,8 @@ export const mockSearchResults: SearchResultItem[] = [
     snippet:
       "…2025년 기본급은 전년 대비 5% 인상되며, 성과급은 분기별 평가 결과에 따라…",
     score: 0.91,
+    chunkId: "c-d1-2",
+    chunkIndex: 2,
   },
   {
     documentId: "d2",
@@ -177,6 +179,8 @@ export const mockSearchResults: SearchResultItem[] = [
     title: "2024년도 연봉계약서",
     snippet: "…2024년 연봉 총액 및 지급 일정은 다음과 같다…",
     score: 0.78,
+    chunkId: "c-d2-4",
+    chunkIndex: 4,
   },
   {
     documentId: "d6",
@@ -184,6 +188,8 @@ export const mockSearchResults: SearchResultItem[] = [
     title: "표준근로계약서",
     snippet: "…임금은 매월 25일 지급하며, 근로시간은 주 40시간을 원칙으로…",
     score: 0.52,
+    chunkId: "c-d6-1",
+    chunkIndex: 1,
   },
 ];
 

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import {
   mockDocuments,
   mockFolders,
@@ -10,6 +11,7 @@ import type {
   Folder,
   GenKind,
   Generation,
+  SearchMode,
 } from "./types";
 
 // ── 상태 소유 경계 (arch 10 §7) ──────────────────────────────
@@ -59,7 +61,13 @@ interface DriveState {
   leftCollapsed: boolean; // PC(≥md) 좌측 패널 접힘(헤더 토글, arch 10 §8b)
   mobileLeftOpen: boolean;
   mobileRightOpen: boolean;
+
+  // 통합 검색(search-frontend) — 입력값·선택 모드·결과 화면 표시 여부는 UI 상태(Zustand).
   searchQuery: string;
+  searchMode: SearchMode | null; // 마지막 실행 모드(키워드/의미/rag)
+  searchActive: boolean; // 조회 화면 vs 검색 결과 화면(§4·§5)
+  searchSubmittedQuery: string; // 실행 시점의 질의(입력값과 분리)
+  searchNonce: number; // 실행마다 증가 — 결과 화면 로딩 재트리거용
 
   // actions — UI
   selectFolder: (id: string) => void;
@@ -71,6 +79,8 @@ interface DriveState {
   setMobileLeft: (open: boolean) => void;
   setMobileRight: (open: boolean) => void;
   setSearchQuery: (q: string) => void;
+  runSearch: (mode: SearchMode) => void; // 현재 입력값으로 모드 검색 실행 → 결과 화면 전환
+  closeSearch: () => void; // 뒤로가기 — 결과 화면 → 조회 화면
 
   // actions — 폴더 목업 mutation (arch 05)
   addFolder: (parentId: string | null, name: string) => void;
@@ -97,10 +107,19 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   mobileLeftOpen: false,
   mobileRightOpen: false,
   searchQuery: "",
+  searchMode: null,
+  searchActive: false,
+  searchSubmittedQuery: "",
+  searchNonce: 0,
 
-  // 폴더 진입(네비게이션) — 인스펙터(문서/폴더) 모두 해제
+  // 폴더 진입(네비게이션) — 인스펙터(문서/폴더) 모두 해제, 검색 결과 화면도 종료
   selectFolder: (id) =>
-    set({ selectedFolderId: id, selectedDocumentId: null, inspectedFolderId: null }),
+    set({
+      selectedFolderId: id,
+      selectedDocumentId: null,
+      inspectedFolderId: null,
+      searchActive: false,
+    }),
   // 문서 인스펙터 — 폴더 인스펙터와 상호배타
   selectDocument: (id) => set({ selectedDocumentId: id, inspectedFolderId: null }),
   // 폴더 인스펙터 — 문서 인스펙터와 상호배타
@@ -116,6 +135,14 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   setMobileLeft: (open) => set({ mobileLeftOpen: open }),
   setMobileRight: (open) => set({ mobileRightOpen: open }),
   setSearchQuery: (q) => set({ searchQuery: q }),
+  runSearch: (mode) =>
+    set((s) => ({
+      searchMode: mode,
+      searchActive: true,
+      searchSubmittedQuery: s.searchQuery,
+      searchNonce: s.searchNonce + 1,
+    })),
+  closeSearch: () => set({ searchActive: false }),
 
   // 폴더 생성/이름변경/이동/삭제 (목업) — arch 05
   addFolder: (parentId, name) =>
@@ -233,6 +260,7 @@ export const useDriveStore = create<DriveState>((set, get) => ({
                   : d,
               ),
             }));
+            toast.success(`"${fileName}" 인제스트 완료`);
           } else {
             set((s) => ({
               documents: s.documents.map((d) =>
@@ -260,6 +288,7 @@ export const useDriveStore = create<DriveState>((set, get) => ({
 
   // 비동기 생성 시뮬레이션: queued → running(진행률) → succeeded
   startGeneration: (kind, documentId) => {
+    const kindLabel = { summary: "요약", draft: "초안", report: "보고서" }[kind];
     const doc = get().documents.find((d) => d.id === documentId);
     const id = nextId();
     const gen: Generation = {
@@ -288,9 +317,6 @@ export const useDriveStore = create<DriveState>((set, get) => ({
           set((s) => {
             const src = s.documents.find((d) => d.id === documentId);
             const outId = nextId();
-            const kindLabel = { summary: "요약", draft: "초안", report: "보고서" }[
-              kind
-            ];
             const baseName = (src?.llmTitle ?? src?.name ?? "문서").replace(
               /\.[^.]+$/,
               "",
@@ -334,6 +360,7 @@ export const useDriveStore = create<DriveState>((set, get) => ({
               ),
             };
           });
+          toast.success(`${kindLabel} 생성 완료 — 산출물 문서로 추가됨`);
         } else {
           set((s) => ({
             generations: s.generations.map((g) =>

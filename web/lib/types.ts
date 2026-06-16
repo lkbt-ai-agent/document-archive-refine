@@ -56,12 +56,17 @@ export interface Generation {
   prompt?: { system: string; user: string }; // 렌더된 프롬프트 스냅샷
 }
 
+// 통합 검색 모드 — 단일 진입에서 선택(search-frontend §1). 키워드/의미=/search, rag=/search/ask.
+export type SearchMode = "keyword" | "semantic" | "rag";
+
 export interface SearchResultItem {
   documentId: string;
   documentName: string;
   title: string;
   snippet: string;
   score: number;
+  chunkId: string; // 매칭 청크 id — row 아래 "청크 정보" toggle 표시용(search-frontend §3a)
+  chunkIndex: number;
 }
 
 export interface Citation {

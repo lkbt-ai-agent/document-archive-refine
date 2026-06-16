@@ -1,6 +1,11 @@
 "use client";
 
+import { useDriveStore } from "@/lib/store";
 import { DocumentList } from "./document-list";
+import { SearchResults } from "./search-results";
 
-// Center = 문서 목록 전용 (하단 상세 패널 제거; 상세는 우측 인스펙터로 통합 — arch 10 §4·§8)
-export const CenterPanel = () => <DocumentList />;
+// Center = 조회(문서 목록) 화면 ↔ 검색 결과 화면 전환 (search-frontend §3, frontend §6·§9).
+export const CenterPanel = () => {
+  const searchActive = useDriveStore((s) => s.searchActive);
+  return searchActive ? <SearchResults /> : <DocumentList />;
+};
