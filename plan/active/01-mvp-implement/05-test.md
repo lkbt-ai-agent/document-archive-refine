@@ -9,6 +9,7 @@ overview: 단위·파이프라인·검색평가·E2E·프론트·재현성 테�
 ## 백엔드·파이프라인
 - [ ] A1 단위 — 폴더 사이클 방지, `owner_id` 스코프, presign 발급 권한.
 - [ ] A2 파이프라인 — 추출/OCR/청킹/임베딩 멱등·재시작, 부분 실패 격리 (ingestion §3·§4).
+- [ ] A3 삭제 정합 — 문서/폴더 CASCADE(청크·하위), 출처 삭제 후 계보 스냅샷 유지(`SET NULL`), 산출물 문서 삭제 시 내역 비노출 (documents-schema §2, generations-schema §2, ai-outputs §9).
 
 ## 평가·통합
 - [ ] B1 검색 평가 게이트 — ~50 한국어 골든셋, Recall@5/@20, 인용 존재, CI 결정적 (search-and-rag §7).

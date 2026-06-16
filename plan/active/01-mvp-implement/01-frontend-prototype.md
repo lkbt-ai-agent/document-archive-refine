@@ -29,5 +29,20 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - [x] F 우측 패널 모바일 전체화면 Sheet + row 클릭 토글·개폐 일원화 (§6b·§10).
 - [x] G Center 폴더 "⋯" 공용 `FolderActions`, 단일=인스펙터·더블=진입, 소요 시간(`elapsed_ms`) 표시, AI 산출물 1급 문서·계보 패널, 우클릭 컨텍스트 메뉴 (§5a·§6·§6a·§6b·§9, ai-outputs §6, ai-outputs-backend §1).
 
-> 🚦 검색/RAG는 이후 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정됨 — 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
-> 🚦 Phase 2 진입 전: C1 + 개정 반영본으로 UI 동선 사용자 재검수 필수.
+## 검색 동선 목업 (통합 검색, search-frontend)
+- [ ] H1 SearchBar 진입 — AppHeader textarea + "검색..." 모드 드롭다운(키워드/의미/rag), Enter=드롭다운 트리거·Shift+Enter=줄바꿈, stepped auto-grow (search-frontend §1·§2).
+- [ ] H2 키워드/의미 결과 화면 — Center 조회→결과 화면 전환, 로딩 후 결과 리스트, 공통 메타(`elapsed_ms`·총 결과 수), 각 row 아래 청크 정보 toggle (search-frontend §3·§3a).
+- [ ] H3 rag 결과 화면 — Center 로딩 후 합성 답변 + 인용, 공통 메타(`elapsed_ms`·총 인용 수) (search-frontend §3·§3a).
+- [ ] H4 뒤로가기 동선 — 화면 제목 옆 버튼으로 결과 화면→조회 화면 복귀, 표시 여부 Zustand (search-frontend §4·§5).
+
+## 화면 전환 동선 목업 (추가)
+- [ ] I1 계보 부모 문서 링크 클릭 → Center가 부모 문서로 이동·선택 (ai-outputs-frontend §3).
+- [ ] I2 원본 보기 분기 — 텍스트류=`OriginalViewerDialog` 인앱 열람 / 그 외=presigned GET 다운로드 (document-frontend §2).
+
+## 상태 흐름 동선 목업 (인제스트·생성, backend 연계)
+- [ ] J1 인제스트 상태 폴링 — DocumentDetail에 `status`/`stage`(extracting→generating_meta→chunking→embedding) 진행 → ready=메타·소요(`ingest_ms`) / failed=`error` 표시·폴링 정지 (document-frontend §3, ingestion-backend §1, document-backend §1).
+- [ ] J2 생성 비동기 상태 — GenerationTrigger(Dialog) → `queued`/`running` 진행 폴링 → `succeeded`=산출물이 Center 목록·"산출물 내역"·계보에 등장 / `failed` (ai-outputs-frontend §1, ai-outputs-backend §2).
+- [ ] J3 완료·실패 알림 — 업로드/인제스트/생성 완료·실패 Toaster(sonner) (frontend §2).
+
+> 🚦 검색은 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정 — 구 하이브리드 목업은 폐기. 통합 모델 목업은 H1~H4(미작성), 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
+> 🚦 Phase 2 진입 전: C1 + 개정 반영본(D~G) + 통합 검색·추가·상태 동선(H·I·J)으로 UI 동선 사용자 재검수 필수.

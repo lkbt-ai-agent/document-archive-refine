@@ -1,6 +1,6 @@
 ---
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-16
 status: approved
 overview: AI 산출물·계보 도메인의 백엔드 구현(API·워크플로우·비동기 생성·계보 기록)을 정의한다.
 refs: research/01-mvp-research/03
@@ -40,9 +40,9 @@ refs: research/01-mvp-research/03
 
 - outline-then-expand
   1. 요약들로 개요 제안.
-  2. 사용자 개요 편집.
-  3. 섹션별 관련 청크 검색·생성(`[n]`).
-  4. 조립·일관성 패스.
+  2. 섹션별 관련 청크 검색·생성(`[n]`).
+  3. 조립·일관성 패스.
+- 개요는 사용자 편집 없이 자동 확정한다(MVP, ai-outputs.md §4).
 
 ## 5. Report 구현
 
