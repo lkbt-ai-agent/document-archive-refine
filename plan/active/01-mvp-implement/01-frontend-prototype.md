@@ -53,8 +53,10 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - [x] K6 산출물 생성 다이얼로그 모바일 풀스크린 — 현재 모바일에서 사이드바처럼 보임. GenerationTrigger Dialog를 모바일(`<md`)에서 화면 꽉 채우는 풀스크린으로 (frontend §10, ai-outputs-frontend §1).
 - [x] K7 검색 결과 subrow 가시성 — 키워드/의미 청크 subrow를 본 row와 구분(들여쓰기·구분선·약한 배경 등). success/fail처럼 과도하게 강조되는 색조는 사용 금지 (search-frontend §3a).
 - [x] K8 검색 결과 row "⋯" 메뉴 — 키워드/의미/rag 결과의 원본 문서 row에 드롭다운: 상세 보기/다운로드/삭제/해당 폴더로 이동 (search-frontend §3, document-frontend §1, ai-outputs-frontend §2).
-- [ ] K9 우측 인스펙터 토글 버튼 — 헤더 맨 우측에 우측 패널 토글 추가(PC·모바일 공통). 좌측 토글과 대칭(PC=패널 접기/펼치기, 모바일=Sheet 열기) (frontend §6·§6b·§10).
-- [ ] K10 SearchBar 위치 반응형 — 모바일(`<md`)은 ChatGPT처럼 SearchBar+검색 버튼을 화면 하단 고정, `≥md`는 현재처럼 헤더에 배치 (search-frontend §1·§2, frontend §10).
+- [ ] K11 우측 인스펙터 자동 닫힘 — 선택 row가 있을 때만 펼침. Center 컨텐츠가 새로 렌더되면(재검색·폴더 이동 등) 선택 해제·인스펙터 닫힘 (frontend §6b).
+- [ ] K12 모바일 SearchBar 포커스 확장 — 모바일에서 textarea 포커스 시 textarea+검색 버튼만 노출(브랜드·패널 토글 가림)해 입력 폭 확보, blur 시 원복 (search-frontend §2, frontend §2·§10).
+- [ ] K13 청크 subrow 카드화 — subrow를 여백 적은 카드로 감싸고, 일치하는 청크를 잘림/가림 없이 전부 표시(snippet 한 줄 clamp 제거) (search-frontend §3a).
+- [ ] K14 헤더 SearchBar 중앙 정렬 — `≥md` 헤더에서 SearchBar+검색 버튼을 가운데 배치 (frontend §2).
 
 > 🚦 검색은 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정 — 구 하이브리드 목업(`ask-dialog`·`search-dialog`) 폐기·삭제. 통합 모델 목업 구현 완료(H1~H4), 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
 > 🚦 Phase 2 진입 전: C1 + 개정 반영본(D~G) + 통합 검색·추가·상태 동선(H·I·J) + 검수 피드백(K)으로 UI 동선 사용자 재검수 필수.
