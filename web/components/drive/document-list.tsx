@@ -72,9 +72,11 @@ export const DocumentList = () => {
   const folders = useDriveStore((s) => s.folders);
   const documents = useDriveStore((s) => s.documents);
   const selectedDocumentId = useDriveStore((s) => s.selectedDocumentId);
+  const highlightedDocId = useDriveStore((s) => s.highlightedDocId);
   const inspectedFolderId = useDriveStore((s) => s.inspectedFolderId);
   const selectFolder = useDriveStore((s) => s.selectFolder);
   const selectDocument = useDriveStore((s) => s.selectDocument);
+  const highlightDocument = useDriveStore((s) => s.highlightDocument);
   const inspectFolder = useDriveStore((s) => s.inspectFolder);
   const deleteDocument = useDriveStore((s) => s.deleteDocument);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
@@ -112,27 +114,10 @@ export const DocumentList = () => {
     return rows.slice(start, start + pagination.pageSize);
   }, [rows, pagination]);
 
-  // 폴더 row: 단일 클릭=인스펙터 토글 / 더블 클릭=진입
-  const folderClickTimer = React.useRef<number | null>(null);
-  const onFolderClick = (id: string) => {
-    if (folderClickTimer.current) return; // 더블 클릭 진행 중
-    folderClickTimer.current = window.setTimeout(() => {
-      folderClickTimer.current = null;
-      const isOpen = inspectedFolderId === id;
-      inspectFolder(isOpen ? null : id);
-      setMobileRight(!isOpen);
-    }, 220);
-  };
-  const onFolderDoubleClick = (id: string) => {
-    if (folderClickTimer.current) {
-      clearTimeout(folderClickTimer.current);
-      folderClickTimer.current = null;
-    }
-    selectFolder(id); // 진입(인스펙터 해제)
-  };
-  // 문서 row: 클릭 토글 (같은 row 재클릭=닫힘)
-  const onDocClick = (id: string) => {
-    const isOpen = selectedDocumentId === id;
+  // 문서 row: 단일 클릭=선택(하이라이트)만, 더블 클릭=인스펙터 토글. 폴더: 더블 클릭=진입.
+  const onFolderDoubleClick = (id: string) => selectFolder(id);
+  const onDocInspectToggle = (id: string) => {
+    const isOpen = useDriveStore.getState().selectedDocumentId === id;
     selectDocument(isOpen ? null : id);
     setMobileRight(!isOpen);
   };
@@ -174,7 +159,8 @@ export const DocumentList = () => {
         header: "상태",
         cell: ({ row }) => {
           const r = row.original;
-          if (r.kind !== "doc") return null;
+          if (r.kind !== "doc")
+            return <span className="text-muted-foreground">—</span>;
           return (
             <StatusBadge
               status={r.doc.status}
@@ -210,53 +196,83 @@ export const DocumentList = () => {
         cell: ({ row }) => {
           const r = row.original;
           if (r.kind === "folder") {
+            const fid = r.folder.id;
             return (
-              <FolderActionsMenu
-                folder={r.folder}
-                onAction={onAction}
-                className="size-7"
-              />
-            );
-          }
-          const d = r.doc;
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <div className="flex items-center justify-end gap-0.5">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="size-7"
-                  aria-label="문서 작업"
-                >
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => selectDocument(d.id)}>
-                  <Eye className="size-4" /> 상세 보기
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => toast.info("presigned GET 다운로드 (목업)")}
-                >
-                  <Download className="size-4" /> 다운로드
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
+                  aria-label="폴더 정보"
                   onClick={() => {
-                    deleteDocument(d.id);
-                    toast.warning(`"${d.name}" 삭제 (목업)`);
+                    const isOpen =
+                      useDriveStore.getState().inspectedFolderId === fid;
+                    inspectFolder(isOpen ? null : fid);
+                    setMobileRight(!isOpen);
                   }}
                 >
-                  <Trash2 className="size-4" /> 삭제
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <Eye className="size-4" />
+                </Button>
+                <FolderActionsMenu
+                  folder={r.folder}
+                  onAction={onAction}
+                  className="size-7"
+                />
+              </div>
+            );
+          }
+          const d = r.doc;
+          return (
+            <div className="flex items-center justify-end gap-0.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                aria-label="상세 보기"
+                onClick={() => {
+                  const isOpen =
+                    useDriveStore.getState().selectedDocumentId === d.id;
+                  selectDocument(isOpen ? null : d.id);
+                  setMobileRight(!isOpen);
+                }}
+              >
+                <Eye className="size-4" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    aria-label="문서 작업"
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => toast.info("presigned GET 다운로드 (목업)")}
+                  >
+                    <Download className="size-4" /> 다운로드
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => {
+                      deleteDocument(d.id);
+                      toast.warning(`"${d.name}" 삭제 (목업)`);
+                    }}
+                  >
+                    <Trash2 className="size-4" /> 삭제
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           );
         },
       },
     ],
-    [selectDocument, deleteDocument, onAction],
+    [selectDocument, inspectFolder, setMobileRight, deleteDocument, onAction],
   );
 
   const table = useReactTable({
@@ -274,7 +290,7 @@ export const DocumentList = () => {
     status: "hidden sm:table-cell",
     size: "hidden md:table-cell text-muted-foreground tabular-nums",
     createdAt: "hidden lg:table-cell text-muted-foreground tabular-nums",
-    actions: "w-10",
+    actions: "w-16",
   };
 
   return (
@@ -325,19 +341,20 @@ export const DocumentList = () => {
                   const r = row.original;
                   const isActive =
                     r.kind === "doc"
-                      ? selectedDocumentId === r.doc.id
+                      ? selectedDocumentId === r.doc.id ||
+                        highlightedDocId === r.doc.id
                       : inspectedFolderId === r.folder.id;
                   const tableRow = (
                     <TableRow
-                      onClick={() =>
-                        r.kind === "folder"
-                          ? onFolderClick(r.folder.id)
-                          : onDocClick(r.doc.id)
+                      onClick={
+                        r.kind === "doc"
+                          ? () => highlightDocument(r.doc.id)
+                          : undefined
                       }
                       onDoubleClick={
                         r.kind === "folder"
                           ? () => onFolderDoubleClick(r.folder.id)
-                          : undefined
+                          : () => onDocInspectToggle(r.doc.id)
                       }
                       className={cn(
                         "cursor-pointer select-none",
@@ -382,9 +399,6 @@ export const DocumentList = () => {
                     <ContextMenu key={row.id}>
                       <ContextMenuTrigger asChild>{tableRow}</ContextMenuTrigger>
                       <ContextMenuContent>
-                        <ContextMenuItem onClick={() => selectDocument(d.id)}>
-                          <Eye className="size-4" /> 상세 보기
-                        </ContextMenuItem>
                         <ContextMenuItem
                           onClick={() =>
                             toast.info("presigned GET 다운로드 (목업)")

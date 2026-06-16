@@ -46,55 +46,67 @@ const FolderNode = ({
   const setMobileLeft = useDriveStore((s) => s.setMobileLeft);
 
   const isSelected = selectedFolderId === folder.id;
+  // 루트("내 보관함")는 이동/이름변경/삭제 불가 → 액션·컨텍스트 메뉴 미노출
+  const isRoot = folder.parentId === null;
+
+  const row = (
+    <div
+      className={cn(
+        "group flex w-full items-center gap-1 rounded-md pr-1 text-sm transition-colors",
+        "hover:bg-accent hover:text-accent-foreground",
+        isSelected && "bg-accent text-accent-foreground font-medium",
+      )}
+      style={{ paddingLeft: depth * 14 + 4 }}
+    >
+      <button
+        type="button"
+        aria-label={hasChildren ? "펼치기/접기" : undefined}
+        onClick={() => hasChildren && toggleFolder(folder.id)}
+        className={cn(
+          "flex size-4 shrink-0 items-center justify-center rounded",
+          !hasChildren && "invisible",
+        )}
+      >
+        <ChevronRight
+          className={cn("size-3.5 transition-transform", expanded && "rotate-90")}
+        />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          selectFolder(folder.id);
+          setMobileLeft(false);
+        }}
+        className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left"
+      >
+        {expanded && hasChildren ? (
+          <FolderOpen className="size-4 shrink-0 text-primary" />
+        ) : (
+          <FolderIcon className="size-4 shrink-0 text-muted-foreground" />
+        )}
+        <span className="truncate">{folder.name}</span>
+      </button>
+
+      {!isRoot && (
+        <FolderActionsMenu
+          folder={folder}
+          onAction={onAction}
+          className="size-6 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 max-md:opacity-100"
+        />
+      )}
+    </div>
+  );
 
   return (
     <div>
-      <FolderContextMenu folder={folder} onAction={onAction}>
-        <div
-          className={cn(
-            "group flex w-full items-center gap-1 rounded-md pr-1 text-sm transition-colors",
-            "hover:bg-accent hover:text-accent-foreground",
-            isSelected && "bg-accent text-accent-foreground font-medium",
-          )}
-          style={{ paddingLeft: depth * 14 + 4 }}
-        >
-          <button
-            type="button"
-            aria-label={hasChildren ? "펼치기/접기" : undefined}
-            onClick={() => hasChildren && toggleFolder(folder.id)}
-            className={cn(
-              "flex size-4 shrink-0 items-center justify-center rounded",
-              !hasChildren && "invisible",
-            )}
-          >
-            <ChevronRight
-              className={cn("size-3.5 transition-transform", expanded && "rotate-90")}
-            />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              selectFolder(folder.id);
-              setMobileLeft(false);
-            }}
-            className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left"
-          >
-            {expanded && hasChildren ? (
-              <FolderOpen className="size-4 shrink-0 text-primary" />
-            ) : (
-              <FolderIcon className="size-4 shrink-0 text-muted-foreground" />
-            )}
-            <span className="truncate">{folder.name}</span>
-          </button>
-
-          <FolderActionsMenu
-            folder={folder}
-            onAction={onAction}
-            className="size-6 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
-          />
-        </div>
-      </FolderContextMenu>
+      {isRoot ? (
+        row
+      ) : (
+        <FolderContextMenu folder={folder} onAction={onAction}>
+          {row}
+        </FolderContextMenu>
+      )}
 
       {expanded &&
         children.map((c) => (

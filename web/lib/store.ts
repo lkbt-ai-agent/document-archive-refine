@@ -55,7 +55,8 @@ interface DriveState {
 
   // UI 상태
   selectedFolderId: string;
-  selectedDocumentId: string | null; // 문서 인스펙터 대상(arch 10 §8b)
+  selectedDocumentId: string | null; // 문서 인스펙터 대상(=인스펙터 열림). 더블클릭/눈 버튼으로 설정
+  highlightedDocId: string | null; // 단일 클릭 선택(하이라이트만, 인스펙터 안 열림). selectedDocumentId 와 상호배타
   inspectedFolderId: string | null; // 폴더 인스펙터 대상(폴더 단일클릭, arch 10 §7a). selectedDocumentId 와 상호배타
   expandedFolderIds: string[];
   leftCollapsed: boolean; // PC(≥md) 좌측 패널 접힘(헤더 토글, arch 10 §8b)
@@ -72,6 +73,7 @@ interface DriveState {
   // actions — UI
   selectFolder: (id: string) => void;
   selectDocument: (id: string | null) => void;
+  highlightDocument: (id: string) => void;
   inspectFolder: (id: string | null) => void;
   toggleFolder: (id: string) => void;
   toggleLeftCollapsed: () => void;
@@ -101,6 +103,7 @@ export const useDriveStore = create<DriveState>((set, get) => ({
 
   selectedFolderId: "hr-salary",
   selectedDocumentId: null,
+  highlightedDocId: null,
   inspectedFolderId: null,
   expandedFolderIds: ["root", "hr", "hr-salary", "reports"],
   leftCollapsed: false,
@@ -117,13 +120,24 @@ export const useDriveStore = create<DriveState>((set, get) => ({
     set({
       selectedFolderId: id,
       selectedDocumentId: null,
+      highlightedDocId: null,
       inspectedFolderId: null,
       searchActive: false,
     }),
-  // 문서 인스펙터 — 폴더 인스펙터와 상호배타
-  selectDocument: (id) => set({ selectedDocumentId: id, inspectedFolderId: null }),
+  // 문서 인스펙터 열기(더블클릭/눈) — 폴더 인스펙터·하이라이트와 상호배타
+  selectDocument: (id) =>
+    set({ selectedDocumentId: id, inspectedFolderId: null, highlightedDocId: null }),
+  // 단일 클릭 선택 — 하이라이트만(인스펙터 안 열림), 열려 있던 인스펙터는 닫음
+  highlightDocument: (id) =>
+    set({
+      highlightedDocId: id,
+      selectedDocumentId: null,
+      inspectedFolderId: null,
+      mobileRightOpen: false,
+    }),
   // 폴더 인스펙터 — 문서 인스펙터와 상호배타
-  inspectFolder: (id) => set({ inspectedFolderId: id, selectedDocumentId: null }),
+  inspectFolder: (id) =>
+    set({ inspectedFolderId: id, selectedDocumentId: null, highlightedDocId: null }),
   toggleFolder: (id) =>
     set((s) => ({
       expandedFolderIds: s.expandedFolderIds.includes(id)
@@ -135,14 +149,19 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   setMobileLeft: (open) => set({ mobileLeftOpen: open }),
   setMobileRight: (open) => set({ mobileRightOpen: open }),
   setSearchQuery: (q) => set({ searchQuery: q }),
+  // 재검색 = Center 새 렌더 → 열려 있던 인스펙터 닫힘(선택 해제)
   runSearch: (mode) =>
     set((s) => ({
       searchMode: mode,
       searchActive: true,
       searchSubmittedQuery: s.searchQuery,
       searchNonce: s.searchNonce + 1,
+      selectedDocumentId: null,
+      inspectedFolderId: null,
     })),
-  closeSearch: () => set({ searchActive: false }),
+  // 뒤로(조회 화면 복귀) = Center 새 렌더 → 인스펙터 닫힘
+  closeSearch: () =>
+    set({ searchActive: false, selectedDocumentId: null, inspectedFolderId: null }),
 
   // 폴더 생성/이름변경/이동/삭제 (목업) — arch 05
   addFolder: (parentId, name) =>

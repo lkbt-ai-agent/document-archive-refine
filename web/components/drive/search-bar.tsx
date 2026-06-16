@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Search, ChevronDown, Type, Brain, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -13,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDriveStore } from "@/lib/store";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { SearchMode } from "@/lib/types";
 
 // 통합 검색 진입(search-frontend §1·§2) — SearchBar(textarea) + "검색..." 모드 드롭다운.
@@ -28,13 +30,34 @@ const MODES: {
   { mode: "rag", label: "rag", icon: Sparkles, desc: "인용과 함께 답변 생성" },
 ];
 
-export const SearchBar = () => {
+export const SearchBar = ({
+  onFocusChange,
+}: {
+  onFocusChange?: (focused: boolean) => void;
+}) => {
   const query = useDriveStore((s) => s.searchQuery);
   const setQuery = useDriveStore((s) => s.setSearchQuery);
   const runSearch = useDriveStore((s) => s.runSearch);
+  const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [focused, setFocused] = React.useState(false);
+
+  // 모바일 전용 — 포커스 시 헤더 전체 폭 차지, 포커스 아웃 시 한 줄로 접힘
+  const fullWidth = isMobile && focused;
+  const collapsed = isMobile && !focused;
+
+  const onFocus = () => {
+    setFocused(true);
+    onFocusChange?.(true);
+  };
+  const onBlur = () => {
+    setFocused(false);
+    onFocusChange?.(false);
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 한글 IME 조합 중 Enter는 조합 확정용이므로 무시(무시 안 하면 마지막 글자 중복: "연봉"→"연봉봉")
+    if (e.nativeEvent.isComposing) return;
     // Enter = 모드 선택 드롭다운 열기, Shift+Enter = 줄바꿈(기본 동작)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -48,17 +71,32 @@ export const SearchBar = () => {
   };
 
   return (
-    <div className="ml-2 flex max-w-xl flex-1 items-center gap-1.5">
+    <div
+      className={cn(
+        "flex w-full items-center gap-1.5",
+        !fullWidth && "max-w-xl",
+      )}
+    >
       {/* 고정 높이(h-9) 래퍼 — textarea 는 absolute 오버레이로 아래로 확장해 헤더 높이 불변 */}
       <div className="relative h-9 flex-1">
-        {/* stepped auto-grow: field-sizing-content 로 줄 수만큼 단계 증가, 최대 높이 후 스크롤 */}
+        {/* 포커스 시 줄 수만큼 확장(최대 높이 후 스크롤), 모바일 blur 시 한 줄로 접힘 */}
         <Textarea
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
+          onFocus={onFocus}
+          onBlur={onBlur}
           rows={1}
-          placeholder="검색 (Enter=모드 선택 · Shift+Enter=줄바꿈)"
-          className="absolute inset-x-0 top-0 z-20 max-h-40 min-h-9 resize-none overflow-y-auto bg-background py-1.5 text-sm shadow-sm"
+          placeholder="검색"
+          style={
+            collapsed
+              ? ({ fieldSizing: "fixed" } as unknown as React.CSSProperties)
+              : undefined
+          }
+          className={cn(
+            "absolute inset-x-0 top-0 z-20 min-h-9 resize-none bg-background py-1.5 text-sm shadow-sm",
+            collapsed ? "h-9 overflow-hidden" : "max-h-40 overflow-y-auto",
+          )}
         />
       </div>
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>

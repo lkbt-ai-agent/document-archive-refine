@@ -53,10 +53,26 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - [x] K6 산출물 생성 다이얼로그 모바일 풀스크린 — 현재 모바일에서 사이드바처럼 보임. GenerationTrigger Dialog를 모바일(`<md`)에서 화면 꽉 채우는 풀스크린으로 (frontend §10, ai-outputs-frontend §1).
 - [x] K7 검색 결과 subrow 가시성 — 키워드/의미 청크 subrow를 본 row와 구분(들여쓰기·구분선·약한 배경 등). success/fail처럼 과도하게 강조되는 색조는 사용 금지 (search-frontend §3a).
 - [x] K8 검색 결과 row "⋯" 메뉴 — 키워드/의미/rag 결과의 원본 문서 row에 드롭다운: 상세 보기/다운로드/삭제/해당 폴더로 이동 (search-frontend §3, document-frontend §1, ai-outputs-frontend §2).
-- [ ] K11 우측 인스펙터 자동 닫힘 — 선택 row가 있을 때만 펼침. Center 컨텐츠가 새로 렌더되면(재검색·폴더 이동 등) 선택 해제·인스펙터 닫힘 (frontend §6b).
-- [ ] K12 모바일 SearchBar 포커스 확장 — 모바일에서 textarea 포커스 시 textarea+검색 버튼만 노출(브랜드·패널 토글 가림)해 입력 폭 확보, blur 시 원복 (search-frontend §2, frontend §2·§10).
-- [ ] K13 청크 subrow 카드화 — subrow를 여백 적은 카드로 감싸고, 일치하는 청크를 잘림/가림 없이 전부 표시(snippet 한 줄 clamp 제거) (search-frontend §3a).
-- [ ] K14 헤더 SearchBar 중앙 정렬 — `≥md` 헤더에서 SearchBar+검색 버튼을 가운데 배치 (frontend §2).
+- [x] K11 우측 인스펙터 자동 닫힘 — 선택 row가 있을 때만 펼침. Center 컨텐츠가 새로 렌더되면(재검색·폴더 이동 등) 선택 해제·인스펙터 닫힘 (frontend §6b).
+- [x] K12 모바일 SearchBar 포커스 확장 — 모바일에서 textarea 포커스 시 textarea+검색 버튼만 노출(브랜드·패널 토글 가림)해 입력 폭 확보, blur 시 원복 (search-frontend §2, frontend §2·§10).
+- [x] K13 청크 subrow 카드화 — subrow를 여백 적은 카드로 감싸고(들여쓰기 `ml-6` css 삭제), 일치하는 청크를 잘림/가림 없이 전부 표시(snippet 한 줄 clamp 제거) (search-frontend §3a).
+- [x] K14 헤더 SearchBar 중앙 정렬 — `≥md` 헤더에서 SearchBar+검색 버튼을 가운데 배치 (frontend §2).
+- [x] K15 검색 결과 "폴더로 이동" 동작 — ResultRowMenu의 "해당 폴더로 이동"이 폴더 이동만 하지 말고 산출물 내역 row 클릭처럼 폴더 이동 + 해당 문서 선택(인스펙터 표시)까지 (search-frontend §3, ai-outputs-frontend §2).
+- [x] K16 검색 결과 row 우클릭 컨텍스트 메뉴 — row 우클릭 시 "⋯" 드롭다운과 동일 항목(상세 보기/다운로드/해당 폴더로 이동/삭제) 표시 (search-frontend §3, document-frontend §1).
+- [x] K17 검색 결과 row 클릭 = 메타데이터 패널 토글 — row 클릭으로 우측 인스펙터 열고, 같은 row 재클릭 시 닫힘(문서 목록 row 토글 규칙과 동일) (search-frontend §3, frontend §6b).
+- [x] K18 RAG 응답 row 우클릭 컨텍스트 메뉴 — rag 인용 출처 row에서도 우클릭 시 "⋯"와 동일 드롭다운 표시(K16이 rag에 미적용 시 수정) (search-frontend §3).
+- [x] K19 모바일 헤더 SearchBar 포커스 시 전체 폭 — 모바일(`<md`)에서만 다른 헤더 요소를 가리고 SearchBar가 헤더 전체 폭 차지(max-width 해제). 패드·PC는 다른 헤더 요소 유지 (search-frontend §2, frontend §10).
+- [x] K20 모바일 헤더 SearchBar 줄 접힘 — 모바일에서 포커스 아웃 시 한 줄로 접고, 포커스 시 입력된 모든 줄 표시 (search-frontend §2).
+- [x] K21 한글 IME 조합 중 Enter 중복 입력 수정 — Enter 동작 입력(SearchBar 등)의 onKeyDown에서 조합 중(`isComposing`)이면 Enter를 무시해 마지막 글자 중복("연봉"→"연봉봉") 방지 (search-frontend §2).
+- [x] K22 헤더 로고 "Me" 강조 — 브랜드 "Mechive"의 "Me"를 primary(노란, shadcn 버튼색) 배경 + padding(≈5px) + border-radius로 감싸 배지처럼 표시 (frontend §1).
+- [x] K23 사이드바·다이얼로그 오버레이 블러 제거 — Sheet/Dialog enter/exit 애니메이션은 유지하되 오버레이 `backdrop-blur`만 제거(블러가 렌더 렉 유발) (frontend §10).
+- [x] K24 모바일 좌측 폴더 row "⋯" 노출 — 데스크톱은 hover-reveal이나 모바일은 hover가 없어 안 보임. `max-md:opacity-100`로 모바일에서 폴더 row "⋯" 드롭다운 항상 노출 (folders-frontend §1·§2).
+- [x] K25 루트 폴더 액션 숨김 — 루트("내 보관함")는 이동/이름변경/삭제 불가이므로 "⋯" 드롭다운·우클릭 컨텍스트 메뉴 미노출 (folders-frontend §1, folders §7).
+- [x] K26 패드 다이얼로그 풀스크린 해제 — 다이얼로그 풀스크린은 폰(`<sm`)만, 패드(`≥sm`)는 중앙 다이얼로그 유지(`dialogMobileFullscreen` `max-md:`→`max-sm:`) (frontend §10).
+- [x] K27 사이드바 닫힘 애니메이션만 제거 — Sheet 열림 애니메이션은 유지, 닫힘(`data-closed:animate-out/fade-out/slide-out`)만 제거해 즉시 닫힘 (frontend §10).
+- [x] K28 폴더 row 상태 컬럼 "—" 표시 — 문서 목록에서 폴더 row의 상태 컬럼을 비우지 말고 크기 컬럼처럼 "—" 표시 (document-frontend §1).
+- [x] K29 인스펙터 토글을 "눈" 버튼으로 일원화 — 폴더/문서/검색결과 row의 "⋯" 좌측에 눈 버튼 추가, 눈 버튼·더블클릭으로 우측 인스펙터 토글(단일 클릭 토글 제거). 문서 "⋯"/컨텍스트의 "상세 보기" 제거 (document-frontend §1, search-frontend §3, frontend §6b).
+- [x] K30 문서 row 더블클릭 인스펙터 토글 — 문서 row 한정: 단일 클릭=문서 선택(하이라이트)만, 더블 클릭=우측 인스펙터 토글. 폴더 row 제외(더블=진입 유지). 폴더목록·키워드/의미/rag 결과 모두. 선택(하이라이트)과 인스펙터 열림 상태 분리 (document-frontend §1, search-frontend §3, frontend §6b).
 
 > 🚦 검색은 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정 — 구 하이브리드 목업(`ask-dialog`·`search-dialog`) 폐기·삭제. 통합 모델 목업 구현 완료(H1~H4), 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
 > 🚦 Phase 2 진입 전: C1 + 개정 반영본(D~G) + 통합 검색·추가·상태 동선(H·I·J) + 검수 피드백(K)으로 UI 동선 사용자 재검수 필수.
