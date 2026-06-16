@@ -19,7 +19,7 @@ export const AppHeader = () => {
   };
 
   return (
-    <header className="flex min-h-14 shrink-0 items-center gap-2 border-b px-3 py-1.5">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
       {/* 폴더 패널 토글 — 모바일=Sheet / PC=접기·펼치기 */}
       <Button
         variant="ghost"

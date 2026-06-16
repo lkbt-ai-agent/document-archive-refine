@@ -48,16 +48,19 @@ export const SearchBar = () => {
   };
 
   return (
-    <div className="ml-2 flex max-w-xl flex-1 items-start gap-1.5">
-      {/* stepped auto-grow: field-sizing-content 로 줄 수만큼 단계 증가, 최대 높이 후 스크롤 */}
-      <Textarea
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={onKeyDown}
-        rows={1}
-        placeholder="검색 (Enter=모드 선택 · Shift+Enter=줄바꿈)"
-        className="max-h-40 min-h-9 resize-none overflow-y-auto py-1.5 text-sm"
-      />
+    <div className="ml-2 flex max-w-xl flex-1 items-center gap-1.5">
+      {/* 고정 높이(h-9) 래퍼 — textarea 는 absolute 오버레이로 아래로 확장해 헤더 높이 불변 */}
+      <div className="relative h-9 flex-1">
+        {/* stepped auto-grow: field-sizing-content 로 줄 수만큼 단계 증가, 최대 높이 후 스크롤 */}
+        <Textarea
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onKeyDown}
+          rows={1}
+          placeholder="검색 (Enter=모드 선택 · Shift+Enter=줄바꿈)"
+          className="absolute inset-x-0 top-0 z-20 max-h-40 min-h-9 resize-none overflow-y-auto bg-background py-1.5 text-sm shadow-sm"
+        />
+      </div>
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-9 shrink-0">

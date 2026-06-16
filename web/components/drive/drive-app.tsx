@@ -79,7 +79,7 @@ export const DriveApp = () => {
       {isMobile && (
         <>
           <Sheet open={mobileLeftOpen} onOpenChange={setMobileLeft}>
-            <SheetContent side="left" className="w-72 p-0">
+            <SheetContent side="left" showCloseButton={false} className="w-72 p-0">
               <SheetHeader className="sr-only">
                 <SheetTitle>폴더</SheetTitle>
               </SheetHeader>
@@ -100,6 +100,7 @@ export const DriveApp = () => {
           >
             <SheetContent
               side="right"
+              showCloseButton={false}
               className="w-screen max-w-none gap-0 p-0 sm:max-w-none"
             >
               <SheetHeader className="sr-only">

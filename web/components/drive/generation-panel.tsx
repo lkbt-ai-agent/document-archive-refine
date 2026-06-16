@@ -82,7 +82,7 @@ export const GenerationPanel = () => {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col">
       <div className="p-4">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -138,7 +138,7 @@ export const GenerationPanel = () => {
         산출물 내역
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto px-4 pb-4">
+      <div className="space-y-2 px-4 pb-4">
         {items.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
             이 문서의 산출물이 없습니다.

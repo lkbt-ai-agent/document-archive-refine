@@ -39,7 +39,7 @@ const RootLayout = ({
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-          <Toaster richColors position="bottom-right" />
+          <Toaster position="top-center" />
         </ThemeProvider>
       </body>
     </html>

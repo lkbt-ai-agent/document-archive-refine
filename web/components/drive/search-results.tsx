@@ -1,10 +1,37 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, ChevronDown, FileText, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  Download,
+  Eye,
+  FileText,
+  FolderInput,
+  MoreHorizontal,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Empty,
   EmptyDescription,
@@ -27,6 +54,62 @@ const MODE_LABEL: Record<SearchMode, string> = {
   keyword: "키워드",
   semantic: "의미",
   rag: "RAG",
+};
+
+// 결과 원본 문서 row 의 "⋯" 메뉴 — 상세/다운로드/폴더 이동/삭제 (키워드·의미·rag 공용)
+const ResultRowMenu = ({ documentId }: { documentId: string }) => {
+  const doc = useDriveStore((s) =>
+    s.documents.find((d) => d.id === documentId),
+  );
+  const selectDocument = useDriveStore((s) => s.selectDocument);
+  const deleteDocument = useDriveStore((s) => s.deleteDocument);
+  const selectFolder = useDriveStore((s) => s.selectFolder);
+  const setMobileRight = useDriveStore((s) => s.setMobileRight);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label="문서 작업"
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => {
+            selectDocument(documentId);
+            setMobileRight(true);
+          }}
+        >
+          <Eye className="size-4" /> 상세 보기
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => toast.info("presigned GET 다운로드 (목업)")}
+        >
+          <Download className="size-4" /> 다운로드
+        </DropdownMenuItem>
+        {doc && (
+          <DropdownMenuItem onClick={() => selectFolder(doc.folderId)}>
+            <FolderInput className="size-4" /> 해당 폴더로 이동
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => {
+            deleteDocument(documentId);
+            toast.warning(`"${doc?.name ?? "문서"}" 삭제 (목업)`);
+          }}
+        >
+          <Trash2 className="size-4" /> 삭제
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 };
 
 // 각 리스트 row 아래 "청크 정보" toggle (§3a)
@@ -68,7 +151,7 @@ const ChunkToggle = ({
   </Collapsible>
 );
 
-// 키워드/의미: 결과 리스트 + 공통 메타
+// 키워드/의미: 문서 목록 table 디자인을 따르고, 청크 정보는 해당 row 밑 subrow(확장)로 표시.
 const RetrievalList = ({
   results,
   elapsedMs,
@@ -77,53 +160,136 @@ const RetrievalList = ({
   results: SearchResultItem[];
   elapsedMs: number;
   onOpen: (documentId: string) => void;
-}) => (
-  <>
-    <p className="pt-1 text-[11px] text-muted-foreground tabular-nums">
-      응답 {formatDuration(elapsedMs)} · 결과 {results.length}건
-    </p>
-    {results.length === 0 ? (
-      <Empty className="py-12">
-        <EmptyHeader>
-          <EmptyTitle>결과 없음</EmptyTitle>
-          <EmptyDescription>다른 키워드로 검색해 보세요.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    ) : (
-      results.map((r) => (
-        <div key={r.chunkId} className="rounded-lg border">
-          <button
-            type="button"
-            onClick={() => onOpen(r.documentId)}
-            className="flex w-full items-start gap-2 rounded-t-lg p-3 text-left hover:bg-accent"
-          >
-            <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-medium">{r.title}</span>
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                  {r.score.toFixed(2)}
-                </span>
-              </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {r.documentName}
-              </p>
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                {r.snippet}
-              </p>
-            </div>
-          </button>
-          <ChunkToggle
-            chunkId={r.chunkId}
-            chunkIndex={r.chunkIndex}
-            score={r.score}
-            snippet={r.snippet}
-          />
-        </div>
-      ))
-    )}
-  </>
-);
+}) => {
+  const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  return (
+    <>
+      <p className="pt-1 text-[11px] text-muted-foreground tabular-nums">
+        응답 {formatDuration(elapsedMs)} · 결과 {results.length}건
+      </p>
+      {results.length === 0 ? (
+        <Empty className="py-12">
+          <EmptyHeader>
+            <EmptyTitle>결과 없음</EmptyTitle>
+            <EmptyDescription>다른 키워드로 검색해 보세요.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>이름</TableHead>
+              <TableHead className="hidden text-right sm:table-cell">
+                점수
+              </TableHead>
+              <TableHead className="w-16" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {results.map((r) => {
+              const open = expanded.has(r.chunkId);
+              return (
+                <React.Fragment key={r.chunkId}>
+                  {/* 본 row — 클릭 시 문서 인스펙터 열기(목록 table 동작과 동일) */}
+                  <TableRow
+                    className="cursor-pointer select-none border-b-0"
+                    onClick={() => onOpen(r.documentId)}
+                  >
+                    <TableCell className="max-w-0">
+                      <div className="flex items-center gap-2">
+                        <FileText className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate font-medium">{r.title}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground tabular-nums sm:hidden">
+                          {r.score.toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {r.documentName}
+                      </p>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                        {r.snippet}
+                      </p>
+                    </TableCell>
+                    <TableCell className="hidden align-top text-right text-xs text-muted-foreground tabular-nums sm:table-cell">
+                      {r.score.toFixed(2)}
+                    </TableCell>
+                    <TableCell
+                      className="align-top"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7"
+                          aria-label="청크 정보"
+                          aria-expanded={open}
+                          onClick={() => toggle(r.chunkId)}
+                        >
+                          <ChevronDown
+                            className={cn(
+                              "size-4 transition-transform",
+                              open && "rotate-180",
+                            )}
+                          />
+                        </Button>
+                        <ResultRowMenu documentId={r.documentId} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {/* 청크 정보 subrow — 본 row와 구분되게 들여쓰기 + 중립 좌측 보더(강한 색조 미사용) */}
+                  {open && (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={3} className="p-0">
+                        <div className="ml-6 border-l-2 border-border bg-muted/40 px-3 py-2">
+                          <div className="space-y-1 text-[11px]">
+                            <div className="flex justify-between gap-3">
+                              <span className="text-muted-foreground">
+                                chunk_id
+                              </span>
+                              <span className="font-mono">{r.chunkId}</span>
+                            </div>
+                            <div className="flex justify-between gap-3">
+                              <span className="text-muted-foreground">
+                                chunk_index
+                              </span>
+                              <span className="tabular-nums">
+                                {r.chunkIndex}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-3">
+                              <span className="text-muted-foreground">
+                                score
+                              </span>
+                              <span className="tabular-nums">
+                                {r.score.toFixed(4)}
+                              </span>
+                            </div>
+                            <p className="pt-1 leading-relaxed text-muted-foreground">
+                              {r.snippet}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </TableBody>
+        </Table>
+      )}
+    </>
+  );
+};
 
 // rag: 합성 답변 + 인용 출처 + 공통 메타
 const RagAnswer = ({
@@ -172,15 +338,15 @@ const RagAnswer = ({
         <div className="space-y-2">
           {mockAskAnswer.citations.map((c) => (
             <div key={c.n} className="rounded-lg border">
-              <button
-                type="button"
-                onClick={() => onOpen(c.documentId)}
-                className="flex w-full items-start gap-2 rounded-t-lg p-3 text-left hover:bg-accent"
-              >
+              <div className="flex items-start gap-2 p-3">
                 <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded bg-primary/15 text-xs font-medium text-primary">
                   {c.n}
                 </span>
-                <div className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={() => onOpen(c.documentId)}
+                  className="min-w-0 flex-1 text-left"
+                >
                   <span className="flex items-center gap-1 text-sm font-medium">
                     <FileText className="size-3.5 shrink-0" />
                     <span className="truncate">{c.documentName}</span>
@@ -188,8 +354,9 @@ const RagAnswer = ({
                   <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                     {c.snippet}
                   </p>
-                </div>
-              </button>
+                </button>
+                <ResultRowMenu documentId={c.documentId} />
+              </div>
               <ChunkToggle chunkId={c.chunkId} snippet={c.snippet} />
             </div>
           ))}

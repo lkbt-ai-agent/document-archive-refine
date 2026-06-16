@@ -13,7 +13,7 @@ import { useDriveStore } from "@/lib/store";
 export const RightPanel = () => {
   const inspectedFolderId = useDriveStore((s) => s.inspectedFolderId);
 
-  // 폴더 인스펙터 (단일 클릭)
+  // 폴더 인스펙터 (단일 클릭) — 헤더 고정 + 아래 전체 스크롤
   if (inspectedFolderId) {
     return (
       <div className="flex h-full flex-col">
@@ -22,12 +22,14 @@ export const RightPanel = () => {
             폴더 정보
           </span>
         </div>
-        <FolderDetail />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <FolderDetail />
+        </div>
       </div>
     );
   }
 
-  // 문서 인스펙터
+  // 문서 인스펙터 — "문서 상세" 헤더만 고정, 아래(상세·버튼·메타 탭) 전체를 단일 스크롤
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center border-b px-3 py-2">
@@ -36,30 +38,30 @@ export const RightPanel = () => {
         </span>
       </div>
 
-      <div className="shrink-0">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <DocumentDetail />
+
+        <Separator />
+
+        <Tabs defaultValue="meta" className="gap-0">
+          <div className="px-3 pt-3">
+            <TabsList className="w-full">
+              <TabsTrigger value="meta" className="flex-1">
+                메타데이터
+              </TabsTrigger>
+              <TabsTrigger value="gen" className="flex-1">
+                산출물
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="meta">
+            <MetadataView />
+          </TabsContent>
+          <TabsContent value="gen">
+            <GenerationPanel />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <Separator />
-
-      <Tabs defaultValue="meta" className="flex min-h-0 flex-1 flex-col gap-0">
-        <div className="px-3 pt-3">
-          <TabsList className="w-full">
-            <TabsTrigger value="meta" className="flex-1">
-              메타데이터
-            </TabsTrigger>
-            <TabsTrigger value="gen" className="flex-1">
-              산출물
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="meta" className="min-h-0 flex-1 overflow-y-auto">
-          <MetadataView />
-        </TabsContent>
-        <TabsContent value="gen" className="min-h-0 flex-1 overflow-hidden">
-          <GenerationPanel />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
