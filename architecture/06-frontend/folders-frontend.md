@@ -1,7 +1,7 @@
 ---
 created: 2026-06-12
-updated: 2026-06-12
-status: draft
+updated: 2026-06-16
+status: approved
 overview: 폴더 도메인의 프론트 구현(트리·액션·다이얼로그·상태)을 정의한다.
 refs: research/01-mvp-research/04 §5
 ---

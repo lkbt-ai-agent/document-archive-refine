@@ -1,7 +1,7 @@
 ---
 created: 2026-06-12
-updated: 2026-06-12
-status: draft
+updated: 2026-06-16
+status: approved
 overview: AI 산출물 도메인의 프론트 구현(생성 트리거·산출물 내역·계보·차트)을 정의한다.
 refs: research/01-mvp-research/04 §5
 ---

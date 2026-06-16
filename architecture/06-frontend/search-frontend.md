@@ -1,7 +1,7 @@
 ---
 created: 2026-06-12
 updated: 2026-06-16
-status: draft
+status: approved
 overview: 검색과 RAG 도메인의 프론트 구현으로 통합 SearchBar 진입, 본문 결과 렌더, 메타 첨부, 화면 네비게이션을 정의한다.
 refs: research/01-mvp-research/04 §5
 ---

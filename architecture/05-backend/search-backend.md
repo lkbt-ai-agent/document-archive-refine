@@ -15,7 +15,8 @@ refs: research/01-mvp-research/02
 | POST   | `/search`     | `{q, mode, filters{folder,date}, limit}` → `{results[], elapsed_ms}`. `mode∈{keyword,semantic}`, 기본 `semantic`. |
 | POST   | `/search/ask` | RAG 질의 → `{answer, citations[{n,chunk_id,document_id}], elapsed_ms}`.                                           |
 
-- 두 응답 모두 `elapsed_ms`(서버 처리 시간) 포함. `mode`는 검색 UI에서 사용자가 선택한다.
+- UI는 단일 검색 진입에서 모드(키워드/의미/rag)를 고르고, 진입은 같되 출력만 갈린다. 키워드/의미는 `/search`(결과 리스트), rag는 `/search/ask`(답변)로 라우팅된다.
+- 두 응답 모두 `elapsed_ms`(서버 처리 시간) 포함.
 
 ## 2. 모듈 흐름
 

@@ -1,7 +1,7 @@
 ---
 created: 2026-06-11
 updated: 2026-06-16
-status: draft
+status: approved
 overview: 3패널 Drive UI 셸(레이아웃·서버/클라 분리·데이터/상태 경계·테마·반응형)을 정의한다.
 refs: research/01-mvp-research/04 §5
 ---
@@ -21,14 +21,14 @@ refs: research/01-mvp-research/04 §5
 ThemeProvider (next-themes, attribute="class" defaultTheme="system" enableSystem)   # §1
 └─ AppShell (RSC)                                 # 브랜드명 "Mechive"(§1), 초기 트리·목록 패치(Suspense)
    ├─ AppHeader (client)                          # SearchBar + ThemeToggle(light/dark/system)
-   │  ├─ SearchBar → SearchResults (client)       # 검색·결과, 인용 클릭 딥링크(§9)
-   │  └─ AskDialog (client)                       # RAG 질의(Dialog)
+   │  └─ SearchBar (client)                       # "검색..." 모드 드롭다운(키워드/의미/rag), 결과는 Center(§9)
    ├─ ResizablePanels (client, ≥md)               # 모바일(<md)은 단일 패널로 대체(§10)
    │  ├─ LeftPanel: FolderTree (client)           # 선택/확장(Zustand), AppHeader 토글(§6b). 모바일=Sheet
    │  │  └─ FolderActions ("⋯" DropdownMenu)      # 이동/이름변경/삭제(§6a, Left·Center 공용)
-   │  ├─ CenterPanel                              # 문서 "목록" 전용
+   │  ├─ CenterPanel                              # 문서 목록 + 검색 결과 화면(§9)
    │  │  ├─ (UploadDropzone)                      # presigned PUT — 컴포넌트 보존, MVP UI 미노출(§8)
-   │  │  └─ DocumentList (client)                 # 하위 폴더 row + 문서 row(§8). 폴더 row: 단일=인스펙터/더블=진입 + "⋯"
+   │  │  ├─ DocumentList (client)                 # 하위 폴더 row + 문서 row(§8). 폴더 row: 단일=인스펙터/더블=진입 + "⋯"
+   │  │  └─ SearchResults (client)                # 검색 결과 리스트/답변 + 제목 옆 뒤로가기(§9)
    │  └─ RightPanel = DetailInspector             # 토글형(§6b), 문서/폴더 양쪽. 모바일=전체화면 Sheet(side=right)
    │     ├─ DocumentDetail (client)               # status/stage 폴링 + "원본 보기"(§8)
    │     ├─ MetadataView (client)                 # AI 메타 읽기 전용(§5a) + 인제스트 소요(§9)
@@ -61,7 +61,7 @@ ThemeProvider (next-themes, attribute="class" defaultTheme="system" enableSystem
 
 ## 6. 패널 구성 (Left 트리 / Center 목록 / Right 토글 인스펙터)
 - Left: 폴더 트리 + CRUD/MOVE. 상세는 `folders-frontend.md`.
-- Center: 문서 목록 전용(Google Drive식 — 하위 폴더 row + 문서 row, 폴더 먼저). 상세는 `document-frontend.md`.
+- Center: 문서 목록(Google Drive식 — 하위 폴더 row + 문서 row, 폴더 먼저) + 검색 결과 화면(§9). 상세는 `document-frontend.md`.
 - Right = DetailInspector(토글형 §6b): 문서=상세+메타+생성 트리거·"산출물 내역", 폴더=FolderDetail. 개폐는 row 클릭 토글.
 
 ### 6a. 폴더 액션 & 다이얼로그
