@@ -489,17 +489,11 @@ export const SearchResults = () => {
       ? 820 + query.length * 11
       : 110 + query.length * 6 + results.length * 8;
 
-  // 단일 클릭 = 선택(하이라이트)만. 더블 클릭/눈 = 인스펙터 토글(같은 문서 재토글 시 닫힘).
+  // 단일 클릭 = 선택(하이라이트)만. 더블 클릭/눈 = 인스펙터 열기(닫기는 패널 X·모바일 Sheet).
   const onSelect = (documentId: string) => highlightDocument(documentId);
   const onOpen = (documentId: string) => {
-    const isOpen = useDriveStore.getState().selectedDocumentId === documentId;
-    if (isOpen) {
-      selectDocument(null);
-      setMobileRight(false);
-    } else {
-      selectDocument(documentId);
-      setMobileRight(true);
-    }
+    selectDocument(documentId);
+    setMobileRight(true);
   };
 
   return (

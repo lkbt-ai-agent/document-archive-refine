@@ -72,7 +72,8 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - [x] K27 사이드바 닫힘 애니메이션만 제거 — Sheet 열림 애니메이션은 유지, 닫힘(`data-closed:animate-out/fade-out/slide-out`)만 제거해 즉시 닫힘 (frontend §10).
 - [x] K28 폴더 row 상태 컬럼 "—" 표시 — 문서 목록에서 폴더 row의 상태 컬럼을 비우지 말고 크기 컬럼처럼 "—" 표시 (document-frontend §1).
 - [x] K29 인스펙터 토글을 "눈" 버튼으로 일원화 — 폴더/문서/검색결과 row의 "⋯" 좌측에 눈 버튼 추가, 눈 버튼·더블클릭으로 우측 인스펙터 토글(단일 클릭 토글 제거). 문서 "⋯"/컨텍스트의 "상세 보기" 제거 (document-frontend §1, search-frontend §3, frontend §6b).
-- [x] K30 문서 row 더블클릭 인스펙터 토글 — 문서 row 한정: 단일 클릭=문서 선택(하이라이트)만, 더블 클릭=우측 인스펙터 토글. 폴더 row 제외(더블=진입 유지). 폴더목록·키워드/의미/rag 결과 모두. 선택(하이라이트)과 인스펙터 열림 상태 분리 (document-frontend §1, search-frontend §3, frontend §6b).
+- [x] K30 문서 row 더블클릭 인스펙터 토글 — 문서 row 한정: 단일 클릭=문서 선택(인스펙터 닫혀 있으면 하이라이트만, 열려 있으면 닫지 말고 해당 문서 메타로 갱신), 더블 클릭=우측 인스펙터 열기. 폴더 row 제외(더블=진입 유지). 폴더목록·키워드/의미/rag 결과 모두. 선택(하이라이트)과 인스펙터 열림 상태 분리 (document-frontend §1, search-frontend §3, frontend §6b).
+- [x] K31 인스펙터 X 닫기 버튼 + 폴더 선택 — 메타데이터 패널 헤더에 X 닫기 버튼(PC `≥md`만 노출, 모바일은 Sheet 닫기). 더블클릭/눈은 열기 전용(닫기는 X·모바일 Sheet·검색 재렌더·화면 이탈만). 폴더 row도 단일 클릭 선택(하이라이트) 가능 (document-frontend §1, folders-frontend §1, frontend §6·§6b).
 
 > 🚦 검색은 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정 — 구 하이브리드 목업(`ask-dialog`·`search-dialog`) 폐기·삭제. 통합 모델 목업 구현 완료(H1~H4), 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
 > 🚦 Phase 2 진입 전: C1 + 개정 반영본(D~G) + 통합 검색·추가·상태 동선(H·I·J) + 검수 피드백(K)으로 UI 동선 사용자 재검수 필수.

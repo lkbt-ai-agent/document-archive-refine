@@ -24,7 +24,7 @@ export const DriveApp = () => {
   const setMobileLeft = useDriveStore((s) => s.setMobileLeft);
   const mobileRightOpen = useDriveStore((s) => s.mobileRightOpen);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
-  const selectDocument = useDriveStore((s) => s.selectDocument);
+  const closeInspector = useDriveStore((s) => s.closeInspector);
   // 우측 인스펙터는 문서 또는 폴더 인스펙터 대상이 있을 때 노출(토글) — arch 10 §8b·§7a
   const inspectorOpen = useDriveStore(
     (s) => s.selectedDocumentId != null || s.inspectedFolderId != null,
@@ -89,13 +89,12 @@ export const DriveApp = () => {
             </SheetContent>
           </Sheet>
 
-          {/* 우측 인스펙터: 모바일은 바텀 시트가 아니라 전체 화면 Sheet(side=right).
-              닫으면 선택 해제해 같은 row 재클릭 시 다시 열리도록 한다. */}
+          {/* 우측 인스펙터: 모바일은 전체 화면 Sheet(side=right). 닫으면 인스펙터 해제(선택은 하이라이트로 유지). */}
           <Sheet
             open={mobileRightOpen}
             onOpenChange={(open) => {
-              setMobileRight(open);
-              if (!open) selectDocument(null);
+              if (open) setMobileRight(true);
+              else closeInspector();
             }}
           >
             <SheetContent

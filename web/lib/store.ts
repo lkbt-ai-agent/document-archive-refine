@@ -56,8 +56,9 @@ interface DriveState {
   // UI 상태
   selectedFolderId: string;
   selectedDocumentId: string | null; // 문서 인스펙터 대상(=인스펙터 열림). 더블클릭/눈 버튼으로 설정
-  highlightedDocId: string | null; // 단일 클릭 선택(하이라이트만, 인스펙터 안 열림). selectedDocumentId 와 상호배타
-  inspectedFolderId: string | null; // 폴더 인스펙터 대상(폴더 단일클릭, arch 10 §7a). selectedDocumentId 와 상호배타
+  highlightedDocId: string | null; // 문서 단일 클릭 선택(하이라이트만, 인스펙터 안 열림)
+  highlightedFolderId: string | null; // 폴더 단일 클릭 선택(하이라이트만, 인스펙터 안 열림)
+  inspectedFolderId: string | null; // 폴더 인스펙터 대상(=인스펙터 열림)
   expandedFolderIds: string[];
   leftCollapsed: boolean; // PC(≥md) 좌측 패널 접힘(헤더 토글, arch 10 §8b)
   mobileLeftOpen: boolean;
@@ -74,7 +75,9 @@ interface DriveState {
   selectFolder: (id: string) => void;
   selectDocument: (id: string | null) => void;
   highlightDocument: (id: string) => void;
+  highlightFolder: (id: string) => void;
   inspectFolder: (id: string | null) => void;
+  closeInspector: () => void;
   toggleFolder: (id: string) => void;
   toggleLeftCollapsed: () => void;
   setLeftCollapsed: (v: boolean) => void;
@@ -104,6 +107,7 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   selectedFolderId: "hr-salary",
   selectedDocumentId: null,
   highlightedDocId: null,
+  highlightedFolderId: null,
   inspectedFolderId: null,
   expandedFolderIds: ["root", "hr", "hr-salary", "reports"],
   leftCollapsed: false,
@@ -115,29 +119,79 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   searchSubmittedQuery: "",
   searchNonce: 0,
 
-  // 폴더 진입(네비게이션) — 인스펙터(문서/폴더) 모두 해제, 검색 결과 화면도 종료
+  // 폴더 진입(네비게이션) — 인스펙터·하이라이트 모두 해제, 검색 결과 화면도 종료
   selectFolder: (id) =>
     set({
       selectedFolderId: id,
       selectedDocumentId: null,
       highlightedDocId: null,
+      highlightedFolderId: null,
       inspectedFolderId: null,
       searchActive: false,
     }),
-  // 문서 인스펙터 열기(더블클릭/눈) — 폴더 인스펙터·하이라이트와 상호배타
+  // 문서 인스펙터 열기(더블클릭/눈) — 다른 인스펙터·하이라이트 해제
   selectDocument: (id) =>
-    set({ selectedDocumentId: id, inspectedFolderId: null, highlightedDocId: null }),
-  // 단일 클릭 선택 — 하이라이트만(인스펙터 안 열림), 열려 있던 인스펙터는 닫음
-  highlightDocument: (id) =>
     set({
-      highlightedDocId: id,
+      selectedDocumentId: id,
+      inspectedFolderId: null,
+      highlightedDocId: null,
+      highlightedFolderId: null,
+    }),
+  // 문서 단일 클릭 선택 — 인스펙터 닫혀 있으면 하이라이트만, 열려 있으면 닫지 말고 해당 문서로 갱신.
+  highlightDocument: (id) =>
+    set((s) => {
+      const inspectorOpen =
+        s.selectedDocumentId !== null || s.inspectedFolderId !== null;
+      return inspectorOpen
+        ? {
+            selectedDocumentId: id,
+            inspectedFolderId: null,
+            highlightedDocId: null,
+            highlightedFolderId: null,
+          }
+        : {
+            highlightedDocId: id,
+            highlightedFolderId: null,
+            selectedDocumentId: null,
+            inspectedFolderId: null,
+          };
+    }),
+  // 폴더 단일 클릭 선택 — 인스펙터 닫혀 있으면 하이라이트만, 열려 있으면 닫지 말고 해당 폴더로 갱신.
+  highlightFolder: (id) =>
+    set((s) => {
+      const inspectorOpen =
+        s.selectedDocumentId !== null || s.inspectedFolderId !== null;
+      return inspectorOpen
+        ? {
+            inspectedFolderId: id,
+            selectedDocumentId: null,
+            highlightedDocId: null,
+            highlightedFolderId: null,
+          }
+        : {
+            highlightedFolderId: id,
+            highlightedDocId: null,
+            selectedDocumentId: null,
+            inspectedFolderId: null,
+          };
+    }),
+  // 폴더 인스펙터 열기(눈) — 다른 인스펙터·하이라이트 해제
+  inspectFolder: (id) =>
+    set({
+      inspectedFolderId: id,
+      selectedDocumentId: null,
+      highlightedDocId: null,
+      highlightedFolderId: null,
+    }),
+  // 인스펙터 닫기(X·모바일 Sheet) — 직전 대상은 하이라이트로 남겨 선택 유지
+  closeInspector: () =>
+    set((s) => ({
       selectedDocumentId: null,
       inspectedFolderId: null,
+      highlightedDocId: s.selectedDocumentId,
+      highlightedFolderId: s.inspectedFolderId,
       mobileRightOpen: false,
-    }),
-  // 폴더 인스펙터 — 문서 인스펙터와 상호배타
-  inspectFolder: (id) =>
-    set({ inspectedFolderId: id, selectedDocumentId: null, highlightedDocId: null }),
+    })),
   toggleFolder: (id) =>
     set((s) => ({
       expandedFolderIds: s.expandedFolderIds.includes(id)

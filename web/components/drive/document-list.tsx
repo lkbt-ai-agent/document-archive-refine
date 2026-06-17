@@ -73,10 +73,12 @@ export const DocumentList = () => {
   const documents = useDriveStore((s) => s.documents);
   const selectedDocumentId = useDriveStore((s) => s.selectedDocumentId);
   const highlightedDocId = useDriveStore((s) => s.highlightedDocId);
+  const highlightedFolderId = useDriveStore((s) => s.highlightedFolderId);
   const inspectedFolderId = useDriveStore((s) => s.inspectedFolderId);
   const selectFolder = useDriveStore((s) => s.selectFolder);
   const selectDocument = useDriveStore((s) => s.selectDocument);
   const highlightDocument = useDriveStore((s) => s.highlightDocument);
+  const highlightFolder = useDriveStore((s) => s.highlightFolder);
   const inspectFolder = useDriveStore((s) => s.inspectFolder);
   const deleteDocument = useDriveStore((s) => s.deleteDocument);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
@@ -114,12 +116,11 @@ export const DocumentList = () => {
     return rows.slice(start, start + pagination.pageSize);
   }, [rows, pagination]);
 
-  // 문서 row: 단일 클릭=선택(하이라이트)만, 더블 클릭=인스펙터 토글. 폴더: 더블 클릭=진입.
+  // 단일 클릭=선택(하이라이트), 더블 클릭=문서 인스펙터 열기 / 폴더 진입. 닫기는 패널 X(또는 모바일 Sheet).
   const onFolderDoubleClick = (id: string) => selectFolder(id);
-  const onDocInspectToggle = (id: string) => {
-    const isOpen = useDriveStore.getState().selectedDocumentId === id;
-    selectDocument(isOpen ? null : id);
-    setMobileRight(!isOpen);
+  const onDocOpen = (id: string) => {
+    selectDocument(id);
+    setMobileRight(true);
   };
 
   const columns = React.useMemo<ColumnDef<ListRow>[]>(
@@ -205,10 +206,8 @@ export const DocumentList = () => {
                   className="size-7"
                   aria-label="폴더 정보"
                   onClick={() => {
-                    const isOpen =
-                      useDriveStore.getState().inspectedFolderId === fid;
-                    inspectFolder(isOpen ? null : fid);
-                    setMobileRight(!isOpen);
+                    inspectFolder(fid);
+                    setMobileRight(true);
                   }}
                 >
                   <Eye className="size-4" />
@@ -230,10 +229,8 @@ export const DocumentList = () => {
                 className="size-7"
                 aria-label="상세 보기"
                 onClick={() => {
-                  const isOpen =
-                    useDriveStore.getState().selectedDocumentId === d.id;
-                  selectDocument(isOpen ? null : d.id);
-                  setMobileRight(!isOpen);
+                  selectDocument(d.id);
+                  setMobileRight(true);
                 }}
               >
                 <Eye className="size-4" />
@@ -343,18 +340,19 @@ export const DocumentList = () => {
                     r.kind === "doc"
                       ? selectedDocumentId === r.doc.id ||
                         highlightedDocId === r.doc.id
-                      : inspectedFolderId === r.folder.id;
+                      : inspectedFolderId === r.folder.id ||
+                        highlightedFolderId === r.folder.id;
                   const tableRow = (
                     <TableRow
                       onClick={
                         r.kind === "doc"
                           ? () => highlightDocument(r.doc.id)
-                          : undefined
+                          : () => highlightFolder(r.folder.id)
                       }
                       onDoubleClick={
                         r.kind === "folder"
                           ? () => onFolderDoubleClick(r.folder.id)
-                          : () => onDocInspectToggle(r.doc.id)
+                          : () => onDocOpen(r.doc.id)
                       }
                       className={cn(
                         "cursor-pointer select-none",
