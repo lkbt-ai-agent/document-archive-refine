@@ -5,9 +5,10 @@ import { UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDriveStore } from "@/lib/store";
+import { useCurrentFolderId } from "@/hooks/use-current-folder";
 
 export const UploadDropzone = () => {
-  const folderId = useDriveStore((s) => s.selectedFolderId);
+  const folderId = useCurrentFolderId() ?? "root";
   const addUpload = useDriveStore((s) => s.addUpload);
   const [dragging, setDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);

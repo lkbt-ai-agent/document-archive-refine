@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, Trash2, MoveRight, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,8 @@ import {
 import { FolderNameDialog } from "./folder-name-dialog";
 import { MoveFolderDialog } from "./move-folder-dialog";
 import { useDriveStore } from "@/lib/store";
+import { useCurrentFolderId } from "@/hooks/use-current-folder";
+import { folderHref, ROOT_FOLDER_ID } from "@/lib/routes";
 import type { Folder } from "@/lib/types";
 
 export type FolderAction = "move" | "rename" | "delete";
@@ -38,6 +41,8 @@ export type FolderAction = "move" | "rename" | "delete";
 // 폴더 액션 다이얼로그(이동/이름변경/삭제)를 한 곳에서 관리하는 훅.
 // Left 트리·Center 목록이 각자 인스턴스를 두고 동일 메뉴(드롭다운/우클릭)에서 onAction 을 호출한다.
 export const useFolderActions = () => {
+  const router = useRouter();
+  const currentFolderId = useCurrentFolderId();
   const renameFolder = useDriveStore((s) => s.renameFolder);
   const deleteFolder = useDriveStore((s) => s.deleteFolder);
   const [renameTarget, setRenameTarget] = React.useState<Folder | null>(null);
@@ -90,6 +95,12 @@ export const useFolderActions = () => {
               onClick={() => {
                 if (deleteTarget) {
                   deleteFolder(deleteTarget.id);
+                  // 현재 보던 폴더가 삭제 대상에 포함됐으면 루트로 이동
+                  const stillExists = useDriveStore
+                    .getState()
+                    .folders.some((f) => f.id === currentFolderId);
+                  if (currentFolderId && !stillExists)
+                    router.push(folderHref(ROOT_FOLDER_ID));
                   toast.warning(`"${deleteTarget.name}" 삭제 (DELETE /folders/{id} — 목업)`);
                 }
               }}

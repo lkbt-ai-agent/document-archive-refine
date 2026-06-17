@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useDriveStore } from "@/lib/store";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { PanelLeft } from "lucide-react";
+import { ROOT_PATH } from "@/lib/routes";
 import { SearchBar } from "./search-bar";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -37,15 +39,19 @@ export const AppHeader = () => {
             <PanelLeft className="size-5" />
           </Button>
 
-          <div className="flex items-center gap-2 font-semibold">
-            {/* 로고 — "Me"를 primary 배경 배지로 강조 */}
+          {/* 로고 — 클릭 시 내 아카이브로. "Me"를 primary 배경 배지로 강조 */}
+          <Link
+            href={ROOT_PATH}
+            aria-label="내 아카이브"
+            className="flex items-center gap-2 font-semibold"
+          >
             <span className="hidden items-center sm:inline-flex">
               <span className="rounded-md bg-primary p-[5px] leading-none text-primary-foreground">
                 Me
               </span>
               <span className="ml-0.5">chive</span>
             </span>
-          </div>
+          </Link>
         </>
       )}
 

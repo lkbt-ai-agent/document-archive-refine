@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Search, ChevronDown, Type, Brain, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDriveStore } from "@/lib/store";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { searchHref } from "@/lib/routes";
 import type { SearchMode } from "@/lib/types";
 
 // 통합 검색 진입(search-frontend §1·§2) — SearchBar(textarea) + "검색..." 모드 드롭다운.
@@ -35,9 +37,9 @@ export const SearchBar = ({
 }: {
   onFocusChange?: (focused: boolean) => void;
 }) => {
+  const router = useRouter();
   const query = useDriveStore((s) => s.searchQuery);
   const setQuery = useDriveStore((s) => s.setSearchQuery);
-  const runSearch = useDriveStore((s) => s.runSearch);
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
@@ -67,7 +69,7 @@ export const SearchBar = ({
 
   const pick = (mode: SearchMode) => {
     setMenuOpen(false);
-    if (query.trim()) runSearch(mode);
+    if (query.trim()) router.push(searchHref(query, mode));
   };
 
   return (

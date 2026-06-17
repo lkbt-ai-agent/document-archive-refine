@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Sparkles, FileText, FileEdit, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useDriveStore } from "@/lib/store";
+import { folderHref } from "@/lib/routes";
 import {
   formatDate,
   formatDuration,
@@ -46,9 +48,7 @@ export const GenerationPanel = () => {
   const documents = useDriveStore((s) => s.documents);
   const generations = useDriveStore((s) => s.generations);
   const startGeneration = useDriveStore((s) => s.startGeneration);
-  const selectFolder = useDriveStore((s) => s.selectFolder);
-  const selectDocument = useDriveStore((s) => s.selectDocument);
-  const setMobileRight = useDriveStore((s) => s.setMobileRight);
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [kind, setKind] = React.useState<GenKind>("summary");
 
@@ -70,15 +70,13 @@ export const GenerationPanel = () => {
           documents.some((d) => d.id === g.outputDocumentId))),
   );
 
-  // 산출물 내역 row 클릭 → Center가 산출물 문서 폴더로 이동·선택
+  // 산출물 내역 row 클릭 → 산출물 문서 폴더로 이동(+해당 문서 인스펙터 딥링크)
   const openArtifact = (g: Generation) => {
     const out = g.outputDocumentId
       ? documents.find((d) => d.id === g.outputDocumentId)
       : undefined;
     if (!out) return;
-    selectFolder(out.folderId);
-    selectDocument(out.id);
-    setMobileRight(true);
+    router.push(folderHref(out.folderId, out.id));
   };
 
   return (

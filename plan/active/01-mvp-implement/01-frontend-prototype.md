@@ -99,10 +99,11 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 
 ### 라우트 구조
 - `app/layout.tsx` — 루트(html/body/providers), 그대로 유지.
-- `app/(drive)/layout.tsx` — 공유 셸(AppHeader + Left 트리 + Center 슬롯 `{children}` + Right 인스펙터 + 모바일 Sheet). route group `(drive)`은 URL에 영향 없음. 네비게이션 간 유지(트리·인스펙터 비리마운트).
-- `app/(drive)/page.tsx` — `/` 루트 폴더 → Center = `<DocumentList folderId="root" />`.
-- `app/(drive)/folders/[folderKey]/page.tsx` — `/folders/{folderKey}` → Center = `<DocumentList folderId={folderKey} />`.
-- `app/(drive)/search/page.tsx` — `/search?q=&mode=` → Center = `<SearchResults q mode />`.
+- `app/page.tsx` — `/` → `redirect("/my-archive")`.
+- `app/(archive)/layout.tsx` — 공유 셸(AppHeader + Left 트리 + Center 슬롯 `{children}` + Right 인스펙터 + 모바일 Sheet). route group `(archive)`은 URL에 영향 없음. 네비게이션 간 유지(트리·인스펙터 비리마운트).
+- `app/(archive)/my-archive/page.tsx` — `/my-archive` 루트 폴더(내 아카이브) → Center = `<DocumentList folderId="root" />`.
+- `app/(archive)/folders/[folderKey]/page.tsx` — `/folders/{folderKey}` → Center = `<DocumentList folderId={folderKey} />`.
+- `app/(archive)/search/page.tsx` — `/search?q=&mode=` → Center = `<SearchResults q mode />`.
 
 ### 책임 분리
 - 폴더/검색 상태 = URL. 서버 page가 `params`/`searchParams`(Next 16 async, context7 확인)를 읽어 Center 컴포넌트에 prop으로 전달 → `useSearchParams` 훅·Suspense 경계 불필요.
@@ -110,12 +111,12 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - store에서 폴더/검색 화면 상태 제거: `selectedFolderId`·`searchActive`·`searchMode`·`searchSubmittedQuery`·`searchNonce`·`runSearch`·`closeSearch`(=URL로 대체). 현재 폴더는 `useParams`/`usePathname` 파생.
 
 ### 항목
-- [ ] L1 셸 layout 분리 — `DriveApp`를 `(drive)/layout.tsx`의 `DriveShell`로 이전, Center를 `{children}` 슬롯으로. DocumentList↔SearchResults 스위처(`CenterPanel`) 제거.
-- [ ] L2 라우트 page 생성 — `/`(루트)·`/folders/[folderKey]`·`/search` 서버 page가 `params`/`searchParams` 읽어 Center 컴포넌트에 prop 전달.
-- [ ] L3 컴포넌트 URL 연동 — `DocumentList`는 `folderId` prop 수용(store 의존 제거), `FolderTree` 현재 폴더 하이라이트·"새 폴더 부모"는 `useParams` 파생, `SearchResults`는 `q`/`mode` prop.
-- [ ] L4 네비게이션 전환 — 폴더 진입·검색 실행·폴더 이동·계보/산출물 이동을 `<Link>`/`useRouter().push`로(`lib/routes.ts` helper: `folderHref`/`searchHref`). 인스펙터 토글(눈/더블클릭/X)은 URL 비대상(클라 상태).
-- [ ] L5 인스펙터·히스토리 정합 — 경로 변경 시 인스펙터 닫힘(`usePathname` 감지), 검색 결과 뒤로가기=`router.back()`. (선택) `/folders/{key}?doc={id}` 딥링크로 특정 문서 인스펙터 동반(폴더 이동·계보·산출물 이동 보존용).
-- [ ] L6 검증 — 브라우저 앞/뒤로가기로 폴더·검색 전환, 직접 URL/딥링크 진입, 새로고침 동작 확인.
+- [x] L1 셸 layout 분리 — `DriveShell`를 `(archive)/layout.tsx`에서 렌더, Center를 `{children}` 슬롯으로. `DriveApp`·`CenterPanel` 스위처 제거.
+- [x] L2 라우트 page 생성 — `app/page.tsx`(`/`→`/my-archive` 리다이렉트)·`(archive)/my-archive/page.tsx`(루트)·`(archive)/folders/[folderKey]/page.tsx`·`(archive)/search/page.tsx` 서버 page가 `params`/`searchParams`(async) 읽어 Center 컴포넌트에 prop 전달.
+- [x] L3 컴포넌트 URL 연동 — `DocumentList` `folderId`/`docId` prop(store 의존 제거), `FolderTree` 현재 폴더·"새 폴더 부모"는 `useCurrentFolderId`(useParams/usePathname) 파생, `SearchResults` `q`/`mode` prop.
+- [x] L4 네비게이션 전환 — 폴더 진입·검색 실행·폴더 이동·계보/산출물 이동을 `useRouter().push`로(`lib/routes.ts` `folderHref`/`searchHref`). 인스펙터 토글(눈/더블클릭/X)은 URL 비대상(클라 상태).
+- [x] L5 인스펙터·히스토리 정합 — 라우트 전환 시 `DocumentList`/`SearchResults`가 `resetSelection`으로 인스펙터 닫힘, 검색 결과 뒤로가기=`router.back()`, `/folders/{key}?doc={id}` 딥링크로 특정 문서 인스펙터 동반(폴더 이동·계보·산출물 이동 보존).
+- [ ] L6 검증 — 브라우저 앞/뒤로가기로 폴더·검색 전환, 직접 URL/딥링크 진입, 새로고침 동작 확인(사용자 직접 검증).
 
 > 🚦 검색은 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정 — 구 하이브리드 목업(`ask-dialog`·`search-dialog`) 폐기·삭제. 통합 모델 목업 구현 완료, 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
 > 🚦 Phase 2 진입 전: 위 구현 기능으로 UI 동선 사용자 재검수 필수.

@@ -11,7 +11,6 @@ import type {
   Folder,
   GenKind,
   Generation,
-  SearchMode,
 } from "./types";
 
 // ── 상태 소유 경계 (arch 10 §7) ──────────────────────────────
@@ -53,39 +52,32 @@ interface DriveState {
   documents: DocumentItem[];
   generations: Generation[];
 
-  // UI 상태
-  selectedFolderId: string;
-  selectedDocumentId: string | null; // 문서 인스펙터 대상(=인스펙터 열림). 더블클릭/눈 버튼으로 설정
-  highlightedDocId: string | null; // 문서 단일 클릭 선택(하이라이트만, 인스펙터 안 열림)
-  highlightedFolderId: string | null; // 폴더 단일 클릭 선택(하이라이트만, 인스펙터 안 열림)
+  // UI 상태 (폴더/검색 화면은 URL이 소스 — store 비보관)
+  selectedDocumentId: string | null; // 문서 인스펙터 대상(=인스펙터 열림)
+  highlightedDocId: string | null; // 문서 단일 클릭 선택(하이라이트만)
+  highlightedFolderId: string | null; // 폴더 단일 클릭 선택(하이라이트만)
   inspectedFolderId: string | null; // 폴더 인스펙터 대상(=인스펙터 열림)
   expandedFolderIds: string[];
-  leftCollapsed: boolean; // PC(≥md) 좌측 패널 접힘(헤더 토글, arch 10 §8b)
+  leftCollapsed: boolean; // PC(≥md) 좌측 패널 접힘(헤더 토글)
   mobileLeftOpen: boolean;
   mobileRightOpen: boolean;
 
-  // 통합 검색(search-frontend) — 입력값·선택 모드·결과 화면 표시 여부는 UI 상태(Zustand).
+  // 검색 입력값(SearchBar) — 실행/결과 화면은 URL(/search)이 소스
   searchQuery: string;
-  searchMode: SearchMode | null; // 마지막 실행 모드(키워드/의미/rag)
-  searchActive: boolean; // 조회 화면 vs 검색 결과 화면(§4·§5)
-  searchSubmittedQuery: string; // 실행 시점의 질의(입력값과 분리)
-  searchNonce: number; // 실행마다 증가 — 결과 화면 로딩 재트리거용
 
   // actions — UI
-  selectFolder: (id: string) => void;
   selectDocument: (id: string | null) => void;
   highlightDocument: (id: string) => void;
   highlightFolder: (id: string) => void;
   inspectFolder: (id: string | null) => void;
   closeInspector: () => void;
+  resetSelection: () => void; // 라우트 전환 시 인스펙터·하이라이트 모두 해제
   toggleFolder: (id: string) => void;
   toggleLeftCollapsed: () => void;
   setLeftCollapsed: (v: boolean) => void;
   setMobileLeft: (open: boolean) => void;
   setMobileRight: (open: boolean) => void;
   setSearchQuery: (q: string) => void;
-  runSearch: (mode: SearchMode) => void; // 현재 입력값으로 모드 검색 실행 → 결과 화면 전환
-  closeSearch: () => void; // 뒤로가기 — 결과 화면 → 조회 화면
 
   // actions — 폴더 목업 mutation (arch 05)
   addFolder: (parentId: string | null, name: string) => void;
@@ -104,7 +96,6 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   documents: mockDocuments,
   generations: mockGenerations,
 
-  selectedFolderId: "hr-salary",
   selectedDocumentId: null,
   highlightedDocId: null,
   highlightedFolderId: null,
@@ -114,21 +105,7 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   mobileLeftOpen: false,
   mobileRightOpen: false,
   searchQuery: "",
-  searchMode: null,
-  searchActive: false,
-  searchSubmittedQuery: "",
-  searchNonce: 0,
 
-  // 폴더 진입(네비게이션) — 인스펙터·하이라이트 모두 해제, 검색 결과 화면도 종료
-  selectFolder: (id) =>
-    set({
-      selectedFolderId: id,
-      selectedDocumentId: null,
-      highlightedDocId: null,
-      highlightedFolderId: null,
-      inspectedFolderId: null,
-      searchActive: false,
-    }),
   // 문서 인스펙터 열기(더블클릭/눈) — 다른 인스펙터·하이라이트 해제
   selectDocument: (id) =>
     set({
@@ -192,6 +169,15 @@ export const useDriveStore = create<DriveState>((set, get) => ({
       highlightedFolderId: s.inspectedFolderId,
       mobileRightOpen: false,
     })),
+  // 라우트 전환(폴더/검색 이동) — 인스펙터·하이라이트 일괄 해제
+  resetSelection: () =>
+    set({
+      selectedDocumentId: null,
+      inspectedFolderId: null,
+      highlightedDocId: null,
+      highlightedFolderId: null,
+      mobileRightOpen: false,
+    }),
   toggleFolder: (id) =>
     set((s) => ({
       expandedFolderIds: s.expandedFolderIds.includes(id)
@@ -203,19 +189,6 @@ export const useDriveStore = create<DriveState>((set, get) => ({
   setMobileLeft: (open) => set({ mobileLeftOpen: open }),
   setMobileRight: (open) => set({ mobileRightOpen: open }),
   setSearchQuery: (q) => set({ searchQuery: q }),
-  // 재검색 = Center 새 렌더 → 열려 있던 인스펙터 닫힘(선택 해제)
-  runSearch: (mode) =>
-    set((s) => ({
-      searchMode: mode,
-      searchActive: true,
-      searchSubmittedQuery: s.searchQuery,
-      searchNonce: s.searchNonce + 1,
-      selectedDocumentId: null,
-      inspectedFolderId: null,
-    })),
-  // 뒤로(조회 화면 복귀) = Center 새 렌더 → 인스펙터 닫힘
-  closeSearch: () =>
-    set({ searchActive: false, selectedDocumentId: null, inspectedFolderId: null }),
 
   // 폴더 생성/이름변경/이동/삭제 (목업) — arch 05
   addFolder: (parentId, name) =>
@@ -266,13 +239,14 @@ export const useDriveStore = create<DriveState>((set, get) => ({
             ? { ...g, outputDocumentId: undefined }
             : g,
         ),
-        selectedFolderId: removed.has(s.selectedFolderId)
-          ? "root"
-          : s.selectedFolderId,
+        // 현재 폴더(=URL)가 삭제됐는지 판단·이동은 호출 측(useFolderActions)에서 router 로 처리
         selectedDocumentId: null,
         inspectedFolderId: removed.has(s.inspectedFolderId ?? "")
           ? null
           : s.inspectedFolderId,
+        highlightedFolderId: removed.has(s.highlightedFolderId ?? "")
+          ? null
+          : s.highlightedFolderId,
       };
     }),
 
@@ -396,7 +370,7 @@ export const useDriveStore = create<DriveState>((set, get) => ({
             );
             const outDoc: DocumentItem = {
               id: outId,
-              folderId: src?.folderId ?? s.selectedFolderId,
+              folderId: src?.folderId ?? "root",
               name: `[${kindLabel}] ${baseName}.md`,
               mime: "text/markdown",
               sizeBytes: 2_048,

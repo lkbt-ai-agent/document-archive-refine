@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { GitBranch, FileText, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +10,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useDriveStore } from "@/lib/store";
+import { folderHref } from "@/lib/routes";
 import { formatDate, formatDuration, genKindLabel } from "@/lib/format";
 
 // AI 산출물(= 어떤 생성의 output) 문서의 계보 섹션 — 메타데이터 패널 상단에 표시.
@@ -26,8 +28,7 @@ export const LineageView = () => {
   );
   const documents = useDriveStore((s) => s.documents);
   const generations = useDriveStore((s) => s.generations);
-  const selectFolder = useDriveStore((s) => s.selectFolder);
-  const selectDocument = useDriveStore((s) => s.selectDocument);
+  const router = useRouter();
 
   if (!doc) return null;
 
@@ -43,8 +44,7 @@ export const LineageView = () => {
 
   // 부모 링크 클릭 → Center가 부모 폴더로 이동 + 인스펙터에 부모 문서 표시
   const openParent = (parentId: string, folderId: string) => {
-    selectFolder(folderId);
-    selectDocument(parentId);
+    router.push(folderHref(folderId, parentId));
   };
 
   const hasPrompt = gen.prompt != null;

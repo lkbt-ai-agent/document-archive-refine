@@ -9,7 +9,7 @@ import type {
 // 백엔드 미연동 — 모든 데이터는 목업. 추후 실 API(react-query)로 교체.
 
 export const mockFolders: Folder[] = [
-  { id: "root", parentId: null, name: "내 보관함", createdAt: "2026-01-02T00:00:00Z" },
+  { id: "root", parentId: null, name: "내 아카이브", createdAt: "2026-01-02T00:00:00Z" },
   { id: "hr", parentId: "root", name: "인사", createdAt: "2026-01-05T00:00:00Z" },
   { id: "hr-salary", parentId: "hr", name: "급여", createdAt: "2026-01-06T00:00:00Z" },
   { id: "hr-contract", parentId: "hr", name: "계약", createdAt: "2026-01-06T00:00:00Z" },

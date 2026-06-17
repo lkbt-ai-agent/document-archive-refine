@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { ChevronRight, Folder as FolderIcon, FolderOpen, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,8 @@ import {
   type FolderAction,
 } from "./folder-actions";
 import { useDriveStore } from "@/lib/store";
+import { folderHref } from "@/lib/routes";
+import { useCurrentFolderId } from "@/hooks/use-current-folder";
 import type { Folder } from "@/lib/types";
 
 const buildChildrenMap = (folders: Folder[]) => {
@@ -30,23 +33,24 @@ const FolderNode = ({
   folder,
   depth,
   childrenMap,
+  currentFolderId,
   onAction,
 }: {
   folder: Folder;
   depth: number;
   childrenMap: Map<string | null, Folder[]>;
+  currentFolderId: string | null;
   onAction: (action: FolderAction, folder: Folder) => void;
 }) => {
+  const router = useRouter();
   const children = childrenMap.get(folder.id) ?? [];
   const hasChildren = children.length > 0;
-  const selectedFolderId = useDriveStore((s) => s.selectedFolderId);
   const expanded = useDriveStore((s) => s.expandedFolderIds.includes(folder.id));
-  const selectFolder = useDriveStore((s) => s.selectFolder);
   const toggleFolder = useDriveStore((s) => s.toggleFolder);
   const setMobileLeft = useDriveStore((s) => s.setMobileLeft);
 
-  const isSelected = selectedFolderId === folder.id;
-  // 루트("내 보관함")는 이동/이름변경/삭제 불가 → 액션·컨텍스트 메뉴 미노출
+  const isSelected = currentFolderId === folder.id;
+  // 루트("내 아카이브")는 이동/이름변경/삭제 불가 → 액션·컨텍스트 메뉴 미노출
   const isRoot = folder.parentId === null;
 
   const row = (
@@ -75,7 +79,7 @@ const FolderNode = ({
       <button
         type="button"
         onClick={() => {
-          selectFolder(folder.id);
+          router.push(folderHref(folder.id));
           setMobileLeft(false);
         }}
         className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left"
@@ -115,6 +119,7 @@ const FolderNode = ({
             folder={c}
             depth={depth + 1}
             childrenMap={childrenMap}
+            currentFolderId={currentFolderId}
             onAction={onAction}
           />
         ))}
@@ -124,8 +129,10 @@ const FolderNode = ({
 
 export const FolderTree = () => {
   const folders = useDriveStore((s) => s.folders);
-  const selectedFolderId = useDriveStore((s) => s.selectedFolderId);
   const addFolder = useDriveStore((s) => s.addFolder);
+  const currentFolderId = useCurrentFolderId();
+  // 새 폴더 부모 = 현재 폴더(검색 화면이면 루트)
+  const newParentId = currentFolderId ?? "root";
 
   const childrenMap = React.useMemo(() => buildChildrenMap(folders), [folders]);
   const roots = childrenMap.get(null) ?? [];
@@ -134,7 +141,7 @@ export const FolderTree = () => {
   const [newOpen, setNewOpen] = React.useState(false);
 
   const newParentName =
-    folders.find((f) => f.id === selectedFolderId)?.name ?? "내 보관함";
+    folders.find((f) => f.id === newParentId)?.name ?? "내 아카이브";
 
   return (
     <div className="flex h-full flex-col">
@@ -160,6 +167,7 @@ export const FolderTree = () => {
             folder={r}
             depth={0}
             childrenMap={childrenMap}
+            currentFolderId={currentFolderId}
             onAction={onAction}
           />
         ))}
@@ -176,7 +184,7 @@ export const FolderTree = () => {
           initialName=""
           submitLabel="만들기"
           onSubmit={(name) => {
-            addFolder(selectedFolderId, name);
+            addFolder(newParentId, name);
             toast.success(`"${name}" 폴더 생성 (POST /folders — 목업)`);
           }}
         />

@@ -2,7 +2,6 @@
 
 import { AppHeader } from "./app-header";
 import { FolderTree } from "./folder-tree";
-import { CenterPanel } from "./center-panel";
 import { RightPanel } from "./right-panel";
 import {
   ResizableHandle,
@@ -18,25 +17,25 @@ import {
 import { useDriveStore } from "@/lib/store";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
-export const DriveApp = () => {
+// 공유 셸 — 라우트 전환 간 유지(트리·인스펙터 비리마운트). Center = 현재 라우트 page({children}).
+export const DriveShell = ({ children }: { children: React.ReactNode }) => {
   const isMobile = useIsMobile();
   const mobileLeftOpen = useDriveStore((s) => s.mobileLeftOpen);
   const setMobileLeft = useDriveStore((s) => s.setMobileLeft);
   const mobileRightOpen = useDriveStore((s) => s.mobileRightOpen);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
   const closeInspector = useDriveStore((s) => s.closeInspector);
-  // 우측 인스펙터는 문서 또는 폴더 인스펙터 대상이 있을 때 노출(토글) — arch 10 §8b·§7a
+  // 우측 인스펙터는 문서/폴더 인스펙터 대상이 있을 때 노출
   const inspectorOpen = useDriveStore(
     (s) => s.selectedDocumentId != null || s.inspectedFolderId != null,
   );
-  // 좌측 패널 접힘(PC) — 헤더 토글 (arch 10 §8b)
   const leftCollapsed = useDriveStore((s) => s.leftCollapsed);
 
   return (
     <div className="flex h-dvh flex-col">
       <AppHeader />
 
-      {/* ≥md: Left 트리 + Center 목록 상시 + Right 인스펙터(토글) (PC·태블릿) */}
+      {/* ≥md: Left 트리 + Center(라우트) + Right 인스펙터(토글) */}
       <div className="hidden flex-1 overflow-hidden md:block">
         <ResizablePanelGroup orientation="horizontal">
           {!leftCollapsed && (
@@ -57,7 +56,7 @@ export const DriveApp = () => {
             defaultSize={inspectorOpen ? "52%" : "80%"}
             minSize="30%"
           >
-            <CenterPanel />
+            {children}
           </ResizablePanel>
           {inspectorOpen && (
             <>
@@ -71,9 +70,7 @@ export const DriveApp = () => {
       </div>
 
       {/* <md: 단일 패널 (모바일) */}
-      <div className="flex-1 overflow-hidden md:hidden">
-        <CenterPanel />
-      </div>
+      <div className="flex-1 overflow-hidden md:hidden">{children}</div>
 
       {/* 모바일 전용 오버레이 — 데스크톱에서는 마운트하지 않음(포털 회피) */}
       {isMobile && (

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ChevronDown,
@@ -51,6 +52,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useDriveStore } from "@/lib/store";
+import { folderHref } from "@/lib/routes";
 import { mockAskAnswer, mockSearchResults } from "@/lib/mock-data";
 import { formatDuration } from "@/lib/format";
 import type { SearchMode, SearchResultItem } from "@/lib/types";
@@ -65,24 +67,18 @@ const MODE_LABEL: Record<SearchMode, string> = {
 
 // 결과 원본 문서 row 공용 액션 — 상세/다운로드/폴더 이동/삭제 (키워드·의미·rag 공용)
 const useResultRowActions = (documentId: string) => {
+  const router = useRouter();
   const doc = useDriveStore((s) =>
     s.documents.find((d) => d.id === documentId),
   );
-  const selectDocument = useDriveStore((s) => s.selectDocument);
   const deleteDocument = useDriveStore((s) => s.deleteDocument);
-  const selectFolder = useDriveStore((s) => s.selectFolder);
-  const setMobileRight = useDriveStore((s) => s.setMobileRight);
 
   return {
     doc,
     download: () => toast.info("presigned GET 다운로드 (목업)"),
-    // 폴더 이동 + 해당 문서 선택(산출물 내역 row 클릭과 동일 동작)
+    // 폴더 이동 + 해당 문서 선택 — 폴더 URL + ?doc 딥링크
     moveToFolder: doc
-      ? () => {
-          selectFolder(doc.folderId);
-          selectDocument(documentId);
-          setMobileRight(true);
-        }
+      ? () => router.push(folderHref(doc.folderId, documentId))
       : undefined,
     remove: () => {
       deleteDocument(documentId);
@@ -446,48 +442,49 @@ const RagAnswer = ({
   );
 };
 
-export const SearchResults = () => {
-  const mode = useDriveStore((s) => s.searchMode);
-  const query = useDriveStore((s) => s.searchSubmittedQuery);
-  const nonce = useDriveStore((s) => s.searchNonce);
-  const closeSearch = useDriveStore((s) => s.closeSearch);
+export const SearchResults = ({ q, mode }: { q: string; mode: SearchMode }) => {
+  const router = useRouter();
   const selectedDocumentId = useDriveStore((s) => s.selectedDocumentId);
   const highlightedDocId = useDriveStore((s) => s.highlightedDocId);
   const selectDocument = useDriveStore((s) => s.selectDocument);
   const highlightDocument = useDriveStore((s) => s.highlightDocument);
+  const resetSelection = useDriveStore((s) => s.resetSelection);
+  const setSearchQuery = useDriveStore((s) => s.setSearchQuery);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
   // 선택(하이라이트)/인스펙터 대상 — 상호배타라 하나만 활성
   const activeDocId = selectedDocumentId ?? highlightedDocId;
 
-  // 로딩을 nonce 일치 여부로 파생(§3) — 실행 즉시 loading=true, 타이머 완료 시 해제.
-  // (effect 내 동기 setState 회피)
-  const [loadedNonce, setLoadedNonce] = React.useState(0);
-  const loading = loadedNonce !== nonce;
+  // 라우트(q/mode) 변경마다: 인스펙터 해제 + SearchBar 입력 동기화 + 로딩 재생.
+  const routeKey = `${q}|${mode}`;
+  const [readyKey, setReadyKey] = React.useState<string | null>(null);
+  const loading = readyKey !== routeKey;
 
   React.useEffect(() => {
+    resetSelection();
+    setSearchQuery(q);
     const t = window.setTimeout(
-      () => setLoadedNonce(nonce),
+      () => setReadyKey(routeKey),
       mode === "rag" ? 900 : 500,
     );
     return () => window.clearTimeout(t);
-  }, [nonce, mode]);
+  }, [routeKey, q, mode, resetSelection, setSearchQuery]);
 
   const results = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return mockSearchResults;
+    const query = q.trim().toLowerCase();
+    if (!query) return mockSearchResults;
     return mockSearchResults.filter(
       (r) =>
-        r.title.toLowerCase().includes(q) ||
-        r.snippet.toLowerCase().includes(q) ||
-        r.documentName.toLowerCase().includes(q),
+        r.title.toLowerCase().includes(query) ||
+        r.snippet.toLowerCase().includes(query) ||
+        r.documentName.toLowerCase().includes(query),
     );
-  }, [query]);
+  }, [q]);
 
   // 총 응답 시간(목업) — 실제로는 /search·/search/ask 응답의 elapsed_ms (§3a)
   const elapsedMs =
     mode === "rag"
-      ? 820 + query.length * 11
-      : 110 + query.length * 6 + results.length * 8;
+      ? 820 + q.length * 11
+      : 110 + q.length * 6 + results.length * 8;
 
   // 단일 클릭 = 선택(하이라이트)만. 더블 클릭/눈 = 인스펙터 열기(닫기는 패널 X·모바일 Sheet).
   const onSelect = (documentId: string) => highlightDocument(documentId);
@@ -505,16 +502,16 @@ export const SearchResults = () => {
           size="icon"
           className="size-8 shrink-0"
           aria-label="조회 화면으로 돌아가기"
-          onClick={closeSearch}
+          onClick={() => router.back()}
         >
           <ArrowLeft className="size-4" />
         </Button>
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold">
-            {mode ? `${MODE_LABEL[mode]} 검색 결과` : "검색 결과"}
+            {`${MODE_LABEL[mode]} 검색 결과`}
           </h2>
-          {query && (
-            <p className="truncate text-xs text-muted-foreground">“{query}”</p>
+          {q && (
+            <p className="truncate text-xs text-muted-foreground">“{q}”</p>
           )}
         </div>
       </div>

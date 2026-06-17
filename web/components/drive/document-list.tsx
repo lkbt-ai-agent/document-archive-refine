@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   useReactTable,
   getCoreRowModel,
@@ -57,6 +58,7 @@ import {
   FolderContextMenu,
 } from "./folder-actions";
 import { useDriveStore } from "@/lib/store";
+import { folderHref } from "@/lib/routes";
 import { formatBytes, formatDate } from "@/lib/format";
 import type { DocumentItem, Folder } from "@/lib/types";
 
@@ -67,21 +69,37 @@ type ListRow =
 
 const PAGE_SIZE = 10;
 
-export const DocumentList = () => {
-  const folderId = useDriveStore((s) => s.selectedFolderId);
+export const DocumentList = ({
+  folderId,
+  docId,
+}: {
+  folderId: string;
+  docId?: string;
+}) => {
+  const router = useRouter();
   const folders = useDriveStore((s) => s.folders);
   const documents = useDriveStore((s) => s.documents);
   const selectedDocumentId = useDriveStore((s) => s.selectedDocumentId);
   const highlightedDocId = useDriveStore((s) => s.highlightedDocId);
   const highlightedFolderId = useDriveStore((s) => s.highlightedFolderId);
   const inspectedFolderId = useDriveStore((s) => s.inspectedFolderId);
-  const selectFolder = useDriveStore((s) => s.selectFolder);
   const selectDocument = useDriveStore((s) => s.selectDocument);
   const highlightDocument = useDriveStore((s) => s.highlightDocument);
   const highlightFolder = useDriveStore((s) => s.highlightFolder);
   const inspectFolder = useDriveStore((s) => s.inspectFolder);
+  const resetSelection = useDriveStore((s) => s.resetSelection);
   const deleteDocument = useDriveStore((s) => s.deleteDocument);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
+
+  // 라우트(폴더/딥링크 doc)에 인스펙터 정합: doc 있으면 열고, 없으면(=폴더 전환) 닫음.
+  React.useEffect(() => {
+    if (docId) {
+      selectDocument(docId);
+      setMobileRight(true);
+    } else {
+      resetSelection();
+    }
+  }, [folderId, docId, selectDocument, setMobileRight, resetSelection]);
 
   const { onAction, dialogs } = useFolderActions();
 
@@ -117,7 +135,7 @@ export const DocumentList = () => {
   }, [rows, pagination]);
 
   // 단일 클릭=선택(하이라이트), 더블 클릭=문서 인스펙터 열기 / 폴더 진입. 닫기는 패널 X(또는 모바일 Sheet).
-  const onFolderDoubleClick = (id: string) => selectFolder(id);
+  const onFolderDoubleClick = (id: string) => router.push(folderHref(id));
   const onDocOpen = (id: string) => {
     selectDocument(id);
     setMobileRight(true);
