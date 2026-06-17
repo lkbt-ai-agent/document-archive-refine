@@ -40,7 +40,7 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - 행 "⋯" 드롭다운(이동/이름변경/삭제) + 우클릭 컨텍스트 메뉴(공용 `FolderActions`).
 - 모바일은 "⋯" 항상 노출(hover 불가).
 - 새 폴더/이름변경/이동/삭제 다이얼로그.
-- 루트("내 보관함")는 액션·컨텍스트 메뉴 미노출.
+- 루트("내 아카이브")는 액션·컨텍스트 메뉴 미노출.
 
 ### Center 문서 목록 (Google Drive식)
 - shadcn Table + TanStack v8 서버 페이지네이션.
@@ -102,21 +102,55 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - `app/page.tsx` — `/` → `redirect("/my-archive")`.
 - `app/(archive)/layout.tsx` — 공유 셸(AppHeader + Left 트리 + Center 슬롯 `{children}` + Right 인스펙터 + 모바일 Sheet). route group `(archive)`은 URL에 영향 없음. 네비게이션 간 유지(트리·인스펙터 비리마운트).
 - `app/(archive)/my-archive/page.tsx` — `/my-archive` 루트 폴더(내 아카이브) → Center = `<DocumentList folderId="root" />`.
+- `app/(archive)/folders/page.tsx` — `/folders`(key 없음) → `redirect("/my-archive")`.
 - `app/(archive)/folders/[folderKey]/page.tsx` — `/folders/{folderKey}` → Center = `<DocumentList folderId={folderKey} />`.
 - `app/(archive)/search/page.tsx` — `/search?q=&mode=` → Center = `<SearchResults q mode />`.
+- `app/not-found.tsx` — 매칭 안 되는 모든 경로의 전역 404(shadcn `Empty` + "내 아카이브로 이동").
 
 ### 책임 분리
 - 폴더/검색 상태 = URL. 서버 page가 `params`/`searchParams`(Next 16 async, context7 확인)를 읽어 Center 컴포넌트에 prop으로 전달 → `useSearchParams` 훅·Suspense 경계 불필요.
 - 인스펙터(문서/폴더 선택·하이라이트)·트리 펼침·좌우 패널 토글·SearchBar 입력값 = Zustand 유지.
-- store에서 폴더/검색 화면 상태 제거: `selectedFolderId`·`searchActive`·`searchMode`·`searchSubmittedQuery`·`searchNonce`·`runSearch`·`closeSearch`(=URL로 대체). 현재 폴더는 `useParams`/`usePathname` 파생.
+- store에서 폴더/검색 화면 상태 제거: `selectedFolderId`·`searchActive`·`searchMode`·`searchSubmittedQuery`·`searchNonce`·`runSearch`·`closeSearch`(=URL로 대체). 현재 폴더는 `useCurrentFolderId`(`useParams`/`usePathname`) 파생.
 
-### 항목
-- [x] L1 셸 layout 분리 — `DriveShell`를 `(archive)/layout.tsx`에서 렌더, Center를 `{children}` 슬롯으로. `DriveApp`·`CenterPanel` 스위처 제거.
-- [x] L2 라우트 page 생성 — `app/page.tsx`(`/`→`/my-archive` 리다이렉트)·`(archive)/my-archive/page.tsx`(루트)·`(archive)/folders/[folderKey]/page.tsx`·`(archive)/search/page.tsx` 서버 page가 `params`/`searchParams`(async) 읽어 Center 컴포넌트에 prop 전달.
-- [x] L3 컴포넌트 URL 연동 — `DocumentList` `folderId`/`docId` prop(store 의존 제거), `FolderTree` 현재 폴더·"새 폴더 부모"는 `useCurrentFolderId`(useParams/usePathname) 파생, `SearchResults` `q`/`mode` prop.
-- [x] L4 네비게이션 전환 — 폴더 진입·검색 실행·폴더 이동·계보/산출물 이동을 `useRouter().push`로(`lib/routes.ts` `folderHref`/`searchHref`). 인스펙터 토글(눈/더블클릭/X)은 URL 비대상(클라 상태).
-- [x] L5 인스펙터·히스토리 정합 — 라우트 전환 시 `DocumentList`/`SearchResults`가 `resetSelection`으로 인스펙터 닫힘, 검색 결과 뒤로가기=`router.back()`, `/folders/{key}?doc={id}` 딥링크로 특정 문서 인스펙터 동반(폴더 이동·계보·산출물 이동 보존).
-- [ ] L6 검증 — 브라우저 앞/뒤로가기로 폴더·검색 전환, 직접 URL/딥링크 진입, 새로고침 동작 확인(사용자 직접 검증).
+### 항목 (구현 완료)
+> 라우트·책임 분리는 위 두 절 참고. 여기선 설계에 없는 구현 세부만 기록.
+- 셸: `(archive)/layout.tsx`가 `DriveShell` 렌더, Center=`{children}` 슬롯(`DriveApp`·`CenterPanel` 스위처 제거).
+- 컴포넌트 prop화: `DocumentList`(`folderId`/`docId`)·`SearchResults`(`q`/`mode`) store 의존 제거.
+- 네비게이션: 폴더 진입·검색·폴더 이동·계보/산출물 이동=`useRouter().push`(`lib/routes.ts` `folderHref`/`searchHref`), 로고·좌측 "내 아카이브" 클릭=`/my-archive`.
+- 히스토리 정합: 라우트 전환 시 `resetSelection`로 인스펙터 닫힘, 검색 뒤로가기=`router.back()`, `/folders/{key}?doc={id}` 딥링크로 문서 인스펙터 동반.
+- [x] L6 검증(사용자): 앞/뒤로가기·딥링크·새로고침 동작 확인.
 
-> 🚦 검색은 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정 — 구 하이브리드 목업(`ask-dialog`·`search-dialog`) 폐기·삭제. 통합 모델 목업 구현 완료, 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
-> 🚦 Phase 2 진입 전: 위 구현 기능으로 UI 동선 사용자 재검수 필수.
+> 🚦 검색은 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정. 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
+
+## architecture/06-frontend 반영 계획 (M)
+> 위 "구현 기능"·"URL 라우팅(L)"에서 확정된 동선을 `architecture/06-frontend/*.md`에 반영. 사용자 재검수 통과 후 착수.
+
+### 반영 방법
+- 파일별로 신규 동선을 기존 절에 흡수하거나 새 `## n.`(append-only)로 추가한 뒤, 절 내부를 기능별로 `###`/bullet로 재분할.
+- 프로토타입이 arch와 어긋난 항목(인터랙션 §6b, 상태 경계 §5)은 arch를 프로토타입 확정안으로 갱신(폐기 표현은 삭제).
+- arch 규약 준수: `—`·`·` 미사용, `## n.`는 stable ID라 재번호 금지(추가만), 상위 레이어만 참조.
+
+### frontend.md
+- [ ] §1·§2: 브랜드 "Mechive"("Me" 배지), 로고 클릭=`/my-archive`, 루트 폴더명 "내 아카이브" 반영.
+- [ ] §1 또는 §10: 헤더 고정 높이(SearchBar가 늘어나도 헤더·레이아웃 불변) 추가.
+- [ ] 신규 `## 12. 라우팅/히스토리`: 경로별 page 분리(catch-all 금지), route group `(archive)`+공유 layout, URL=폴더/검색 진실 소스(서버 page가 async `params`/`searchParams`를 Center prop으로 전달), 인스펙터·토글·입력값=Zustand. 라우트 표(`/`·`/folders`→`/my-archive`, `/my-archive`, `/folders/[folderKey]`, `/search`, 전역 404).
+- [ ] §5: Zustand 키에서 `selectedFolderId`·검색 화면 상태 제거, "현재 폴더/검색=URL(`useCurrentFolderId` 파생)" 경계로 갱신.
+- [ ] §6b: "단일=선택(하이라이트), 더블/눈=인스펙터 열기, PC=X 버튼·모바일=Sheet 닫기"로 갱신("재클릭 토글"·"닫기 버튼 없음" 폐기). 인스펙터는 선택 대상 있을 때만 펼치고 Center 재렌더 시 닫힘.
+- [ ] §10: 다이얼로그 풀스크린 범위 `<md`에서 폰(`<sm`)으로 축소, Sheet X 제거·`backdrop-blur` 제거·사이드바 닫힘 애니메이션 제거 추가.
+- [ ] §2 Toaster: position `top-center`, 배경색 없이 아이콘으로 성공/실패 구분.
+
+### document-frontend.md
+- [ ] §1: 컬럼(이름/상태/크기/등록일, 폴더는 상태·크기 대시 자리표시 `-`) + 폴더 우선 정렬 명시, 행 단일=선택·더블/눈=인스펙터·"⋯"/우클릭 메뉴로 갱신.
+- [ ] §3: 인스펙터 단일 스크롤("문서 상세" 헤더만 고정), 메타데이터/산출물 탭, 텍스트류=인앱 마크다운·그 외=presigned GET 분기 반영.
+
+### folders-frontend.md
+- [ ] §1·§3: 폴더 row 단일=선택(하이라이트)·더블=진입·"눈"=폴더 인스펙터로 갱신("단일=인스펙터 토글" 폐기), 루트("내 아카이브") 액션·컨텍스트 메뉴 미노출, 모바일 "⋯" 항상 노출 추가.
+
+### search-frontend.md
+- [ ] §3a: 청크 subrow를 카드형(여백 적게, 전체 표시, 과한 색조 금지)으로 명시.
+- [ ] 신규 결과 row 액션: "⋯"/우클릭 메뉴(다운로드/해당 폴더로 이동/삭제), "해당 폴더로 이동"=폴더 이동+문서 선택, row 클릭=인스펙터 토글.
+- [ ] §2: 한글 IME 조합 중 Enter 무시, `≥md` 중앙 정렬, 모바일 포커스 전체 폭·blur 시 한 줄 접힘 추가.
+- [ ] §4·§5: 결과 화면=URL(`/search?q=&mode=`)·뒤로가기=`router.back()`로 갱신, §5의 "결과 화면 표시 여부 Zustand" 제거(URL 대체).
+
+### ai-outputs-frontend.md
+- [ ] §2·§3: 산출물 내역 row 클릭·계보 부모 링크 이동을 `useRouter().push(folderHref(..., docId))` URL 이동으로 명시(딥링크로 해당 문서 인스펙터 동반).
