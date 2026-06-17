@@ -123,7 +123,7 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 > 🚦 검색은 단일 진입(키워드/의미/rag, 결과는 Center) 모델로 개정. 정본은 search-frontend.md, Phase 2 구현은 04-frontend C1.
 
 ## architecture/06-frontend 반영 계획 (M)
-> 위 "구현 기능"·"URL 라우팅(L)"에서 확정된 동선을 `architecture/06-frontend/*.md`에 반영. 사용자 재검수 통과 후 착수.
+> 위 "구현 기능"·"URL 라우팅(L)"에서 확정된 동선을 `architecture/06-frontend/*.md`에 반영. 2026-06-17 반영 완료(5개 파일 `updated: 2026-06-17`).
 
 ### 반영 방법
 - 파일별로 신규 동선을 기존 절에 흡수하거나 새 `## n.`(append-only)로 추가한 뒤, 절 내부를 기능별로 `###`/bullet로 재분할.
@@ -131,26 +131,26 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - arch 규약 준수: `—`·`·` 미사용, `## n.`는 stable ID라 재번호 금지(추가만), 상위 레이어만 참조.
 
 ### frontend.md
-- [ ] §1·§2: 브랜드 "Mechive"("Me" 배지), 로고 클릭=`/my-archive`, 루트 폴더명 "내 아카이브" 반영.
-- [ ] §1 또는 §10: 헤더 고정 높이(SearchBar가 늘어나도 헤더·레이아웃 불변) 추가.
-- [ ] 신규 `## 12. 라우팅/히스토리`: 경로별 page 분리(catch-all 금지), route group `(archive)`+공유 layout, URL=폴더/검색 진실 소스(서버 page가 async `params`/`searchParams`를 Center prop으로 전달), 인스펙터·토글·입력값=Zustand. 라우트 표(`/`·`/folders`→`/my-archive`, `/my-archive`, `/folders/[folderKey]`, `/search`, 전역 404).
-- [ ] §5: Zustand 키에서 `selectedFolderId`·검색 화면 상태 제거, "현재 폴더/검색=URL(`useCurrentFolderId` 파생)" 경계로 갱신.
-- [ ] §6b: "단일=선택(하이라이트), 더블/눈=인스펙터 열기, PC=X 버튼·모바일=Sheet 닫기"로 갱신("재클릭 토글"·"닫기 버튼 없음" 폐기). 인스펙터는 선택 대상 있을 때만 펼치고 Center 재렌더 시 닫힘.
-- [ ] §10: 다이얼로그 풀스크린 범위 `<md`에서 폰(`<sm`)으로 축소, Sheet X 제거·`backdrop-blur` 제거·사이드바 닫힘 애니메이션 제거 추가.
-- [ ] §2 Toaster: position `top-center`, 배경색 없이 아이콘으로 성공/실패 구분.
+- [x] §1·§2: 브랜드 "Mechive"("Me" 배지), 로고 클릭=`/my-archive`, 루트 폴더명 "내 아카이브" 반영.
+- [x] §1 또는 §10: 헤더 고정 높이(SearchBar가 늘어나도 헤더·레이아웃 불변) 추가.
+- [x] 신규 `## 12. 라우팅/히스토리`: 경로별 page 분리(catch-all 금지), route group `(archive)`+공유 layout, URL=폴더/검색 진실 소스(서버 page가 async `params`/`searchParams`를 Center prop으로 전달), 인스펙터·토글·입력값=Zustand. 라우트 표(`/`·`/folders`→`/my-archive`, `/my-archive`, `/folders/[folderKey]`, `/search`, 전역 404).
+- [x] §5: Zustand 키에서 `selectedFolderId`·검색 화면 상태 제거, "현재 폴더/검색=URL(`useCurrentFolderId` 파생)" 경계로 갱신.
+- [x] §6b: "단일=선택(하이라이트), 더블/눈=인스펙터 열기, PC=X 버튼·모바일=Sheet 닫기"로 갱신("재클릭 토글"·"닫기 버튼 없음" 폐기). 인스펙터는 선택 대상 있을 때만 펼치고 Center 재렌더 시 닫힘.
+- [x] §10: 다이얼로그 풀스크린 범위 `<md`에서 폰(`<sm`)으로 축소, Sheet X 제거·`backdrop-blur` 제거·사이드바 닫힘 애니메이션 제거 추가.
+- [x] §2 Toaster: position `top-center`, 배경색 없이 아이콘으로 성공/실패 구분.
 
 ### document-frontend.md
-- [ ] §1: 컬럼(이름/상태/크기/등록일, 폴더는 상태·크기 대시 자리표시 `-`) + 폴더 우선 정렬 명시, 행 단일=선택·더블/눈=인스펙터·"⋯"/우클릭 메뉴로 갱신.
-- [ ] §3: 인스펙터 단일 스크롤("문서 상세" 헤더만 고정), 메타데이터/산출물 탭, 텍스트류=인앱 마크다운·그 외=presigned GET 분기 반영.
+- [x] §1: 컬럼(이름/상태/크기/등록일, 폴더는 상태·크기 대시 자리표시 `-`) + 폴더 우선 정렬 명시, 행 단일=선택·더블/눈=인스펙터·"⋯"/우클릭 메뉴로 갱신.
+- [x] §3: 인스펙터 단일 스크롤("문서 상세" 헤더만 고정), 메타데이터/산출물 탭, 텍스트류=인앱 마크다운·그 외=presigned GET 분기 반영.
 
 ### folders-frontend.md
-- [ ] §1·§3: 폴더 row 단일=선택(하이라이트)·더블=진입·"눈"=폴더 인스펙터로 갱신("단일=인스펙터 토글" 폐기), 루트("내 아카이브") 액션·컨텍스트 메뉴 미노출, 모바일 "⋯" 항상 노출 추가.
+- [x] §1·§3: 폴더 row 단일=선택(하이라이트)·더블=진입·"눈"=폴더 인스펙터로 갱신("단일=인스펙터 토글" 폐기), 루트("내 아카이브") 액션·컨텍스트 메뉴 미노출, 모바일 "⋯" 항상 노출 추가.
 
 ### search-frontend.md
-- [ ] §3a: 청크 subrow를 카드형(여백 적게, 전체 표시, 과한 색조 금지)으로 명시.
-- [ ] 신규 결과 row 액션: "⋯"/우클릭 메뉴(다운로드/해당 폴더로 이동/삭제), "해당 폴더로 이동"=폴더 이동+문서 선택, row 클릭=인스펙터 토글.
-- [ ] §2: 한글 IME 조합 중 Enter 무시, `≥md` 중앙 정렬, 모바일 포커스 전체 폭·blur 시 한 줄 접힘 추가.
-- [ ] §4·§5: 결과 화면=URL(`/search?q=&mode=`)·뒤로가기=`router.back()`로 갱신, §5의 "결과 화면 표시 여부 Zustand" 제거(URL 대체).
+- [x] §3a: 청크 subrow를 카드형(여백 적게, 전체 표시, 과한 색조 금지)으로 명시.
+- [x] 신규 결과 row 액션: "⋯"/우클릭 메뉴(다운로드/해당 폴더로 이동/삭제), "해당 폴더로 이동"=폴더 이동+문서 선택, row 클릭=인스펙터 토글.
+- [x] §2: 한글 IME 조합 중 Enter 무시, `≥md` 중앙 정렬, 모바일 포커스 전체 폭·blur 시 한 줄 접힘 추가.
+- [x] §4·§5: 결과 화면=URL(`/search?q=&mode=`)·뒤로가기=`router.back()`로 갱신, §5의 "결과 화면 표시 여부 Zustand" 제거(URL 대체).
 
 ### ai-outputs-frontend.md
-- [ ] §2·§3: 산출물 내역 row 클릭·계보 부모 링크 이동을 `useRouter().push(folderHref(..., docId))` URL 이동으로 명시(딥링크로 해당 문서 인스펙터 동반).
+- [x] §2·§3: 산출물 내역 row 클릭·계보 부모 링크 이동을 `useRouter().push(folderHref(..., docId))` URL 이동으로 명시(딥링크로 해당 문서 인스펙터 동반).

@@ -1,6 +1,6 @@
 ---
 created: 2026-06-12
-updated: 2026-06-16
+updated: 2026-06-17
 status: approved
 overview: 문서 도메인의 프론트 구현(목록·업/다운로드·원본 보기·상세·폴링)을 정의한다.
 refs: research/01-mvp-research/04 §5
@@ -13,7 +13,9 @@ refs: research/01-mvp-research/04 §5
 ## 1. 목록 (Google Drive식)
 - DocumentList: shadcn `Table` + TanStack Table v8 헤드리스(`useReactTable`/`getCoreRowModel`, `manualPagination: true`) — 서버 페이지네이션.
 - 목록 계약 `GET /documents?folder_id=&limit=&cursor=`(document-backend.md) + react-query 바인딩. API·옵션은 context7로 v8 확인 후 작성.
-- 하위 폴더 row + 문서 row(폴더 먼저). 폴더 row: 단일=인스펙터 토글·더블=진입, "⋯" FolderActions(folders-frontend.md). 문서 row: 클릭=Right 토글.
+- 컬럼: 이름, 상태, 크기, 등록일. 폴더 행은 상태/크기에 대시 자리표시(`-`)를 둔다.
+- 하위 폴더 row + 문서 row(폴더 먼저). 단일 클릭=선택(하이라이트), 더블 클릭/눈 버튼=열기(문서=문서 인스펙터, 폴더 더블=진입/폴더 눈=폴더 인스펙터). 상세 규칙은 frontend.md §6b.
+- 행 "⋯" 드롭다운과 우클릭 컨텍스트 메뉴(문서=다운로드/삭제, 폴더=FolderActions, folders-frontend.md).
 - AI 산출물도 일반 문서 행으로 표기(ai-outputs-frontend.md).
 
 ## 2. 업로드 / 다운로드 / 원본 보기
@@ -24,6 +26,8 @@ refs: research/01-mvp-research/04 §5
 - 표시 날짜는 등록일(`created_at`)만 — 인앱 편집 없어 수정일 무의미(`updated_at`·`doc_modified_at` 미노출).
 
 ## 3. DocumentDetail / 인제스트 폴링
+- 인스펙터는 "문서 상세" 헤더만 고정하고 그 아래 전체를 단일 스크롤한다.
+- 본문은 상세(크기/형식/페이지/작성자/등록일/처리 시간)와 메타데이터/산출물 탭으로 구성한다.
 - DocumentDetail(Right): `status`/`stage` react-query 폴링(ready/failed 정지) + "원본 보기".
 - MetadataView: AI 메타(제목/요약/토픽/키워드) 읽기 전용 + 인제스트 소요(`documents.ingest_ms`).
 - 소요 시간은 초 단위 표기.
