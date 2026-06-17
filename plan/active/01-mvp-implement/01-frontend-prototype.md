@@ -131,12 +131,13 @@ overview: 백엔드 착수 전 UI/데이터 흐름 확정 + 클릭 가능한 목
 - arch 규약 준수: `—`·`·` 미사용, `## n.`는 stable ID라 재번호 금지(추가만), 상위 레이어만 참조.
 
 ### frontend.md
+> 반영 후 frontend.md를 9개 섹션으로 풀 renumber(중복 제거·논리 재편). 아래 §번호는 최종(renumber 후) 기준이며, 참조 파일(04-frontend, 도메인 4파일)도 일괄 갱신함.
 - [x] §1·§2: 브랜드 "Mechive"("Me" 배지), 로고 클릭=`/my-archive`, 루트 폴더명 "내 아카이브" 반영.
-- [x] §1 또는 §10: 헤더 고정 높이(SearchBar가 늘어나도 헤더·레이아웃 불변) 추가.
-- [x] 신규 `## 12. 라우팅/히스토리`: 경로별 page 분리(catch-all 금지), route group `(archive)`+공유 layout, URL=폴더/검색 진실 소스(서버 page가 async `params`/`searchParams`를 Center prop으로 전달), 인스펙터·토글·입력값=Zustand. 라우트 표(`/`·`/folders`→`/my-archive`, `/my-archive`, `/folders/[folderKey]`, `/search`, 전역 404).
-- [x] §5: Zustand 키에서 `selectedFolderId`·검색 화면 상태 제거, "현재 폴더/검색=URL(`useCurrentFolderId` 파생)" 경계로 갱신.
-- [x] §6b: "단일=선택(하이라이트), 더블/눈=인스펙터 열기, PC=X 버튼·모바일=Sheet 닫기"로 갱신("재클릭 토글"·"닫기 버튼 없음" 폐기). 인스펙터는 선택 대상 있을 때만 펼치고 Center 재렌더 시 닫힘.
-- [x] §10: 다이얼로그 풀스크린 범위 `<md`에서 폰(`<sm`)으로 축소, Sheet X 제거·`backdrop-blur` 제거·사이드바 닫힘 애니메이션 제거 추가.
+- [x] §1: 헤더 고정 높이(SearchBar가 늘어나도 헤더·레이아웃 불변) 추가.
+- [x] 신규 `## 8. 라우팅/히스토리`: 경로별 page 분리(catch-all 금지), route group `(archive)`+공유 layout, URL=폴더/검색 진실 소스(서버 page가 async `params`/`searchParams`를 Center prop으로 전달), 인스펙터·토글·입력값=Zustand. 라우트 목록(`/`·`/folders`→`/my-archive`, `/my-archive`, `/folders/[folderKey]`, `/search`, 전역 404).
+- [x] §4: Zustand 키에서 `selectedFolderId`·검색 화면 상태 제거, "현재 폴더/검색=URL(`useCurrentFolderId` 파생)" 경계로 갱신.
+- [x] §5: "단일=선택(하이라이트), 더블/눈=인스펙터 열기, PC=X 버튼·모바일=Sheet 닫기"로 갱신("재클릭 토글"·"닫기 버튼 없음" 폐기). 인스펙터는 선택 대상 있을 때만 펼치고 Center 재렌더 시 닫힘.
+- [x] §7: 다이얼로그 풀스크린 범위 `<md`에서 폰(`<sm`)으로 축소, Sheet X 제거·`backdrop-blur` 제거·사이드바 닫힘 애니메이션 제거 추가.
 - [x] §2 Toaster: position `top-center`, 배경색 없이 아이콘으로 성공/실패 구분.
 
 ### document-frontend.md

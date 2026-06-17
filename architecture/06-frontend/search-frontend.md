@@ -37,7 +37,7 @@ refs: research/01-mvp-research/04 §5
 - 키워드/의미 결과는 문서 목록 table 디자인을 따른다. 청크 정보는 각 결과 row 아래 카드형 subrow로 표시한다(여백을 적게, 전체 표시, 과한 색조 금지).
 
 ### 3b. 결과 row 액션
-- 결과 row: 단일 클릭=선택(인스펙터 토글), 더블 클릭/눈 버튼=인스펙터 열기(frontend.md §6b).
+- 결과 row: 단일 클릭=선택(인스펙터 토글), 더블 클릭/눈 버튼=인스펙터 열기(frontend.md §5).
 - 행 "⋯" 드롭다운과 우클릭 컨텍스트 메뉴: 다운로드, 해당 폴더로 이동, 삭제.
 - "해당 폴더로 이동"은 그 문서의 폴더로 이동한 뒤 해당 문서를 선택한다(`folderHref(folderId, docId)`).
 - rag 답변의 인용 `[n]` 클릭은 해당 출처로 이동한다.
@@ -47,5 +47,5 @@ refs: research/01-mvp-research/04 §5
 - 결과 화면은 URL(`/search?q=&mode=`)로 표현한다. 뒤로가기 버튼은 `router.back()`으로 직전 화면(조회 또는 다른 결과)으로 돌아간다.
 
 ## 5. 상태 관리
-- SearchBar 입력값은 Zustand, 검색/답변 결과는 react-query로 둔다(경계는 frontend.md §5).
-- 제출 질의와 모드, 결과 화면 표시 여부는 URL이 진실 소스다(`/search?q=&mode=`, frontend.md §12). Zustand에 결과 화면 상태를 따로 두지 않는다.
+- SearchBar 입력값은 Zustand, 검색/답변 결과는 react-query로 둔다(경계는 frontend.md §4).
+- 제출 질의와 모드, 결과 화면 표시 여부는 URL이 진실 소스다(`/search?q=&mode=`, frontend.md §8). Zustand에 결과 화면 상태를 따로 두지 않는다.

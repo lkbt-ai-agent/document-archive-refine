@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background -->
+  <rect
+    x="2"
+    y="2"
+    width="60"
+    height="60"
+    rx="14"
+    fill="#F6C400"
+  />
+
+  <!-- Rounded M -->
+  <path
+    d="
+      M 15 48
+      L 15 20
+      A 5 5 0 0 1 24 17
+
+      L 32 35
+
+      L 40 17
+      A 5 5 0 0 1 49 20
+
+      L 49 48
+
+      A 4 4 0 0 1 41 48
+      L 41 28
+
+      L 35 42
+      A 4 4 0 0 1 29 42
+      L 23 28
+
+      L 23 48
+      A 4 4 0 0 1 15 48
+      Z
+    "
+    fill="#4A3214"
+    stroke="#4A3214"
+    stroke-width="3"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+</svg>

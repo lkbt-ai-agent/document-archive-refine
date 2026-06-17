@@ -25,5 +25,5 @@ refs: research/01-mvp-research/04 §5
 
 ## 3. 상태 관리
 - 트리는 평면 리스트(folders.md §4)를 `useMemo`로 구성.
-- 확장은 Zustand(`expandedFolderIds`), 낙관 업데이트 후 실패 시 롤백. 현재 폴더는 URL에서 파생한다(frontend.md §12).
-- 폴더 row: 단일 클릭=선택(하이라이트), 더블 클릭=진입, "눈" 버튼=폴더 인스펙터 열기(frontend.md §6b).
+- 확장은 Zustand(`expandedFolderIds`), 낙관 업데이트 후 실패 시 롤백. 현재 폴더는 URL에서 파생한다(frontend.md §8).
+- 폴더 row: 단일 클릭=선택(하이라이트), 더블 클릭=진입, "눈" 버튼=폴더 인스펙터 열기(frontend.md §5).

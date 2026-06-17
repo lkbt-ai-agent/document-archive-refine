@@ -14,7 +14,7 @@ refs: research/01-mvp-research/04 §5
 - DocumentList: shadcn `Table` + TanStack Table v8 헤드리스(`useReactTable`/`getCoreRowModel`, `manualPagination: true`) — 서버 페이지네이션.
 - 목록 계약 `GET /documents?folder_id=&limit=&cursor=`(document-backend.md) + react-query 바인딩. API·옵션은 context7로 v8 확인 후 작성.
 - 컬럼: 이름, 상태, 크기, 등록일. 폴더 행은 상태/크기에 대시 자리표시(`-`)를 둔다.
-- 하위 폴더 row + 문서 row(폴더 먼저). 단일 클릭=선택(하이라이트), 더블 클릭/눈 버튼=열기(문서=문서 인스펙터, 폴더 더블=진입/폴더 눈=폴더 인스펙터). 상세 규칙은 frontend.md §6b.
+- 하위 폴더 row + 문서 row(폴더 먼저). 단일 클릭=선택(하이라이트), 더블 클릭/눈 버튼=열기(문서=문서 인스펙터, 폴더 더블=진입/폴더 눈=폴더 인스펙터). 상세 규칙은 frontend.md §5.
 - 행 "⋯" 드롭다운과 우클릭 컨텍스트 메뉴(문서=다운로드/삭제, 폴더=FolderActions, folders-frontend.md).
 - AI 산출물도 일반 문서 행으로 표기(ai-outputs-frontend.md).
 
