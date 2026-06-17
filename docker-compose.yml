@@ -1,0 +1,55 @@
+# 실행 구성 (infrastructure §7): api·worker·web·redis만 정의한다.
+# PostgreSQL·MinIO는 원격 서비스라 여기서 정의하지 않는다.
+# 기본 `docker compose up`은 redis만 기동. 앱 프로세스는 `--profile app`로 띄운다
+# (코드/Dockerfile은 03-backend·04-frontend에서 생성).
+name: document-archive-refine
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # --- 앱 프로세스 (profile: app) ---
+  api:                                    # FastAPI (03-backend)
+    profiles: ["app"]
+    build: ./backend                      # 03-backend A1에서 backend/ + Dockerfile 생성
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0     # 컨테이너 네트워크용(.env의 localhost 오버라이드)
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  worker:                                 # arq worker (03-backend), api와 동일 이미지
+    profiles: ["app"]
+    build: ./backend
+    command: ["arq", "src.pipeline.worker.WorkerSettings"]
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  web:                                    # Next.js (04-frontend)
+    profiles: ["app"]
+    build: ./web                          # 04-frontend에서 web Dockerfile 생성
+    env_file: .env
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  redis-data:
