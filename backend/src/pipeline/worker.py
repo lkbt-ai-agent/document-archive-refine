@@ -12,7 +12,7 @@ from src.pipeline.queue import redis_settings
 
 
 class WorkerSettings:
-    functions = [tasks.ingest_document]
+    functions = [tasks.ingest_document, tasks.run_generation]
     cron_jobs = [cron(tasks.cleanup_orphans, minute=0)]  # 매시 정각 (document-backend §4)
     redis_settings = redis_settings()
     max_tries = 5  # 단계 재시도(지수 백오프), ingestion-backend §1

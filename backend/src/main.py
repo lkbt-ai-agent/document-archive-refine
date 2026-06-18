@@ -50,9 +50,13 @@ def _register_routers(app: FastAPI) -> None:
     """도메인 라우터 등록. 구현된 도메인만 점진적으로 추가한다(D~H)."""
     from src.documents.router import router as documents_router
     from src.folders.router import router as folders_router
+    from src.generations.router import router as generations_router
+    from src.search.router import router as search_router
 
     app.include_router(folders_router)
     app.include_router(documents_router)
+    app.include_router(search_router)
+    app.include_router(generations_router)
 
 
 app = create_app()

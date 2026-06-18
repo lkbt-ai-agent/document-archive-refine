@@ -5,6 +5,7 @@ MinIO presigned URL 발급과 오브젝트 삭제·검증을 담당한다. 폴�
 """
 
 import asyncio
+import io
 from datetime import timedelta
 from urllib.parse import quote
 
@@ -51,6 +52,32 @@ async def object_exists(object_key: str) -> bool:
         return True
     except S3Error:
         return False
+
+
+async def put_bytes(object_key: str, data: bytes, content_type: str) -> None:
+    """서버 측에서 오브젝트를 직접 적재(산출물 문서화, ai-outputs-backend §7)."""
+
+    def _put() -> None:
+        get_minio().put_object(
+            settings.minio_bucket, object_key, io.BytesIO(data), length=len(data),
+            content_type=content_type,
+        )
+
+    await asyncio.to_thread(_put)
+
+
+async def get_bytes(object_key: str) -> bytes:
+    """오브젝트 본문 전체를 읽는다(인제스트 워커용)."""
+
+    def _read() -> bytes:
+        resp = get_minio().get_object(settings.minio_bucket, object_key)
+        try:
+            return resp.read()
+        finally:
+            resp.close()
+            resp.release_conn()
+
+    return await asyncio.to_thread(_read)
 
 
 async def delete_object(object_key: str) -> None:

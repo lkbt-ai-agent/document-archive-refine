@@ -23,6 +23,13 @@ async def ingest_document(ctx, document_id: str) -> None:
     await run_ingest(document_id)
 
 
+async def run_generation(ctx, generation_id: str) -> None:
+    """AI 산출물 생성 진입점. 멱등 키 `generation_id` (ai-outputs-backend §2)."""
+    from src.generations.runner import run
+
+    await run(generation_id)
+
+
 async def cleanup_orphans(ctx) -> dict:
     """주기 잡(매시): `uploaded`로 24h 방치된 행을 stat_object 부재 확인 후 삭제."""
     cutoff = datetime.now(UTC) - ORPHAN_AGE

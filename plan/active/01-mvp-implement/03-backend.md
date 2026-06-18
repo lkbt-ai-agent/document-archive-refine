@@ -1,6 +1,6 @@
 ---
 created: 2026-06-11
-completed: —
+completed: 2026-06-18
 overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토리지·인제스트·검색/RAG·산출물 (arch data-overview·backend·domains 전반).
 ---
 
@@ -39,26 +39,26 @@ overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토
 - [x] E6 문서 조회·이동 API — 목록(`folder_id`·cursor)·상세(`status`/`stage`/`error`)·폴더 이동(`PATCH {folder_id}`) (document-backend §1).
 
 ## 인제스트 (ingestion)
-- [ ] F1 arq worker + enqueue, `status`/`stage` 멱등 갱신, `ingest_ms` 기록 (§2·§4).
-- [ ] F2 파일타입 감지(내용 기반) → PDF 본문·표 추출 (§3-1·§3-2).
-- [ ] F3 OCR(스캔 PDF·이미지) 페이지 단위 + 부분 실패 격리 (§3-2).
-- [ ] F4 TXT/MD 안전 디코딩 + MD 구조 보존 (§3-2).
-- [ ] F5 메타 생성 `{title,summary,topics,keywords}` + intrinsic·언어 (§3-3).
-- [ ] F6 청킹 + KURE-v1 임베딩(1024d) → `document_chunks` 멱등 upsert(`ON CONFLICT (document_id, chunk_index)`) (§3-4·§3-5).
-- [ ] F7 `sha256` 인제스트 중 계산·`documents` 채움 + 동일 파일 식별·표시(재업로드 차단 안 함) (document-backend §5, documents-schema §3, document.md §4).
+- [x] F1 arq worker + enqueue, `status`/`stage` 멱등 갱신, `ingest_ms` 기록 (§2·§4).
+- [x] F2 파일타입 감지(내용 기반) → PDF 본문·표 추출 (§3-1·§3-2).
+- [x] F3 OCR(스캔 PDF·이미지) 페이지 단위 + 부분 실패 격리 (§3-2).
+- [x] F4 TXT/MD 안전 디코딩 + MD 구조 보존 (§3-2).
+- [x] F5 메타 생성 `{title,summary,topics,keywords}` + intrinsic·언어 (§3-3).
+- [x] F6 청킹 + KURE-v1 임베딩(1024d) → `document_chunks` 멱등 upsert(`ON CONFLICT (document_id, chunk_index)`) (§3-4·§3-5).
+- [x] F7 `sha256` 인제스트 중 계산·`documents` 채움 + 동일 파일 식별·표시(재업로드 차단 안 함) (document-backend §5, documents-schema §3, document.md §4).
 - 추출/OCR 엔진 선정은 ingestion-backend §2-2 확정값을 따르고, 라이브러리 API·버전만 context7 MCP로 확인.
 
 ## 검색 & RAG (search-and-rag)
-- [ ] G1 키워드 검색(PGroonga, 폴백 `tsvector simple`) (search-backend §3, search-schema §1).
-- [ ] G2 의미 검색(HNSW cosine) (search-backend §3, search-schema §2).
-- [ ] G3 자연어→구조화 질의(GBNF) + Python 날짜 해석, `owner_id` 강제 (search-backend §2, search-and-rag §3).
-- [ ] G4 단일 진입 라우팅 — 키워드/의미 `POST /search`, rag `POST /search/ask`(인용 `[n]↔chunk_id`) (search-backend §1·§2).
-- [ ] G5 평가 게이트 — 한국어 골든셋 Recall@5/@20(키워드·의미) + RAG 인용 존재 이진 체크, CI 결정적 (search-backend §6, search-and-rag §7).
+- [x] G1 키워드 검색(PGroonga, 폴백 `tsvector simple`) (search-backend §3, search-schema §1).
+- [x] G2 의미 검색(HNSW cosine) (search-backend §3, search-schema §2).
+- [x] G3 자연어→구조화 질의(GBNF) + Python 날짜 해석, `owner_id` 강제 (search-backend §2, search-and-rag §3).
+- [x] G4 단일 진입 라우팅 — 키워드/의미 `POST /search`, rag `POST /search/ask`(인용 `[n]↔chunk_id`) (search-backend §1·§2).
+- [x] G5 평가 게이트 — 한국어 골든셋 Recall@5/@20(키워드·의미) + RAG 인용 존재 이진 체크, CI 결정적 (search-backend §6, search-and-rag §7).
 
 ## AI 산출물 & 계보 (ai-outputs)
-- [ ] H1 비동기 생성 — `POST /generations`(202) + `generations(queued)` + enqueue (ai-outputs-backend §2).
-- [ ] H2 Summary(STUFF/MAP-REDUCE/HIERARCHICAL) 워크플로우 (ai-outputs-backend §3).
-- [ ] H3 Draft(outline-then-expand) 워크플로우 (ai-outputs-backend §4).
-- [ ] H4 Report — Python 통계 + Vega-Lite 스펙 + 검증·수리 루프(≤5) (ai-outputs-backend §5).
-- [ ] H5 계보 기록(provider/model/seed/프롬프트/출처/차트) + 인용 스냅샷(`cited_text`/`cited_title`) 복사·출처 FK `ON DELETE SET NULL` + `/generations/{id}`·`/lineage`·`/generations?source_document_id=&kind=&user=`("산출물 내역", 출력 문서 존재 건만) (ai-outputs-backend §6·§1, generations-schema §2).
-- [ ] H6 산출물 문서화 — 성공 시 업로드 + `documents` 행 + 인제스트, `output_document_id` 기록 (ai-outputs-backend §7).
+- [x] H1 비동기 생성 — `POST /generations`(202) + `generations(queued)` + enqueue (ai-outputs-backend §2).
+- [x] H2 Summary(STUFF/MAP-REDUCE/HIERARCHICAL) 워크플로우 (ai-outputs-backend §3).
+- [x] H3 Draft(outline-then-expand) 워크플로우 (ai-outputs-backend §4).
+- [x] H4 Report — Python 통계 + Vega-Lite 스펙 + 검증·수리 루프(≤5) (ai-outputs-backend §5).
+- [x] H5 계보 기록(provider/model/seed/프롬프트/출처/차트) + 인용 스냅샷(`cited_text`/`cited_title`) 복사·출처 FK `ON DELETE SET NULL` + `/generations/{id}`·`/lineage`·`/generations?source_document_id=&kind=&user=`("산출물 내역", 출력 문서 존재 건만) (ai-outputs-backend §6·§1, generations-schema §2).
+- [x] H6 산출물 문서화 — 성공 시 업로드 + `documents` 행 + 인제스트, `output_document_id` 기록 (ai-outputs-backend §7).
