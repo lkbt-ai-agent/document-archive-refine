@@ -1,0 +1,37 @@
+[project]
+name = "document-archive-refine-backend"
+version = "0.1.0"
+description = "Mechive 백엔드 — FastAPI · SQLAlchemy 2 · arq (한국어 문서 아카이브)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.118",
+    "uvicorn[standard]>=0.34",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "psycopg[binary]>=3.2",
+    "alembic>=1.14",
+    "pgvector>=0.3.6",
+    "minio>=7.2",
+    "arq>=0.26",
+    "httpx>=0.28",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+]
+
+# 애플리케이션이라 빌드/설치 대상이 아니다. `uv run`이 venv만 관리하고
+# 패키지 `src`는 backend/ 를 CWD로 두고 import한다(arq `src.pipeline.worker.WorkerSettings`).
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
