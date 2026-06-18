@@ -14,6 +14,6 @@ overview: 원격 PG/MinIO 연결 검증 + 로컬 런타임(Redis·llama) 기동 
 
 ## 런타임·실행
 - [x] B1 Redis 기동(로컬 Docker `redis:7-alpine`) + `REDIS_URL` (§5). `docker-compose.yml`, ping=PONG.
-- [x] B2 llama-server 기동 — 생성 8080 / 임베딩 8081(KURE-v1) (§6). `scripts/llama-{chat,embed}.sh` (Mac mini 호스트에서 모델로 기동).
+- [x] B2 llama-server 기동 — 생성 8080 / 임베딩 8081(KURE-v1) (§6). `scripts/llama-{chat,embed}.sh`, arch 지정 모델(a.x-4.0-light Q4_K_M, kure-v1 Q8_0) 다운로드·네이티브 Metal 기동, 임베딩 1024d·채팅 스모크 통과.
 - [x] B3 api·worker·web·redis만 프로세스화(PG·MinIO 정의 금지) (§7). `docker-compose.yml`(앱은 `--profile app`).
 - [x] B4 헬스체크 — PG/MinIO/Redis/llama, PG/MinIO 실패 시 fail-fast (backend §11). `scripts/healthcheck.sh`, PG/MinIO/Redis OK.

@@ -1,7 +1,11 @@
-# 실행 구성 (infrastructure §7): api·worker·web·redis만 정의한다.
-# PostgreSQL·MinIO는 원격 서비스라 여기서 정의하지 않는다.
-# 기본 `docker compose up`은 redis만 기동. 앱 프로세스는 `--profile app`로 띄운다
-# (코드/Dockerfile은 03-backend·04-frontend에서 생성).
+# [무엇] 로컬 개발에 필요한 서비스들을 한 번에 띄우는 docker compose 정의 파일.
+#        (docker compose = 여러 컨테이너를 하나의 설정으로 함께 실행/관리하는 도구)
+# [구성] redis      = 백그라운드 작업 큐(arq)가 쓰는 인메모리 저장소. 지금은 이것만 기본 기동.
+#        api/worker/web = 백엔드 API·작업 워커·프론트엔드. 아직 코드가 없어 `--profile app`로
+#                         분리해 둠(기본 기동에서 제외 → 코드/Dockerfile 준비되면 함께 기동).
+# [원격] PostgreSQL·MinIO는 원격 서버라 여기서 정의하지 않는다 (infrastructure §7).
+# [사용] `docker compose up -d redis`        → redis만 백그라운드 기동
+#        `docker compose --profile app up`   → 앱 프로세스까지 기동(준비 후)
 name: document-archive-refine
 
 services:

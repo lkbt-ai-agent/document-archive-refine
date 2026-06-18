@@ -1,6 +1,6 @@
 ---
 created: 2026-06-11
-updated: 2026-06-15
+updated: 2026-06-17
 status: approved
 overview: 원격 DB·MinIO 연결, 환경변수·시크릿, Redis·llama 런타임, DB 확장 검증을 정의한다.
 refs: research/01-mvp-research/00 §0, research/01-mvp-research/04 §6
@@ -35,6 +35,7 @@ refs: research/01-mvp-research/00 §0, research/01-mvp-research/04 §6
 - 새 DB를 만들지 않고 스키마로만 격리
 - 전용 스키마 `archive`에 모든 테이블 생성, 확장은 전용 `archive_ext`. 연결 시 `search_path=archive,archive_ext`.
 - Alembic `version_table_schema='archive'`로 버전 테이블도 격리.
+- 앱 역할 권한: `archive` 소유(또는 CREATE), `archive_ext` USAGE(확장 타입/연산자 참조에 필요).
 
 ## 4. DB·MinIO
 ### 연결
@@ -52,11 +53,12 @@ refs: research/01-mvp-research/00 §0, research/01-mvp-research/04 §6
 ### 런타임
 - Mac mini 네이티브(Metal):
 ```bash
-llama-server -m ax-4.0-light-q4_k_m.gguf -ngl 99 -c 8192 --port 8080   # 생성
+llama-server -m a.x-4.0-light-q4_k_m.gguf -ngl 99 -c 8192 --port 8080   # 생성
 llama-server -m kure-v1-q8_0.gguf --embeddings --pooling cls -ngl 99 \
   --ctx-size 8192 --batch-size 8192 --port 8081                         # 임베딩
 ```
 - 모델 Docker 금지: macOS Docker는 Metal 불가(CPU-only로 느려짐) → 호스트 네이티브.
+- 모델 정의(선정 이유/출처/양자화)는 `models.md`.
 
 ## 7. 실행 구성 & 부트스트랩
 - 대상: api·worker·web·redis
