@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "./status-badge";
 import { OriginalViewerDialog } from "./original-viewer-dialog";
 import { useDriveStore } from "@/lib/store";
+import { useDocument, triggerDownload } from "@/lib/api/documents";
+import { errorMessage } from "@/lib/api/client";
 import { formatBytes, formatDate, formatDuration } from "@/lib/format";
 import { isTextLike } from "@/lib/ui";
 
@@ -19,21 +21,22 @@ const MetaRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
 );
 
 export const DocumentDetail = () => {
-  const doc = useDriveStore((s) =>
-    s.documents.find((d) => d.id === s.selectedDocumentId),
-  );
+  const selectedId = useDriveStore((s) => s.selectedDocumentId);
+  const { data: doc } = useDocument(selectedId);
   const [viewerOpen, setViewerOpen] = React.useState(false);
 
   if (!doc) return null;
 
-  // "원본 보기": 텍스트류 = 마크다운 뷰어 / 그 외 = presigned 다운로드 (arch 10 §10)
+  // "원본 보기": 텍스트류 = 마크다운 뷰어 / 그 외 = presigned 다운로드 (document-frontend §2)
   const onViewOriginal = () => {
     if (isTextLike(doc.mime)) {
       setViewerOpen(true);
     } else {
-      toast.info("텍스트가 아닌 파일은 다운로드합니다 (presigned GET — 목업)");
+      triggerDownload(doc.id).catch((e) => toast.error(errorMessage(e)));
     }
   };
+  const onDownload = () =>
+    triggerDownload(doc.id).catch((e) => toast.error(errorMessage(e)));
 
   return (
     <div className="space-y-4 p-4">
@@ -64,7 +67,7 @@ export const DocumentDetail = () => {
           size="sm"
           variant="outline"
           className="flex-1"
-          onClick={() => toast.info("presigned GET 다운로드 (목업)")}
+          onClick={onDownload}
         >
           <Download className="size-4" /> 다운로드
         </Button>

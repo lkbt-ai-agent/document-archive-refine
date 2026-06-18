@@ -19,14 +19,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useDriveStore } from "@/lib/store";
-import { folderHref } from "@/lib/routes";
+import { useDocument, fetchDocument } from "@/lib/api/documents";
 import {
-  formatDate,
-  formatDuration,
-  genKindLabel,
-  genStatusLabel,
-} from "@/lib/format";
-import type { GenKind, GenStatus, Generation } from "@/lib/types";
+  useArtifacts,
+  useCreateGeneration,
+  useGeneration,
+  useInvalidateGenerations,
+} from "@/lib/api/generations";
+import { errorMessage } from "@/lib/api/client";
+import { folderHref } from "@/lib/routes";
+import { formatDate, genKindLabel, genStatusLabel } from "@/lib/format";
+import type { GenKind, GenStatus } from "@/lib/types";
 
 const KIND_OPTIONS: { kind: GenKind; icon: React.ElementType; desc: string }[] = [
   { kind: "summary", icon: FileText, desc: "STUFF / MAP-REDUCE 요약" },
@@ -41,42 +44,91 @@ const genStatusColor: Record<GenStatus, string> = {
   queued: "text-status-uploaded",
 };
 
-export const GenerationPanel = () => {
-  const doc = useDriveStore((s) =>
-    s.documents.find((d) => d.id === s.selectedDocumentId),
+// 진행 중 생성 1건 — queued/running 동안 폴링하다 종료되면 onDone 으로 알림(목록 갱신).
+const InflightRow = ({
+  genId,
+  kind,
+  onDone,
+}: {
+  genId: string;
+  kind: GenKind;
+  onDone: (genId: string, status: GenStatus) => void;
+}) => {
+  const { data: gen } = useGeneration(genId);
+  const status = gen?.status;
+  React.useEffect(() => {
+    if (status === "succeeded" || status === "failed") onDone(genId, status);
+  }, [status, genId, onDone]);
+
+  if (!gen || status === "succeeded") return null;
+  return (
+    <div className="rounded-md border p-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-medium">{genKindLabel[kind]}</span>
+        <span className={cn("text-xs", genStatusColor[gen.status])}>
+          {genStatusLabel[gen.status]}
+        </span>
+      </div>
+      {gen.status === "running" && (
+        <Progress value={gen.progressPct} className="mt-2 h-1" />
+      )}
+    </div>
   );
-  const documents = useDriveStore((s) => s.documents);
-  const generations = useDriveStore((s) => s.generations);
-  const startGeneration = useDriveStore((s) => s.startGeneration);
+};
+
+export const GenerationPanel = () => {
+  const selectedId = useDriveStore((s) => s.selectedDocumentId);
+  const { data: doc } = useDocument(selectedId);
   const router = useRouter();
+
+  const { data: artifacts = [] } = useArtifacts(selectedId);
+  const createGen = useCreateGeneration();
+  const invalidate = useInvalidateGenerations();
+
   const [open, setOpen] = React.useState(false);
   const [kind, setKind] = React.useState<GenKind>("summary");
+  // 방금 트리거한 진행 중 생성들(완료 시 목록으로 이동).
+  const [inflight, setInflight] = React.useState<{ id: string; kind: GenKind }[]>([]);
 
   const generate = () => {
     if (!doc) return;
-    startGeneration(kind, doc.id);
-    setOpen(false);
-    toast.success(
-      `${genKindLabel[kind]} 생성 요청 (POST /generations → 202, 목업)`,
+    createGen.mutate(
+      { kind, documentId: doc.id },
+      {
+        onSuccess: (g) => {
+          setInflight((prev) => [{ id: g.id, kind }, ...prev]);
+          toast.success(`${genKindLabel[kind]} 생성을 시작했습니다.`);
+        },
+        onError: (e) => toast.error(errorMessage(e)),
+      },
     );
+    setOpen(false);
   };
 
-  // 산출물 내역 = 현재 원본 문서의 생성. 성공 건은 출력 문서가 존재할 때만(삭제 시 비노출, arch 09 §9a).
-  const items = generations.filter(
-    (g) =>
-      g.documentId === doc?.id &&
-      (g.status !== "succeeded" ||
-        (g.outputDocumentId != null &&
-          documents.some((d) => d.id === g.outputDocumentId))),
+  const onInflightDone = React.useCallback(
+    (genId: string, status: GenStatus) => {
+      setInflight((prev) => {
+        const done = prev.find((p) => p.id === genId);
+        if (done) {
+          if (status === "succeeded")
+            toast.success(`${genKindLabel[done.kind]} 생성 완료 — 산출물 문서로 추가됨`);
+          else toast.error(`${genKindLabel[done.kind]} 생성 실패`);
+        }
+        return prev.filter((p) => p.id !== genId);
+      });
+      invalidate();
+    },
+    [invalidate],
   );
 
-  // 산출물 내역 row 클릭 → 산출물 문서 폴더로 이동(+해당 문서 인스펙터 딥링크)
-  const openArtifact = (g: Generation) => {
-    const out = g.outputDocumentId
-      ? documents.find((d) => d.id === g.outputDocumentId)
-      : undefined;
-    if (!out) return;
-    router.push(folderHref(out.folderId, out.id));
+  // 산출물 내역 row 클릭 → 산출물 문서 폴더로 이동(+해당 문서 인스펙터 딥링크).
+  const openArtifact = async (outputDocId: string) => {
+    try {
+      const out = await fetchDocument(outputDocId);
+      router.push(folderHref(out.folderId, out.id));
+    } catch (e) {
+      toast.error(errorMessage(e));
+    }
   };
 
   return (
@@ -122,7 +174,7 @@ export const GenerationPanel = () => {
               })}
             </div>
             <DialogFooter>
-              <Button onClick={generate} disabled={!doc}>
+              <Button onClick={generate} disabled={!doc || createGen.isPending}>
                 <Sparkles className="size-4" /> 생성 시작
               </Button>
             </DialogFooter>
@@ -137,46 +189,49 @@ export const GenerationPanel = () => {
       </div>
 
       <div className="space-y-2 px-4 pb-4">
-        {items.length === 0 && (
+        {inflight.map((g) => (
+          <InflightRow
+            key={g.id}
+            genId={g.id}
+            kind={g.kind}
+            onDone={onInflightDone}
+          />
+        ))}
+
+        {inflight.length === 0 && artifacts.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
             이 문서의 산출물이 없습니다.
           </p>
         )}
-        {items.map((g) => {
-          const navigable = g.status === "succeeded" && g.outputDocumentId != null;
-          return (
-            <button
-              key={g.id}
-              type="button"
-              disabled={!navigable}
-              onClick={() => navigable && openArtifact(g)}
-              className={cn(
-                "block w-full rounded-md border p-2.5 text-left",
-                navigable
-                  ? "cursor-pointer hover:bg-accent"
-                  : "cursor-default",
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium">{genKindLabel[g.kind]}</span>
-                <span className={cn("text-xs", genStatusColor[g.status])}>
-                  {genStatusLabel[g.status]}
-                </span>
-              </div>
-              {g.status === "running" && (
-                <Progress value={g.progressPct} className="mt-2 h-1" />
-              )}
-              <p className="mt-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                <span>{formatDate(g.createdAt)}</span>
-                {g.elapsedMs != null && (
-                  <span className="tabular-nums">
-                    생성 {formatDuration(g.elapsedMs)}
-                  </span>
-                )}
+
+        {artifacts.map((g) => (
+          <button
+            key={g.id}
+            type="button"
+            disabled={!g.output_document_id}
+            onClick={() =>
+              g.output_document_id && openArtifact(g.output_document_id)
+            }
+            className={cn(
+              "block w-full rounded-md border p-2.5 text-left",
+              g.output_document_id
+                ? "cursor-pointer hover:bg-accent"
+                : "cursor-default",
+            )}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">{genKindLabel[g.kind]}</span>
+              <span className={cn("text-xs", genStatusColor.succeeded)}>
+                {genStatusLabel.succeeded}
+              </span>
+            </div>
+            {g.created_at && (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {formatDate(g.created_at)}
               </p>
-            </button>
-          );
-        })}
+            )}
+          </button>
+        ))}
       </div>
     </div>
   );

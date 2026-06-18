@@ -1,12 +1,13 @@
 "use client";
 
-import * as React from "react";
 import { Folder as FolderIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useDriveStore } from "@/lib/store";
+import { useFolders } from "@/lib/api/folders";
+import { useDocuments } from "@/lib/api/documents";
 import { formatDate } from "@/lib/format";
 
-// 폴더 인스펙터(읽기 전용) — 폴더 단일 클릭 시 우측에 표시 (arch 10 §7a)
+// 폴더 인스펙터(읽기 전용) — 폴더 단일/눈 클릭 시 우측에 표시 (folders-frontend §1).
 const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="flex justify-between gap-4 py-1 text-sm">
     <span className="text-muted-foreground">{label}</span>
@@ -16,13 +17,15 @@ const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
 
 export const FolderDetail = () => {
   const folderId = useDriveStore((s) => s.inspectedFolderId);
-  const folder = useDriveStore((s) => s.folders.find((f) => f.id === folderId));
-  const subfolderCount = useDriveStore(
-    (s) => s.folders.filter((f) => f.parentId === folderId).length,
-  );
-  const docCount = useDriveStore(
-    (s) => s.documents.filter((d) => d.folderId === folderId).length,
-  );
+  const { data: folders = [] } = useFolders();
+  const folder = folders.find((f) => f.id === folderId);
+  const subfolderCount = folders.filter((f) => f.parentId === folderId).length;
+
+  const docsQuery = useDocuments(folderId ?? "none", !!folderId);
+  const loadedDocs =
+    (docsQuery.data?.pages ?? []).reduce((n, p) => n + p.items.length, 0) ?? 0;
+  // 정확한 총계 API가 없어 로드된 건수 기준(다음 페이지 있으면 "+").
+  const docLabel = `${loadedDocs}${docsQuery.hasNextPage ? "+" : ""}개`;
 
   if (!folder) return null;
 
@@ -41,7 +44,7 @@ export const FolderDetail = () => {
           value={folder.createdAt ? formatDate(folder.createdAt) : "—"}
         />
         <Row label="하위 폴더" value={`${subfolderCount}개`} />
-        <Row label="문서" value={`${docCount}개`} />
+        <Row label="문서" value={docLabel} />
       </div>
     </div>
   );

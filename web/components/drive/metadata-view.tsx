@@ -10,6 +10,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { useDriveStore } from "@/lib/store";
+import { useDocument } from "@/lib/api/documents";
 import { LineageView } from "./lineage-view";
 
 // AI 생성 메타데이터 — 읽기 전용 표시 (사용자 보정 MVP 제외; arch 10 §7a).
@@ -23,9 +24,8 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 );
 
 export const MetadataView = () => {
-  const doc = useDriveStore((s) =>
-    s.documents.find((d) => d.id === s.selectedDocumentId),
-  );
+  const selectedId = useDriveStore((s) => s.selectedDocumentId);
+  const { data: doc } = useDocument(selectedId);
 
   if (!doc) return null;
 

@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { useDriveStore } from "@/lib/store";
+import { toast } from "sonner";
+import { useFolders, useMoveFolder } from "@/lib/api/folders";
+import { errorMessage } from "@/lib/api/client";
 import type { Folder } from "@/lib/types";
 
 const buildChildrenMap = (folders: Folder[]) => {
@@ -49,8 +51,8 @@ export const MoveFolderDialog = ({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) => {
-  const folders = useDriveStore((s) => s.folders);
-  const moveFolder = useDriveStore((s) => s.moveFolder);
+  const { data: folders = [] } = useFolders();
+  const moveFolder = useMoveFolder();
   const [target, setTarget] = React.useState<string | null>(null);
 
   const childrenMap = React.useMemo(() => buildChildrenMap(folders), [folders]);
@@ -62,7 +64,13 @@ export const MoveFolderDialog = ({
 
   const submit = () => {
     if (!folder || !target) return;
-    moveFolder(folder.id, target);
+    moveFolder.mutate(
+      { id: folder.id, parentId: target },
+      {
+        onSuccess: () => toast.success("폴더를 이동했습니다."),
+        onError: (e) => toast.error(errorMessage(e)),
+      },
+    );
     onOpenChange(false);
   };
 

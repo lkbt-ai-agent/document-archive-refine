@@ -15,7 +15,9 @@ import {
   type FolderAction,
 } from "./folder-actions";
 import { useDriveStore } from "@/lib/store";
-import { folderHref } from "@/lib/routes";
+import { useFolders, useCreateFolder } from "@/lib/api/folders";
+import { errorMessage } from "@/lib/api/client";
+import { folderHref, ROOT_FOLDER_ID } from "@/lib/routes";
 import { useCurrentFolderId } from "@/hooks/use-current-folder";
 import type { Folder } from "@/lib/types";
 
@@ -128,11 +130,12 @@ const FolderNode = ({
 };
 
 export const FolderTree = () => {
-  const folders = useDriveStore((s) => s.folders);
-  const addFolder = useDriveStore((s) => s.addFolder);
+  const { data: folders = [] } = useFolders();
+  const createFolder = useCreateFolder();
+  const expandFolder = useDriveStore((s) => s.expandFolder);
   const currentFolderId = useCurrentFolderId();
   // 새 폴더 부모 = 현재 폴더(검색 화면이면 루트)
-  const newParentId = currentFolderId ?? "root";
+  const newParentId = currentFolderId ?? ROOT_FOLDER_ID;
 
   const childrenMap = React.useMemo(() => buildChildrenMap(folders), [folders]);
   const roots = childrenMap.get(null) ?? [];
@@ -183,10 +186,18 @@ export const FolderTree = () => {
           description={`"${newParentName}" 하위에 폴더를 만듭니다.`}
           initialName=""
           submitLabel="만들기"
-          onSubmit={(name) => {
-            addFolder(newParentId, name);
-            toast.success(`"${name}" 폴더 생성 (POST /folders — 목업)`);
-          }}
+          onSubmit={(name) =>
+            createFolder.mutate(
+              { parentId: newParentId, name },
+              {
+                onSuccess: () => {
+                  expandFolder(newParentId);
+                  toast.success(`"${name}" 폴더를 만들었습니다.`);
+                },
+                onError: (e) => toast.error(errorMessage(e)),
+              },
+            )
+          }
         />
       )}
 

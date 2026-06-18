@@ -61,18 +61,36 @@ export type SearchMode = "keyword" | "semantic" | "rag";
 
 export interface SearchResultItem {
   documentId: string;
-  documentName: string;
-  title: string;
-  snippet: string;
-  score: number;
+  documentName: string; // original_filename
+  title: string; // llm_title ?? original_filename
+  snippet: string; // 매칭 청크 본문(content)
+  score: number; // 키워드=pgroonga_score, 의미=유사도
   chunkId: string; // 매칭 청크 id — row 아래 "청크 정보" toggle 표시용(search-frontend §3a)
-  chunkIndex: number;
+  folderId: string; // "해당 폴더로 이동"용
 }
 
+// rag 답변 인용 — /search/ask 는 {n, chunk_id, document_id}만 반환. 문서명은 클라이언트가 보강.
 export interface Citation {
   n: number;
   chunkId: string;
   documentId: string;
-  documentName: string;
-  snippet: string;
+}
+
+// 산출물 계보(GET /generations/{id}/lineage) — LineageView 표시용.
+export interface Lineage {
+  generationId: string;
+  kind: GenKind;
+  provider?: string;
+  model?: string; // model_id → 표시는 provider/model_id
+  seed?: number;
+  latencyMs?: number;
+  createdAt?: string;
+  sourceDocuments: { documentId: string | null; role?: string; citedTitle?: string }[];
+  prompts: { step?: string; system?: string; prompt: string }[];
+  charts: ChartSpec[];
+}
+
+export interface ChartSpec {
+  title?: string;
+  spec: Record<string, unknown>; // Vega-Lite spec(데이터 주입 완료)
 }

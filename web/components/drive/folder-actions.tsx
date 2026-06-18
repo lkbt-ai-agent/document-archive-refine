@@ -32,9 +32,32 @@ import {
 import { FolderNameDialog } from "./folder-name-dialog";
 import { MoveFolderDialog } from "./move-folder-dialog";
 import { useDriveStore } from "@/lib/store";
+import {
+  useFolders,
+  useRenameFolder,
+  useDeleteFolder,
+} from "@/lib/api/folders";
+import { errorMessage } from "@/lib/api/client";
 import { useCurrentFolderId } from "@/hooks/use-current-folder";
 import { folderHref, ROOT_FOLDER_ID } from "@/lib/routes";
 import type { Folder } from "@/lib/types";
+
+// 자기 + 후손 id (삭제 시 현재 폴더 포함 여부 판단용).
+const subtreeIds = (folders: Folder[], rootId: string): Set<string> => {
+  const childrenOf = new Map<string | null, Folder[]>();
+  for (const f of folders) {
+    const arr = childrenOf.get(f.parentId) ?? [];
+    arr.push(f);
+    childrenOf.set(f.parentId, arr);
+  }
+  const ids = new Set<string>();
+  const walk = (id: string) => {
+    ids.add(id);
+    for (const c of childrenOf.get(id) ?? []) walk(c.id);
+  };
+  walk(rootId);
+  return ids;
+};
 
 export type FolderAction = "move" | "rename" | "delete";
 
@@ -43,8 +66,10 @@ export type FolderAction = "move" | "rename" | "delete";
 export const useFolderActions = () => {
   const router = useRouter();
   const currentFolderId = useCurrentFolderId();
-  const renameFolder = useDriveStore((s) => s.renameFolder);
-  const deleteFolder = useDriveStore((s) => s.deleteFolder);
+  const { data: folders = [] } = useFolders();
+  const renameFolder = useRenameFolder();
+  const deleteFolder = useDeleteFolder();
+  const resetSelection = useDriveStore((s) => s.resetSelection);
   const [renameTarget, setRenameTarget] = React.useState<Folder | null>(null);
   const [moveTarget, setMoveTarget] = React.useState<Folder | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Folder | null>(null);
@@ -65,10 +90,15 @@ export const useFolderActions = () => {
           title="폴더 이름 변경"
           initialName={renameTarget.name}
           submitLabel="변경"
-          onSubmit={(name) => {
-            renameFolder(renameTarget.id, name);
-            toast.success("이름 변경 (PATCH /folders/{id} — 목업)");
-          }}
+          onSubmit={(name) =>
+            renameFolder.mutate(
+              { id: renameTarget.id, name },
+              {
+                onSuccess: () => toast.success("폴더 이름을 변경했습니다."),
+                onError: (e) => toast.error(errorMessage(e)),
+              },
+            )
+          }
         />
       )}
 
@@ -93,16 +123,21 @@ export const useFolderActions = () => {
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (deleteTarget) {
-                  deleteFolder(deleteTarget.id);
-                  // 현재 보던 폴더가 삭제 대상에 포함됐으면 루트로 이동
-                  const stillExists = useDriveStore
-                    .getState()
-                    .folders.some((f) => f.id === currentFolderId);
-                  if (currentFolderId && !stillExists)
-                    router.push(folderHref(ROOT_FOLDER_ID));
-                  toast.warning(`"${deleteTarget.name}" 삭제 (DELETE /folders/{id} — 목업)`);
+                if (!deleteTarget) return;
+                const removed = subtreeIds(folders, deleteTarget.id);
+                const name = deleteTarget.name;
+                deleteFolder.mutate(
+                  { id: deleteTarget.id },
+                  {
+                    onSuccess: () => toast.success(`"${name}" 폴더를 삭제했습니다.`),
+                    onError: (e) => toast.error(errorMessage(e)),
+                  },
+                );
+                // 현재 보던 폴더/인스펙터가 삭제 범위에 들면 루트로 이동·인스펙터 해제
+                if (currentFolderId && removed.has(currentFolderId)) {
+                  router.push(folderHref(ROOT_FOLDER_ID));
                 }
+                resetSelection();
               }}
             >
               삭제

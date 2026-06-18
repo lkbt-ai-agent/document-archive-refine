@@ -46,59 +46,71 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { useDriveStore } from "@/lib/store";
-import { folderHref } from "@/lib/routes";
-import { mockAskAnswer, mockSearchResults } from "@/lib/mock-data";
+import { useSearch, useAsk } from "@/lib/api/search";
+import { useDocument, useDeleteDocument, triggerDownload } from "@/lib/api/documents";
+import { errorMessage } from "@/lib/api/client";
+import { folderHref, ROOT_FOLDER_ID } from "@/lib/routes";
 import { formatDuration } from "@/lib/format";
-import type { SearchMode, SearchResultItem } from "@/lib/types";
+import type { Citation, SearchMode, SearchResultItem } from "@/lib/types";
 
 // 검색 결과 화면(search-frontend §3·§3a·§4) — Center 본문에 렌더. 조회 화면을 대체한다.
-// 키워드/의미 = 결과 리스트, rag = 답변 + 인용. 공통 메타(응답 시간·개수) + row별 청크 toggle.
 const MODE_LABEL: Record<SearchMode, string> = {
   keyword: "키워드",
   semantic: "의미",
   rag: "RAG",
 };
 
-// 결과 원본 문서 row 공용 액션 — 상세/다운로드/폴더 이동/삭제 (키워드·의미·rag 공용)
-const useResultRowActions = (documentId: string) => {
+// 결과 row 공용 액션 — 다운로드/폴더 이동/삭제. 필요한 값(폴더·이름)을 인자로 받아 store 비의존.
+const useResultRowActions = (item: {
+  documentId: string;
+  folderId: string;
+  documentName: string;
+}) => {
   const router = useRouter();
-  const doc = useDriveStore((s) =>
-    s.documents.find((d) => d.id === documentId),
-  );
-  const deleteDocument = useDriveStore((s) => s.deleteDocument);
-
+  const del = useDeleteDocument();
   return {
-    doc,
-    download: () => toast.info("presigned GET 다운로드 (목업)"),
+    download: () =>
+      triggerDownload(item.documentId).catch((e) => toast.error(errorMessage(e))),
     // 폴더 이동 + 해당 문서 선택 — 폴더 URL + ?doc 딥링크
-    moveToFolder: doc
-      ? () => router.push(folderHref(doc.folderId, documentId))
-      : undefined,
-    remove: () => {
-      deleteDocument(documentId);
-      toast.warning(`"${doc?.name ?? "문서"}" 삭제 (목업)`);
-    },
+    moveToFolder: () =>
+      router.push(folderHref(item.folderId, item.documentId)),
+    remove: () =>
+      del.mutate(item.documentId, {
+        onSuccess: () => toast.success(`"${item.documentName}" 문서를 삭제했습니다.`),
+        onError: (e) => toast.error(errorMessage(e)),
+      }),
   };
 };
 
-// "⋯" 드롭다운
-const ResultRowMenu = ({ documentId }: { documentId: string }) => {
-  const a = useResultRowActions(documentId);
+const RowActions = ({
+  item,
+  variant,
+}: {
+  item: { documentId: string; folderId: string; documentName: string };
+  variant: "dropdown" | "context";
+}) => {
+  const a = useResultRowActions(item);
+  if (variant === "context") {
+    return (
+      <ContextMenuContent>
+        <ContextMenuItem onClick={a.download}>
+          <Download className="size-4" /> 다운로드
+        </ContextMenuItem>
+        <ContextMenuItem onClick={a.moveToFolder}>
+          <FolderInput className="size-4" /> 해당 폴더로 이동
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem variant="destructive" onClick={a.remove}>
+          <Trash2 className="size-4" /> 삭제
+        </ContextMenuItem>
+      </ContextMenuContent>
+    );
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          aria-label="문서 작업"
-        >
+        <Button variant="ghost" size="icon" className="size-7" aria-label="문서 작업">
           <MoreHorizontal className="size-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -106,11 +118,9 @@ const ResultRowMenu = ({ documentId }: { documentId: string }) => {
         <DropdownMenuItem onClick={a.download}>
           <Download className="size-4" /> 다운로드
         </DropdownMenuItem>
-        {a.moveToFolder && (
-          <DropdownMenuItem onClick={a.moveToFolder}>
-            <FolderInput className="size-4" /> 해당 폴더로 이동
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem onClick={a.moveToFolder}>
+          <FolderInput className="size-4" /> 해당 폴더로 이동
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={a.remove}>
           <Trash2 className="size-4" /> 삭제
@@ -119,75 +129,6 @@ const ResultRowMenu = ({ documentId }: { documentId: string }) => {
     </DropdownMenu>
   );
 };
-
-// 우클릭 컨텍스트 메뉴 — "⋯"와 동일 항목
-const ResultRowContextMenu = ({
-  documentId,
-  children,
-}: {
-  documentId: string;
-  children: React.ReactNode;
-}) => {
-  const a = useResultRowActions(documentId);
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={a.download}>
-          <Download className="size-4" /> 다운로드
-        </ContextMenuItem>
-        {a.moveToFolder && (
-          <ContextMenuItem onClick={a.moveToFolder}>
-            <FolderInput className="size-4" /> 해당 폴더로 이동
-          </ContextMenuItem>
-        )}
-        <ContextMenuSeparator />
-        <ContextMenuItem variant="destructive" onClick={a.remove}>
-          <Trash2 className="size-4" /> 삭제
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
-  );
-};
-
-// 각 리스트 row 아래 "청크 정보" toggle (§3a)
-const ChunkToggle = ({
-  chunkId,
-  chunkIndex,
-  score,
-  snippet,
-}: {
-  chunkId: string;
-  chunkIndex?: number;
-  score?: number;
-  snippet: string;
-}) => (
-  <Collapsible>
-    <CollapsibleTrigger className="group flex w-full items-center gap-1.5 border-t px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-accent/50">
-      <ChevronDown className="size-3.5 transition-transform group-data-[state=open]:rotate-180" />
-      청크 정보
-    </CollapsibleTrigger>
-    <CollapsibleContent className="space-y-1 border-t bg-muted/30 px-3 py-2 text-[11px]">
-      <div className="flex justify-between gap-3">
-        <span className="text-muted-foreground">chunk_id</span>
-        <span className="font-mono">{chunkId}</span>
-      </div>
-      {chunkIndex != null && (
-        <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">chunk_index</span>
-          <span className="tabular-nums">{chunkIndex}</span>
-        </div>
-      )}
-      {score != null && (
-        <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">score</span>
-          <span className="tabular-nums">{score.toFixed(4)}</span>
-        </div>
-      )}
-      <p className="pt-1 leading-relaxed">{snippet}</p>
-    </CollapsibleContent>
-  </Collapsible>
-);
 
 // 키워드/의미: 문서 목록 table 디자인을 따르고, 청크 정보는 해당 row 밑 subrow(확장)로 표시.
 const RetrievalList = ({
@@ -229,101 +170,96 @@ const RetrievalList = ({
           <TableHeader>
             <TableRow>
               <TableHead>이름</TableHead>
-              <TableHead className="hidden text-right sm:table-cell">
-                점수
-              </TableHead>
+              <TableHead className="hidden text-right sm:table-cell">점수</TableHead>
               <TableHead className="w-24" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {results.map((r) => {
               const open = expanded.has(r.chunkId);
+              const item = {
+                documentId: r.documentId,
+                folderId: r.folderId,
+                documentName: r.documentName,
+              };
               return (
                 <React.Fragment key={r.chunkId}>
-                  {/* 본 row — 단일 클릭=선택, 더블 클릭=인스펙터 토글, 우클릭=컨텍스트 메뉴 */}
-                  <ResultRowContextMenu documentId={r.documentId}>
-                    <TableRow
-                      className={cn(
-                        "cursor-pointer select-none border-b-0",
-                        activeDocId === r.documentId && "bg-accent/60",
-                      )}
-                      onClick={() => onSelect(r.documentId)}
-                      onDoubleClick={() => onOpen(r.documentId)}
-                    >
-                      <TableCell className="max-w-0">
-                        <div className="flex items-center gap-2">
-                          <FileText className="size-4 shrink-0 text-muted-foreground" />
-                          <span className="truncate font-medium">{r.title}</span>
-                          <span className="shrink-0 text-xs text-muted-foreground tabular-nums sm:hidden">
-                            {r.score.toFixed(2)}
-                          </span>
-                        </div>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {r.documentName}
-                        </p>
-                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                          {r.snippet}
-                        </p>
-                      </TableCell>
-                      <TableCell className="hidden align-top text-right text-xs text-muted-foreground tabular-nums sm:table-cell">
-                        {r.score.toFixed(2)}
-                      </TableCell>
-                      <TableCell
-                        className="align-top"
-                        onClick={(e) => e.stopPropagation()}
+                  <ContextMenu>
+                    <ContextMenuTrigger asChild>
+                      <TableRow
+                        className={cn(
+                          "cursor-pointer select-none border-b-0",
+                          activeDocId === r.documentId && "bg-accent/60",
+                        )}
+                        onClick={() => onSelect(r.documentId)}
+                        onDoubleClick={() => onOpen(r.documentId)}
                       >
-                        <div className="flex items-center justify-end gap-0.5">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7"
-                            aria-label="청크 정보"
-                            aria-expanded={open}
-                            onClick={() => toggle(r.chunkId)}
-                          >
-                            <ChevronDown
-                              className={cn(
-                                "size-4 transition-transform",
-                                open && "rotate-180",
-                              )}
-                            />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7"
-                            aria-label="상세 보기"
-                            onClick={() => onOpen(r.documentId)}
-                          >
-                            <Eye className="size-4" />
-                          </Button>
-                          <ResultRowMenu documentId={r.documentId} />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </ResultRowContextMenu>
-                  {/* 청크 정보 subrow — 여백 적은 카드, 일치 청크를 잘림 없이 전부 표시 */}
+                        <TableCell className="max-w-0">
+                          <div className="flex items-center gap-2">
+                            <FileText className="size-4 shrink-0 text-muted-foreground" />
+                            <span className="truncate font-medium">{r.title}</span>
+                            <span className="shrink-0 text-xs text-muted-foreground tabular-nums sm:hidden">
+                              {r.score.toFixed(2)}
+                            </span>
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {r.documentName}
+                          </p>
+                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                            {r.snippet}
+                          </p>
+                        </TableCell>
+                        <TableCell className="hidden align-top text-right text-xs text-muted-foreground tabular-nums sm:table-cell">
+                          {r.score.toFixed(2)}
+                        </TableCell>
+                        <TableCell
+                          className="align-top"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-end gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7"
+                              aria-label="청크 정보"
+                              aria-expanded={open}
+                              onClick={() => toggle(r.chunkId)}
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "size-4 transition-transform",
+                                  open && "rotate-180",
+                                )}
+                              />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7"
+                              aria-label="상세 보기"
+                              onClick={() => onOpen(r.documentId)}
+                            >
+                              <Eye className="size-4" />
+                            </Button>
+                            <RowActions item={item} variant="dropdown" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </ContextMenuTrigger>
+                    <RowActions item={item} variant="context" />
+                  </ContextMenu>
+                  {/* 청크 정보 subrow — 일치 청크를 잘림 없이 전부 표시 */}
                   {open && (
                     <TableRow className="hover:bg-transparent">
                       <TableCell colSpan={3} className="p-0 pb-2">
                         <div className="space-y-1 rounded-md border bg-muted/30 p-2 text-[11px]">
                           <div className="flex justify-between gap-3">
-                            <span className="text-muted-foreground">
-                              chunk_id
-                            </span>
+                            <span className="text-muted-foreground">chunk_id</span>
                             <span className="font-mono">{r.chunkId}</span>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <span className="text-muted-foreground">
-                              chunk_index
-                            </span>
-                            <span className="tabular-nums">{r.chunkIndex}</span>
-                          </div>
-                          <div className="flex justify-between gap-3">
                             <span className="text-muted-foreground">score</span>
-                            <span className="tabular-nums">
-                              {r.score.toFixed(4)}
-                            </span>
+                            <span className="tabular-nums">{r.score.toFixed(4)}</span>
                           </div>
                           <p className="pt-1 leading-relaxed break-words whitespace-pre-wrap text-muted-foreground">
                             {r.snippet}
@@ -342,13 +278,84 @@ const RetrievalList = ({
   );
 };
 
+// rag 인용 카드 — /search/ask 는 {n, chunk_id, document_id}만 주므로 문서명은 단건 조회로 보강.
+const CitationCard = ({
+  citation,
+  activeDocId,
+  onOpen,
+  onSelect,
+}: {
+  citation: Citation;
+  activeDocId: string | null;
+  onOpen: (documentId: string) => void;
+  onSelect: (documentId: string) => void;
+}) => {
+  const { data: doc } = useDocument(citation.documentId);
+  const item = {
+    documentId: citation.documentId,
+    folderId: doc?.folderId ?? ROOT_FOLDER_ID,
+    documentName: doc?.name ?? "문서",
+  };
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className={cn(
+            "rounded-lg border",
+            activeDocId === citation.documentId && "bg-accent/60",
+          )}
+        >
+          <div
+            className="flex cursor-pointer items-start gap-2 p-3"
+            onClick={() => onSelect(citation.documentId)}
+            onDoubleClick={() => onOpen(citation.documentId)}
+          >
+            <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded bg-primary/15 text-xs font-medium text-primary">
+              {citation.n}
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="flex items-center gap-1 text-sm font-medium">
+                <FileText className="size-3.5 shrink-0" />
+                <span className="truncate">{item.documentName}</span>
+              </span>
+              <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
+                {citation.chunkId}
+              </p>
+            </div>
+            <div
+              className="flex shrink-0 items-center gap-0.5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                aria-label="상세 보기"
+                onClick={() => onOpen(citation.documentId)}
+              >
+                <Eye className="size-4" />
+              </Button>
+              <RowActions item={item} variant="dropdown" />
+            </div>
+          </div>
+        </div>
+      </ContextMenuTrigger>
+      <RowActions item={item} variant="context" />
+    </ContextMenu>
+  );
+};
+
 // rag: 합성 답변 + 인용 출처 + 공통 메타
 const RagAnswer = ({
+  answer,
+  citations,
   elapsedMs,
   activeDocId,
   onOpen,
   onSelect,
 }: {
+  answer: string;
+  citations: Citation[];
   elapsedMs: number;
   activeDocId: string | null;
   onOpen: (documentId: string) => void;
@@ -360,7 +367,7 @@ const RagAnswer = ({
       const m = part.match(/\[(\d+)\]/);
       if (m) {
         const n = Number(m[1]);
-        const cit = mockAskAnswer.citations.find((c) => c.n === n);
+        const cit = citations.find((c) => c.n === n);
         return (
           <button
             key={i}
@@ -378,63 +385,25 @@ const RagAnswer = ({
   return (
     <>
       <p className="pt-1 text-[11px] text-muted-foreground tabular-nums">
-        응답 {formatDuration(elapsedMs)} · 인용 {mockAskAnswer.citations.length}개
+        응답 {formatDuration(elapsedMs)} · 인용 {citations.length}개
       </p>
       <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3">
         <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
-        <p className="text-sm leading-relaxed">
-          {renderAnswer(mockAskAnswer.answer)}
-        </p>
+        <p className="text-sm leading-relaxed">{renderAnswer(answer)}</p>
       </div>
       <div>
         <p className="mb-1.5 text-xs font-semibold text-muted-foreground">
           인용 출처
         </p>
         <div className="space-y-2">
-          {mockAskAnswer.citations.map((c) => (
-            <ResultRowContextMenu key={c.n} documentId={c.documentId}>
-              <div
-                className={cn(
-                  "rounded-lg border",
-                  activeDocId === c.documentId && "bg-accent/60",
-                )}
-              >
-                <div
-                  className="flex cursor-pointer items-start gap-2 p-3"
-                  onClick={() => onSelect(c.documentId)}
-                  onDoubleClick={() => onOpen(c.documentId)}
-                >
-                  <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded bg-primary/15 text-xs font-medium text-primary">
-                    {c.n}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1 text-sm font-medium">
-                      <FileText className="size-3.5 shrink-0" />
-                      <span className="truncate">{c.documentName}</span>
-                    </span>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                      {c.snippet}
-                    </p>
-                  </div>
-                  <div
-                    className="flex shrink-0 items-center gap-0.5"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7"
-                      aria-label="상세 보기"
-                      onClick={() => onOpen(c.documentId)}
-                    >
-                      <Eye className="size-4" />
-                    </Button>
-                    <ResultRowMenu documentId={c.documentId} />
-                  </div>
-                </div>
-                <ChunkToggle chunkId={c.chunkId} snippet={c.snippet} />
-              </div>
-            </ResultRowContextMenu>
+          {citations.map((c) => (
+            <CitationCard
+              key={c.n}
+              citation={c}
+              activeDocId={activeDocId}
+              onOpen={onOpen}
+              onSelect={onSelect}
+            />
           ))}
         </div>
       </div>
@@ -451,42 +420,21 @@ export const SearchResults = ({ q, mode }: { q: string; mode: SearchMode }) => {
   const resetSelection = useDriveStore((s) => s.resetSelection);
   const setSearchQuery = useDriveStore((s) => s.setSearchQuery);
   const setMobileRight = useDriveStore((s) => s.setMobileRight);
-  // 선택(하이라이트)/인스펙터 대상 — 상호배타라 하나만 활성
   const activeDocId = selectedDocumentId ?? highlightedDocId;
 
-  // 라우트(q/mode) 변경마다: 인스펙터 해제 + SearchBar 입력 동기화 + 로딩 재생.
-  const routeKey = `${q}|${mode}`;
-  const [readyKey, setReadyKey] = React.useState<string | null>(null);
-  const loading = readyKey !== routeKey;
+  const search = useSearch(q, mode);
+  const ask = useAsk(q, mode);
 
+  // 라우트(q/mode) 변경마다 인스펙터 해제 + SearchBar 입력 동기화.
   React.useEffect(() => {
     resetSelection();
     setSearchQuery(q);
-    const t = window.setTimeout(
-      () => setReadyKey(routeKey),
-      mode === "rag" ? 900 : 500,
-    );
-    return () => window.clearTimeout(t);
-  }, [routeKey, q, mode, resetSelection, setSearchQuery]);
+  }, [q, mode, resetSelection, setSearchQuery]);
 
-  const results = React.useMemo(() => {
-    const query = q.trim().toLowerCase();
-    if (!query) return mockSearchResults;
-    return mockSearchResults.filter(
-      (r) =>
-        r.title.toLowerCase().includes(query) ||
-        r.snippet.toLowerCase().includes(query) ||
-        r.documentName.toLowerCase().includes(query),
-    );
-  }, [q]);
+  const loading = mode === "rag" ? ask.isLoading : search.isLoading;
+  const error = mode === "rag" ? ask.error : search.error;
 
-  // 총 응답 시간(목업) — 실제로는 /search·/search/ask 응답의 elapsed_ms (§3a)
-  const elapsedMs =
-    mode === "rag"
-      ? 820 + q.length * 11
-      : 110 + q.length * 6 + results.length * 8;
-
-  // 단일 클릭 = 선택(하이라이트)만. 더블 클릭/눈 = 인스펙터 열기(닫기는 패널 X·모바일 Sheet).
+  // 단일 클릭 = 선택(하이라이트)만. 더블 클릭/눈 = 인스펙터 열기.
   const onSelect = (documentId: string) => highlightDocument(documentId);
   const onOpen = (documentId: string) => {
     selectDocument(documentId);
@@ -510,9 +458,7 @@ export const SearchResults = ({ q, mode }: { q: string; mode: SearchMode }) => {
           <h2 className="truncate text-sm font-semibold">
             {`${MODE_LABEL[mode]} 검색 결과`}
           </h2>
-          {q && (
-            <p className="truncate text-xs text-muted-foreground">“{q}”</p>
-          )}
+          {q && <p className="truncate text-xs text-muted-foreground">“{q}”</p>}
         </div>
       </div>
 
@@ -520,20 +466,29 @@ export const SearchResults = ({ q, mode }: { q: string; mode: SearchMode }) => {
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
           <Spinner /> {mode === "rag" ? "컨텍스트 조립 + 답변 생성 중…" : "검색 중…"}
         </div>
+      ) : error ? (
+        <Empty className="py-12">
+          <EmptyHeader>
+            <EmptyTitle>검색 실패</EmptyTitle>
+            <EmptyDescription>{errorMessage(error)}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ScrollArea className="flex-1">
           <div className="space-y-3 px-3 pb-6 sm:px-4">
             {mode === "rag" ? (
               <RagAnswer
-                elapsedMs={elapsedMs}
+                answer={ask.data?.answer ?? ""}
+                citations={ask.data?.citations ?? []}
+                elapsedMs={ask.data?.elapsedMs ?? 0}
                 activeDocId={activeDocId}
                 onOpen={onOpen}
                 onSelect={onSelect}
               />
             ) : (
               <RetrievalList
-                results={results}
-                elapsedMs={elapsedMs}
+                results={search.data?.results ?? []}
+                elapsedMs={search.data?.elapsedMs ?? 0}
                 activeDocId={activeDocId}
                 onOpen={onOpen}
                 onSelect={onSelect}

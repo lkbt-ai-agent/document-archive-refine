@@ -4,22 +4,28 @@ import * as React from "react";
 import { UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useDriveStore } from "@/lib/store";
+import { useUpload } from "@/lib/api/documents";
+import { errorMessage } from "@/lib/api/client";
 import { useCurrentFolderId } from "@/hooks/use-current-folder";
+import { ROOT_FOLDER_ID } from "@/lib/routes";
 
 export const UploadDropzone = () => {
-  const folderId = useCurrentFolderId() ?? "root";
-  const addUpload = useDriveStore((s) => s.addUpload);
+  const folderId = useCurrentFolderId() ?? ROOT_FOLDER_ID;
+  const upload = useUpload();
   const [dragging, setDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  // presigned 3단계(init → 브라우저 PUT → confirm)를 파일별로 실행, 완료 시 인제스트 시작.
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    Array.from(files).forEach((f) => addUpload(folderId, f.name, f.size));
-    toast.success(
-      files.length === 1
-        ? `"${files[0].name}" 업로드 시작 (presigned 3단계 — 목업)`
-        : `${files.length}개 파일 업로드 시작 (목업)`,
+    Array.from(files).forEach((f) =>
+      upload.mutate(
+        { folderId, file: f },
+        {
+          onSuccess: () => toast.success(`"${f.name}" 업로드 완료 — 인제스트 시작`),
+          onError: (e) => toast.error(errorMessage(e)),
+        },
+      ),
     );
   };
 
