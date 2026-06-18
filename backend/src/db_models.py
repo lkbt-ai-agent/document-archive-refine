@@ -12,7 +12,6 @@ from src.generations.models import (
     GenerationSourceChunk,
     GenerationSourceDocument,
     Model,
-    PromptTemplate,
 )
 from src.models import Base
 from src.users.models import User
@@ -24,7 +23,6 @@ __all__ = [
     "Document",
     "DocumentChunk",
     "Model",
-    "PromptTemplate",
     "Generation",
     "GenerationPrompt",
     "GenerationSourceDocument",

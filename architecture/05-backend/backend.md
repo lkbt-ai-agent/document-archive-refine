@@ -35,6 +35,8 @@ backend/src/
 └── ai/            {provider,llama_client,bedrock_client(추후),schemas}
 ```
 
+- 런타임/툴체인: uv로 의존성 관리, Python 3.12 고정. 패키지 `src`는 backend/ 기준 실행(워커 `arq src.pipeline.worker.WorkerSettings`).
+
 ## 4. 레이어링
 
 - `router → service → repository → model`
@@ -62,8 +64,8 @@ async def get_session():
 ## 7. API 공통 규약
 
 - 라우트: 복수 명사(`/folders`,`/documents`,`/search`,`/generations`).
-- 페이지네이션: `limit`/`offset` 또는 cursor.
-- 에러: 공통 에러 모델 + 도메인 예외 → 예외 핸들러가 HTTP 매핑.
+- 페이지네이션: `limit`/`offset` 또는 cursor. 문서 목록은 keyset cursor(불투명 base64 `(created_at, id)`).
+- 에러: 공통 에러 모델 + 도메인 예외 → 예외 핸들러가 HTTP 매핑. 응답 형태는 `{"error": {code, message, details}}`.
 - 보안: 모든 조회/변경에 `owner_id` 스코프 강제(`WHERE owner_id=:user`).
 - CORS: web 오리진 허용.
 
@@ -88,6 +90,7 @@ class BedrockLLM(LLMClient): ...         # 추후
 
 - llama.cpp `--json-schema`(GBNF) 호출 래퍼를 ai 모듈에 공통화한다.
 - 재사용처: 메타 추출(ingestion-backend.md)·쿼리 파싱(search-backend.md)·차트 스펙(ai-outputs-backend.md).
+- 구현은 llama-server의 OpenAI 호환 `response_format: {type: "json_schema"}`로 GBNF를 적용한다.
 
 ## 10. 비동기 작업 연동
 
@@ -97,7 +100,7 @@ class BedrockLLM(LLMClient): ...         # 추후
 ## 11. 공통 횡단
 
 - 로깅·관측: 생성마다 provider/model·디코딩 파라미터·토큰·지연을 계보(ai-outputs-backend.md)에 기록.
-- 헬스체크: 원격 PG/MinIO/Redis/llama 연결 점검. 기동 시 PG/MinIO 도달 실패는 fail-fast(핵심 의존).
+- 헬스체크: 원격 PG/MinIO/Redis/llama 연결 점검. 기동 시 PG/MinIO 도달 실패는 fail-fast(핵심 의존). 런타임 점검은 `GET /health`가 의존성별 상태를 JSON으로 반환한다.
 
 ## 12. 운영 배포 전 TODO
 

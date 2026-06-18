@@ -19,7 +19,6 @@ refs: research/01-mvp-research/01 §5.4, research/01-mvp-research/03 §4
 - `generations` 1—N `generation_source_chunks`.
 - `generations` 1—N `generation_charts`.
 - `generations` N—1 `models`.
-- `generations` N—1 `prompt_templates`.
 - `generations` ↔ `documents`는 두 종류의 관계:
   - 입력(출처): `generations` N—M `documents` (`generation_source_documents` 경유) — 한 생성이 여러 원본을 섞으면 다대다.
   - 출력(산출물): `generations` 0—1 `documents` (`output_document_id`, materialize) — 생성 1회당 산출 문서 최대 1개, materialize 전이면 0.

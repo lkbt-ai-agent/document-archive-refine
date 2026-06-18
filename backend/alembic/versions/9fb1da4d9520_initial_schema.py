@@ -127,7 +127,7 @@ def upgrade() -> None:
     )
     op.execute("CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata)")
 
-    # --- models · prompt_templates (정적 레지스트리, generations-schema §1) ---
+    # --- models (정적 레지스트리, generations-schema §1) ---
     op.execute(
         """
         CREATE TABLE archive.models (
@@ -140,18 +140,6 @@ def upgrade() -> None:
           provider       TEXT NOT NULL DEFAULT 'llama.cpp',
           runtime_build  TEXT,
           created_at     TIMESTAMPTZ DEFAULT now()
-        )
-        """
-    )
-    op.execute(
-        """
-        CREATE TABLE archive.prompt_templates (
-          id       BIGSERIAL PRIMARY KEY,
-          key      TEXT NOT NULL,
-          version  INT NOT NULL,
-          language TEXT DEFAULT 'ko',
-          body     TEXT NOT NULL,
-          CONSTRAINT uq_prompt_template_key_version UNIQUE (key, version)
         )
         """
     )
@@ -200,7 +188,6 @@ def upgrade() -> None:
           generation_id   UUID REFERENCES archive.generations(id) ON DELETE CASCADE,
           step            TEXT,
           step_index      INT,
-          template_id     BIGINT REFERENCES archive.prompt_templates(id),
           rendered_prompt TEXT NOT NULL,
           rendered_system TEXT,
           raw_response    TEXT
@@ -263,7 +250,6 @@ def downgrade() -> None:
         "generation_source_documents",
         "generation_prompts",
         "generations",
-        "prompt_templates",
         "models",
         "document_chunks",
         "documents",

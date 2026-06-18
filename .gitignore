@@ -3,3 +3,6 @@
 # Claude Code (machine-local; keep shared .claude/settings.json tracked)
 .claude/settings.local.json
 .claude/*.local.json
+
+# editor swap files
+*.swp

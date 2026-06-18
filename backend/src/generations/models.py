@@ -1,7 +1,7 @@
 """생성 계보 모델 (generations-schema §1).
 
 `generations`가 계보 헤드(생성 1회)이고, 하위 테이블(프롬프트·출처문서·출처청크·차트)이
-연결된다. `models`/`prompt_templates`는 정적 레지스트리. 출처 FK는 원본 삭제에도 계보가
+연결된다. `models`는 정적 레지스트리. 출처 FK는 원본 삭제에도 계보가
 남도록 `ON DELETE SET NULL` + 스냅샷 컬럼(`cited_text`/`cited_title`)을 둔다(generations-schema §2).
 """
 
@@ -43,17 +43,6 @@ class Model(Base):
     created_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), server_default=text("now()")
     )
-
-
-class PromptTemplate(Base):
-    __tablename__ = "prompt_templates"
-    __table_args__ = (UniqueConstraint("key", "version", name="uq_prompt_template_key_version"),)
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    key: Mapped[str] = mapped_column(Text, nullable=False)
-    version: Mapped[int] = mapped_column(Integer, nullable=False)
-    language: Mapped[str | None] = mapped_column(Text, server_default=text("'ko'"))
-    body: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class Generation(Base):
@@ -120,7 +109,6 @@ class GenerationPrompt(Base):
     )
     step: Mapped[str | None] = mapped_column(Text)
     step_index: Mapped[int | None] = mapped_column(Integer)
-    template_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("prompt_templates.id"))
     rendered_prompt: Mapped[str] = mapped_column(Text, nullable=False)
     rendered_system: Mapped[str | None] = mapped_column(Text)
     raw_response: Mapped[str | None] = mapped_column(Text)

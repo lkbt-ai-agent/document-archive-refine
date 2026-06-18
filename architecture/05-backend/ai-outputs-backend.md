@@ -49,8 +49,8 @@ refs: research/01-mvp-research/03
 - 흐름
   1. LLM 구조화 데이터 추출(rows).
   2. Python 결정적 통계 계산.
-  3. LLM Vega-Lite 스펙 생성.
-  4. JSON 스키마 검증·수리 루프(≤5회). 5회 실패 시 해당 차트만 제외하고 생성은 계속(ai-outputs.md §5).
+  3. LLM Vega-Lite 스펙 생성(데이터값은 §2 통계를 코드가 주입, LLM은 mark/encoding 스켈레톤만).
+  4. JSON 스키마 검증·수리 루프(≤5회). 5회 실패 시 결정적 폴백 스펙으로 차트 유지(행 0개면 생략), 생성은 계속(ai-outputs.md §5).
   5. react-vega 렌더 + 서사(`[n]`).
 
 ## 6. 계보·재현성 기록

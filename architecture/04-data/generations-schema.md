@@ -25,14 +25,6 @@ CREATE TABLE archive.models (                              -- 모델 레지스�
   runtime_build  TEXT,                                     -- 런타임 빌드
   created_at     TIMESTAMPTZ DEFAULT now());               -- 생성 일시
 
-CREATE TABLE archive.prompt_templates (                    -- 프롬프트 템플릿
-  id       BIGSERIAL PRIMARY KEY,                          -- 템플릿 ID
-  key      TEXT NOT NULL,                                  -- 템플릿 키
-  version  INT NOT NULL,                                   -- 버전
-  language TEXT DEFAULT 'ko',                              -- 언어
-  body     TEXT NOT NULL,                                  -- 템플릿 본문
-  UNIQUE (key, version));
-
 CREATE TABLE archive.generations (                         -- 계보 헤드(=생성 1회)
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),  -- 생성 ID
   kind               archive.artifact_kind NOT NULL,        -- 산출물 종류
@@ -69,7 +61,6 @@ CREATE TABLE archive.generation_prompts (                  -- 생성 프롬프�
   generation_id   UUID REFERENCES archive.generations(id) ON DELETE CASCADE,  -- 생성 ID
   step            TEXT,                                     -- 단계명
   step_index      INT,                                      -- 단계 순번
-  template_id     BIGINT REFERENCES archive.prompt_templates(id),  -- 템플릿 ID
   rendered_prompt TEXT NOT NULL,                            -- 렌더된 프롬프트
   rendered_system TEXT,                                     -- 렌더된 시스템 프롬프트
   raw_response    TEXT);                                    -- 원시 응답
