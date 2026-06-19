@@ -60,7 +60,7 @@ overview: Phase 1 프로토타입 승계 → 목업 제거·실 API 배선(Left 
 - 진행: **D19a 디자인 프로토타입 먼저 → 승인 후 D19b~d 실 기능/배선.**
 - [x] D19a 디자인 프로토타입 페이지 — throwaway 라우트(`/design/search-grouped`)에 정적 더미 데이터로 "문서 그룹 카드 + 청크 캐러셀(◀/▶·i/N 인디케이터)" 비주얼만 구현. 실 데이터·배선 없음. 디자인 승인용.
 - [x] D19b (승인 후) 그룹화 로직 — 검색 결과(청크 평면)를 `documentId`로 그룹화 + 정렬하는 프론트 변환 유틸(헤더용 최고 score·청크 수 포함).
-- [x] D19c SearchResults 적용 — **3안(더보기 토글) 확정** 이식: 문서당 1 카드 + 첫 청크 노출 + "더보기/접기", row 액션 문서 단위 유지. 공통 규칙: 키워드=하이라이트, 의미=문서 keywords 해시태그(`useDocument`). 그룹화는 `lib/search-group.ts`. 프로토타입 라우트 제거.
+- [x] D19c SearchResults 적용 — **3안(더보기 토글) 확정** 이식: 문서당 1 카드 + 첫 청크 노출 + "더보기/접기", row 액션 문서 단위 유지. 공통 규칙: 키워드=하이라이트, 의미=문서 keywords 해시태그(`useDocument`). 그룹화는 `lib/search-group.ts`. 프로토타입 라우트(`/design/search-grouped`)는 1·2·3안 비교 보존용으로 유지.
 - [x] D19d (승인 후) 아키텍처 — search-frontend §3a("청크 row 아래 카드형 subrow") 갱신.
 
 ## 검색 결과 화면 보정 (후속)
