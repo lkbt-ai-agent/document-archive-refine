@@ -44,3 +44,11 @@ overview: Phase 1 프로토타입 승계 → 목업 제거·실 API 배선(Left 
 - [x] D13 백엔드 선제 abort — `allow_abort_jobs=True`, `queue.abort_job()`, `delete`가 row 삭제 전 `abort_job(ingest:{id})`. 진행/대기 job 취소(`CancelledError`→failed 미기록), 모든 삭제 경로 공통.
 - [x] D14 취소 시 클라 업로드 XHR 중단(고아 방지) — `lib/upload-control.ts` 레지스트리, `useDeleteDocument`가 DELETE 전 `abortUpload(id)`. 늦은 PUT 차단·`/complete` 404 회피, `AbortError` 토스트 생략.
 - [ ] D15 (백엔드 후속 TODO) 협조적 취소로 OCR 단계 조기 중단 — `to_thread` OCR가 길면 abort가 스레드 종료까지 지연(데이터 안전, 낭비만). 단계 사이 문서 존재 확인으로 조기 반환. 우선순위 낮음.
+
+## 목록 컨텍스트 메뉴 보강 (후속)
+- 증상: 폴더·파일이 있는(비어있지 않은) DocumentList에서 배경 우클릭/모바일 롱프레스 시 메뉴가 안 뜸. D6은 빈 상태(`isEmpty`)에만 ContextMenu를 감싸, 행이 있는 목록의 배경엔 추가 메뉴가 없음.
+- [x] D16 목록 배경 컨텍스트 메뉴 — 비어있지 않은 목록에서도 배경(행 외 영역) 우클릭/롱프레스 시 [폴더 추가]·[파일 추가] 노출. 방안: 목록 컨테이너(테이블 래퍼/ScrollArea 내용)를 `ContextMenu`로 감싸 `useArchiveActions` 재사용, 행별 컨텍스트 메뉴(폴더 액션·문서 다운로드/삭제)는 그대로 유지(이벤트 전파 분리). 빈 상태(D6)와 동일 동작으로 통합. 모바일 롱프레스가 `ContextMenu`를 트리거하는지 확인(미동작 시 터치 핸들러 보강).
+
+## 원본 미리보기 (후속)
+- 현재(document-frontend §2): 마크다운/텍스트만 인앱 뷰어, PDF·이미지는 presigned GET `attachment` 다운로드(인앱 렌더 안 함). MinIO는 바이트만 서빙 → 미리보기는 브라우저가 inline+Content-Type으로 렌더.
+- [ ] D17 PDF·이미지 인앱 미리보기 — "원본 보기"를 마크다운=뷰어(기존)·PDF/이미지=인라인 렌더로 확장. 백엔드: presigned GET에 inline 옵션(`response-content-disposition: inline` + `response-content-type=<mime>`) 추가(예: `GET /documents/{id}/download?disposition=inline` 또는 별도 `/preview`). 프론트: `onViewOriginal` 분기 확장 → `OriginalViewerDialog`에 PDF=`<iframe>`·이미지=`<img>` 임베드(또는 새 탭), 그 외 바이너리는 다운로드 유지. CORS(GET)는 기존 허용, Content-Type은 저장된 `mime_type` 사용. 아키텍처 document-frontend §2·document-backend §3 반영.

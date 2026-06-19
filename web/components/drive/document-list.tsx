@@ -354,7 +354,10 @@ export const DocumentList = ({
             </ContextMenuContent>
           </ContextMenu>
         ) : (
-          <div className="px-2 sm:px-4">
+          // 채워진 목록도 배경 우클릭/롱프레스 시 폴더/파일 추가 (D16, 행 메뉴는 Radix가 격리)
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <div className="min-h-[60vh] px-2 sm:px-4">
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (
@@ -455,7 +458,17 @@ export const DocumentList = ({
                 })}
               </TableBody>
             </Table>
-          </div>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onSelect={openNewFolder}>
+                <FolderPlus className="size-4" /> 폴더 추가
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={openFilePicker}>
+                <Upload className="size-4" /> 파일 추가
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         )}
       </ScrollArea>
 
