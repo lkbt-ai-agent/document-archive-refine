@@ -108,3 +108,28 @@ ThemeProvider (next-themes, attribute="class" defaultTheme="system" enableSystem
 - 폴링 주기
   - 해결: [ ]
   - 비고: 인제스트/생성 폴링 간격을 부하 보고 뒤 조정.
+
+## 10. 헤더 액션 메뉴
+- §2의 `AppHeader = SearchBar + ThemeToggle` 전제를 보강한다. 헤더 우측 액션을 "⋯" 단일 드롭다운으로 통합한다.
+- 트리거: "⋯"(`MoreHorizontal`) 아이콘 버튼. 단독 `ThemeToggle` 버튼을 대체한다.
+- 메뉴 항목: 파일 추가, 폴더 추가, 구분선, 테마(라이트/다크/시스템).
+- PC/태블릿/모바일 모든 브레이크포인트에서 동일하게 동작한다(반응형 분기 없음).
+- 파일 추가
+  - 메뉴 밖(헤더 내 형제)에 숨은 `<input type="file" multiple>`을 두고 항목 선택 시 `ref.click()`으로 OS 파일 선택창을 연다.
+  - 대상 폴더는 `useCurrentFolderId()`(없으면 루트, 검색 화면 포함).
+  - 업로드 로직은 `UploadDropzone`와 공용 훅으로 공유한다(드롭존은 보존, §2).
+- 폴더 추가: 현재 폴더를 부모로 `FolderNameDialog` + 낙관 생성(folders-frontend.md)을 재사용한다.
+- 빈 목록(DocumentList) 우클릭 컨텍스트 메뉴도 같은 [폴더 추가]·[파일 추가]를 제공한다(동일 공용 훅).
+- 진행률: presigned PUT은 `XMLHttpRequest`(`upload.onprogress`)로 추적한다. 브라우저는 평문 HTTP/2(h2c)를 지원하지 않아 `http` MinIO는 HTTP/1.1로 고정되고, fetch 스트리밍 업로드로는 진행률을 얻을 수 없다(infrastructure §8 TLS 적용 전 한정). 완료/실패는 Toaster로 알린다.
+
+## 11. 인제스트/업로드 진행 표시
+- 본 절은 §10의 "메타데이터 탭" 진행률 위치를 갱신한다. 진행 표시는 인스펙터 상세(DocumentDetail)의 상태 태그(StatusBadge) 바로 밑에 둔다.
+- 업로드뿐 아니라 인제스트 각 단계의 진행을 하나의 진행 바로 보여준다.
+- 백엔드는 단계 내부 진척률을 노출하지 않는다(`documents.stage` 이산, documents-schema·ingestion §2·§4). 따라서 percent는 status+stage를 단계 순서로 환산해 프론트에서 파생한다.
+  - 단계 순서(ingestion §4): uploaded → extracting → generating_meta → chunking → embedding → ready.
+  - 매핑: 업로드 대기 0, 추출 20, 메타 생성 40, 청킹 60, 임베딩 80, 완료 100.
+  - 업로드 단계는 클라이언트 바이트 진행률(`uploadProgress`, §10)을 0–20% 구간에 매핑한다(클라 세션 한정).
+- 표시 범위: `uploaded`·`processing` 에서만 바를 노출한다. `ready` 는 숨기고(완료 배지), `failed` 는 에러 블록으로 대체한다.
+- 캡션은 `statusLabel`/`stageLabel`(진행형 표기)을 재사용한다. 인스펙터 상세는 PC·모바일 공통이라 한 곳에서만 렌더한다.
+- 진행 바 우측 "취소" 버튼: confirm 후 문서를 삭제해 진행 중 처리를 중단한다. 백엔드가 진행 중 인제스트 job을 선제 abort한다(document-backend §2).
+- 전송 도중 취소·삭제 시 클라이언트가 업로드 PUT(XHR)을 `AbortController`로 중단한다. 늦은 PUT이 행 없는 오브젝트(고아)를 만드는 것을 막고 `/complete` 404를 피한다.

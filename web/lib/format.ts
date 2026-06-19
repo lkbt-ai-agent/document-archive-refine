@@ -28,17 +28,17 @@ export const formatDuration = (ms: number): string => {
 };
 
 export const statusLabel: Record<DocStatus, string> = {
-  uploaded: "업로드됨",
+  uploaded: "업로드 대기",
   processing: "처리 중",
   ready: "완료",
   failed: "실패",
 };
 
 export const stageLabel: Record<DocStage, string> = {
-  extracting: "추출",
-  generating_meta: "메타 생성",
-  chunking: "청킹",
-  embedding: "임베딩",
+  extracting: "추출 중",
+  generating_meta: "메타 생성 중",
+  chunking: "청킹 중",
+  embedding: "임베딩 중",
 };
 
 export const genKindLabel: Record<GenKind, string> = {

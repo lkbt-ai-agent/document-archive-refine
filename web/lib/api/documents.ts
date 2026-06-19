@@ -5,6 +5,11 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { ROOT_FOLDER_ID } from "@/lib/routes";
+import {
+  abortUpload,
+  registerUpload,
+  unregisterUpload,
+} from "@/lib/upload-control";
 import { apiFetch } from "./client";
 import type {
   DocumentDTO,
@@ -59,8 +64,10 @@ export const useDocument = (id: string | null) =>
 export const useDeleteDocument = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      apiFetch<void>(`/documents/${id}`, { method: "DELETE" }),
+    mutationFn: (id: string) => {
+      abortUpload(id); // 진행 중 업로드 PUT 중단 — 늦은 PUT의 고아 오브젝트 방지(plan D14)
+      return apiFetch<void>(`/documents/${id}`, { method: "DELETE" });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents"] });
       qc.invalidateQueries({ queryKey: ["generations"] });
@@ -68,11 +75,53 @@ export const useDeleteDocument = () => {
   });
 };
 
+// presigned PUT을 XHR로 전송해 업로드 진행률(%)을 추적한다.
+// fetch는 진행률을 못 준다 — 스트리밍 업로드는 HTTP/2가 필요한데 브라우저는 평문 h2c 미지원이라
+// http MinIO에선 HTTP/1.1로 고정된다(frontend.md §10). XHR.upload.onprogress 는 http·전 브라우저 OK.
+const putWithProgress = (
+  url: string,
+  file: File,
+  onProgress?: (pct: number) => void,
+  signal?: AbortSignal,
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    if (file.type) xhr.setRequestHeader("Content-Type", file.type);
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    });
+    xhr.addEventListener("load", () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error("업로드 전송 실패")),
+    );
+    xhr.addEventListener("error", () => reject(new Error("업로드 전송 실패")));
+    // 취소(삭제) 시 진행 중 PUT 중단 — 명시 취소는 AbortError로 구분(토스트 생략용)
+    xhr.addEventListener("abort", () => {
+      const err = new Error("업로드 취소됨");
+      err.name = "AbortError";
+      reject(err);
+    });
+    if (signal) {
+      if (signal.aborted) xhr.abort();
+      else signal.addEventListener("abort", () => xhr.abort(), { once: true });
+    }
+    xhr.send(file);
+  });
+
 export const useUpload = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (v: { folderId: string; file: File }) => {
-      // 1) init → presigned PUT 발급, 2) 브라우저가 MinIO로 직접 PUT, 3) confirm → 인제스트 enqueue.
+    mutationFn: async (v: {
+      folderId: string;
+      file: File;
+      onInit?: (documentId: string) => void;
+      onProgress?: (pct: number) => void;
+    }) => {
+      // 1) init → presigned PUT 발급, 2) 브라우저가 MinIO로 직접 PUT(진행률), 3) confirm → 인제스트 enqueue.
       const init = await apiFetch<UploadInitResponseDTO>("/documents", {
         method: "POST",
         body: {
@@ -82,15 +131,23 @@ export const useUpload = () => {
           size_bytes: v.file.size,
         },
       });
-      const put = await fetch(init.upload_url, {
-        method: "PUT",
-        body: v.file,
-        headers: v.file.type ? { "Content-Type": v.file.type } : {},
-      });
-      if (!put.ok) throw new Error("업로드 전송 실패");
-      await apiFetch<DocumentDTO>(`/documents/${init.document_id}/complete`, {
-        method: "POST",
-      });
+      v.onInit?.(init.document_id); // 문서 id 확정 — 진행률 귀속·자동 선택용(frontend.md §10)
+      // 진행 중 PUT을 docId로 취소 가능하게 등록 — 삭제/취소 시 고아 오브젝트 방지(plan D14)
+      const controller = new AbortController();
+      registerUpload(init.document_id, controller);
+      try {
+        await putWithProgress(
+          init.upload_url,
+          v.file,
+          v.onProgress,
+          controller.signal,
+        );
+        await apiFetch<DocumentDTO>(`/documents/${init.document_id}/complete`, {
+          method: "POST",
+        });
+      } finally {
+        unregisterUpload(init.document_id);
+      }
       return init.document_id;
     },
     onSuccess: (_id, v) =>

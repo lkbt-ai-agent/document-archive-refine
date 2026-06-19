@@ -2,7 +2,7 @@
 created: 2026-06-12
 updated: 2026-06-15
 status: approved
-overview: 문서 도메인의 백엔드 구현(API·presigned·정리 잡·보안)을 정의한다.
+overview: 문서 도메인의 백엔드 구현(API·presigned·고아 방지·보안)을 정의한다.
 refs: research/01-mvp-research/04 §2
 ---
 
@@ -28,7 +28,7 @@ refs: research/01-mvp-research/04 §2
 - upload init: documents 행(`uploaded`)·`object_key` 생성 → storage가 presigned PUT 발급.
 - upload confirm: storage `stat_object`로 존재·크기 검증 → `processing` 전이 → 인제스트 enqueue(pipeline).
 - download: `owner_id` 검사 → storage presigned GET 발급.
-- delete: `object_key` 수집 → DB 삭제(청크 CASCADE) → storage 오브젝트 삭제(재시도·멱등).
+- delete: 진행 중 인제스트 job 선제 abort(arq) → `object_key` 수집 → DB 삭제(청크 CASCADE) → storage 오브젝트 삭제(재시도·멱등).
 
 ## 3. presigned 메커니즘
 
@@ -37,10 +37,11 @@ refs: research/01-mvp-research/04 §2
   - `stat_object`: 오브젝트 본문을 내려받지 않고 메타데이터(존재 여부·크기·etag·content-type)만 조회하는 호출. 업로드 완료·크기 일치를 가볍게 확인한다.
 - 다운로드: presigned GET 발급, 응답 `Content-Disposition`에 한국어 원본 파일명(RFC 5987). 발급 전 `owner_id` 검사.
 
-## 4. 고아 정리 (잡)
+## 4. 고아 방지
 
 - presigned PUT TTL(5~15분) 만료로 미완 업로드를 차단한다.
-- arq 주기 잡(예: 1시간마다)이 일정 기간(예: 24시간) 넘게 `uploaded`로 방치된 행을 `stat_object` 부재 확인 후 삭제한다.
+- 전송 도중 취소·삭제 시 클라이언트가 진행 중 업로드 PUT을 중단해, 늦은 PUT이 행 없는 오브젝트(고아)를 만드는 것을 막는다(frontend §11).
+- 미완 업로드(`uploaded`) 행을 자동 삭제하는 주기 배치는 두지 않는다.
 
 ## 5. 무결성·멱등
 

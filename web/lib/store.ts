@@ -15,6 +15,7 @@ interface DriveState {
   mobileLeftOpen: boolean;
   mobileRightOpen: boolean;
   searchQuery: string; // SearchBar 입력값(실행/결과 화면은 URL이 소스)
+  uploadProgress: Record<string, number>; // 문서별 업로드 진행률(%) — 클라 세션 한정(frontend.md §10)
 
   selectDocument: (id: string | null) => void;
   highlightDocument: (id: string) => void;
@@ -29,6 +30,8 @@ interface DriveState {
   setMobileLeft: (open: boolean) => void;
   setMobileRight: (open: boolean) => void;
   setSearchQuery: (q: string) => void;
+  setUploadProgress: (id: string, pct: number) => void;
+  clearUploadProgress: (id: string) => void;
 }
 
 export const useDriveStore = create<DriveState>((set) => ({
@@ -41,6 +44,7 @@ export const useDriveStore = create<DriveState>((set) => ({
   mobileLeftOpen: false,
   mobileRightOpen: false,
   searchQuery: "",
+  uploadProgress: {},
 
   // 문서 인스펙터 열기(더블클릭/눈) — 다른 인스펙터·하이라이트 해제
   selectDocument: (id) =>
@@ -131,4 +135,13 @@ export const useDriveStore = create<DriveState>((set) => ({
   setMobileLeft: (open) => set({ mobileLeftOpen: open }),
   setMobileRight: (open) => set({ mobileRightOpen: open }),
   setSearchQuery: (q) => set({ searchQuery: q }),
+  setUploadProgress: (id, pct) =>
+    set((s) => ({ uploadProgress: { ...s.uploadProgress, [id]: pct } })),
+  clearUploadProgress: (id) =>
+    set((s) => {
+      if (!(id in s.uploadProgress)) return s;
+      const next = { ...s.uploadProgress };
+      delete next[id];
+      return { uploadProgress: next };
+    }),
 }));

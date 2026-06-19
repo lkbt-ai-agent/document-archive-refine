@@ -15,6 +15,8 @@ import {
   Download,
   Trash2,
   Eye,
+  FolderPlus,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -56,6 +58,7 @@ import {
   FolderActionsMenu,
   FolderContextMenu,
 } from "./folder-actions";
+import { useArchiveActions } from "@/hooks/use-archive-actions";
 import { useDriveStore } from "@/lib/store";
 import { useFolders } from "@/lib/api/folders";
 import {
@@ -108,6 +111,9 @@ export const DocumentList = ({
   }, [folderId, docId, selectDocument, setMobileRight, resetSelection]);
 
   const { onAction, dialogs } = useFolderActions();
+  // 빈 목록 우클릭 → 폴더 추가/파일 추가 (헤더 메뉴와 동일 로직, frontend.md §10)
+  const { openFilePicker, openNewFolder, elements } =
+    useArchiveActions(folderId);
 
   const folderName = folders.find((f) => f.id === folderId)?.name ?? "폴더";
 
@@ -320,17 +326,33 @@ export const DocumentList = ({
             </EmptyHeader>
           </Empty>
         ) : isEmpty ? (
-          <Empty className="py-12">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileText />
-              </EmptyMedia>
-              <EmptyTitle>비어 있음</EmptyTitle>
-              <EmptyDescription>
-                이 폴더에는 하위 폴더나 문서가 없습니다.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <div className="flex min-h-[60vh] items-center justify-center">
+                <Empty className="py-12">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <FileText />
+                    </EmptyMedia>
+                    <EmptyTitle>비어 있음</EmptyTitle>
+                    <EmptyDescription>
+                      이 폴더에는 하위 폴더나 문서가 없습니다.
+                      <br />
+                      우클릭해 폴더나 파일을 추가하세요.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onSelect={openNewFolder}>
+                <FolderPlus className="size-4" /> 폴더 추가
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={openFilePicker}>
+                <Upload className="size-4" /> 파일 추가
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         ) : (
           <div className="px-2 sm:px-4">
             <Table>
@@ -453,6 +475,8 @@ export const DocumentList = ({
 
       {/* 폴더 이동/이름변경/삭제 다이얼로그(공용) */}
       {dialogs}
+      {/* 빈 목록 컨텍스트 메뉴용 숨은 input + 새 폴더 다이얼로그 */}
+      {elements}
     </div>
   );
 };

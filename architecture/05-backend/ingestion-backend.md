@@ -19,6 +19,7 @@ refs: research/01-mvp-research/01, research/01-mvp-research/04 §4
 - 멱등과 재시도는 페이지·스테이지 단위로 동작한다. 따라서 한 페이지(예: OCR 실패)나 한 스테이지가 실패해도 그 단위만 재처리되고 문서 전체 인제스트는 중단되지 않는다.
 - 진행 상황은 워커가 `documents.status`와 `documents.stage`를 갱신해 보고하며, 프론트엔드는 이 값을 폴링해 현재 단계를 표시한다.
 - 파이프라인 전체 소요 시간은 완료 시 `documents.ingest_ms`에 기록한다.
+- 워커는 abort 허용(arq `allow_abort_jobs`): 문서 삭제 시 진행/대기 중 인제스트 job을 선제 취소한다(`CancelledError`로 중단, `failed` 미기록). 삭제 흐름은 document-backend §2.
 
 ## 2. 인제스트 파이프라인
 

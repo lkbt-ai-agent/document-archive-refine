@@ -1,16 +1,32 @@
 "use client";
 
 import * as React from "react";
-import { Download, Eye, TriangleAlert } from "lucide-react";
+import { Download, Eye, TriangleAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { StatusBadge } from "./status-badge";
 import { OriginalViewerDialog } from "./original-viewer-dialog";
 import { useDriveStore } from "@/lib/store";
-import { useDocument, triggerDownload } from "@/lib/api/documents";
+import {
+  useDocument,
+  useDeleteDocument,
+  triggerDownload,
+} from "@/lib/api/documents";
 import { errorMessage } from "@/lib/api/client";
 import { formatBytes, formatDate, formatDuration } from "@/lib/format";
+import { ingestProgress } from "@/lib/ingest";
 import { isTextLike } from "@/lib/ui";
 
 const MetaRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
@@ -23,9 +39,30 @@ const MetaRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
 export const DocumentDetail = () => {
   const selectedId = useDriveStore((s) => s.selectedDocumentId);
   const { data: doc } = useDocument(selectedId);
+  // 업로드 진행률(클라 세션) — 인제스트 단계 진행과 합쳐 상태 태그 밑 바로 표시(frontend.md §11)
+  const uploadPct = useDriveStore((s) =>
+    doc ? s.uploadProgress[doc.id] : undefined,
+  );
+  const closeInspector = useDriveStore((s) => s.closeInspector);
+  const clearUploadProgress = useDriveStore((s) => s.clearUploadProgress);
+  const deleteDoc = useDeleteDocument();
   const [viewerOpen, setViewerOpen] = React.useState(false);
+  const [cancelOpen, setCancelOpen] = React.useState(false);
 
   if (!doc) return null;
+
+  const progress = ingestProgress(doc.status, doc.stage, uploadPct);
+
+  // 진행 중(업로드/처리) 취소 = 문서 삭제(D12). 백엔드가 진행 중 job을 선제 취소(D13).
+  const onCancelIngest = () => {
+    const id = doc.id;
+    deleteDoc.mutate(id, {
+      onSuccess: () => toast.success("처리를 취소하고 문서를 삭제했습니다."),
+      onError: (e) => toast.error(errorMessage(e)),
+    });
+    clearUploadProgress(id);
+    closeInspector();
+  };
 
   // "원본 보기": 텍스트류 = 마크다운 뷰어 / 그 외 = presigned 다운로드 (document-frontend §2)
   const onViewOriginal = () => {
@@ -46,6 +83,27 @@ export const DocumentDetail = () => {
       </div>
 
       <StatusBadge status={doc.status} stage={doc.stage} progress={doc.progress} />
+
+      {/* 상태 태그 밑 진행 표시 — 업로드/인제스트 각 단계 (frontend.md §11) + 취소(=삭제) */}
+      {progress && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Progress value={progress.pct} className="flex-1" />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-muted-foreground hover:text-status-failed"
+              onClick={() => setCancelOpen(true)}
+            >
+              <X className="size-4" /> 취소
+            </Button>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{progress.label}</span>
+            <span className="tabular-nums">{progress.pct}%</span>
+          </div>
+        </div>
+      )}
 
       {doc.status === "failed" && doc.error && (
         <div className="flex items-start gap-2 rounded-md border border-status-failed/40 bg-status-failed/10 p-2.5 text-sm text-status-failed">
@@ -89,6 +147,22 @@ export const DocumentDetail = () => {
       </div>
 
       <OriginalViewerDialog doc={doc} open={viewerOpen} onOpenChange={setViewerOpen} />
+
+      {/* 진행 중 취소 확인 — 확정 시 문서 삭제(D12) */}
+      <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>처리를 취소할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &quot;{doc.llmTitle ?? doc.name}&quot; 문서와 진행 중인 처리가 삭제됩니다. 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>닫기</AlertDialogCancel>
+            <AlertDialogAction onClick={onCancelIngest}>취소(삭제)</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

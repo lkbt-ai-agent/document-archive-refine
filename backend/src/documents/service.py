@@ -21,7 +21,7 @@ from src.documents.schemas import (
     UploadInitResponse,
 )
 from src.folders.repository import FolderRepository
-from src.pipeline.queue import enqueue
+from src.pipeline.queue import abort_job, enqueue
 from src.storage import service as storage
 
 INGEST_TASK = "ingest_document"
@@ -119,6 +119,9 @@ class DocumentService:
     async def delete(self, owner_id: UUID, document_id: UUID) -> None:
         doc = await self._require(owner_id, document_id)
         object_key = doc.object_key
+        # 진행 중 인제스트 선제 취소(best-effort) — row 삭제 전에 신호해 낭비 작업·에러 로그를 줄인다.
+        # job이 없으면 무해(no-op). row 삭제가 최종 hard stop. (04-frontend D13)
+        await abort_job(f"ingest:{document_id}")
         await self.repo.delete(doc)  # 청크 CASCADE
         await self.session.commit()
         await storage.delete_object(object_key)  # 멱등

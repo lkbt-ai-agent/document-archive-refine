@@ -49,12 +49,3 @@ class DocumentRepository:
     async def delete(self, document: Document) -> None:
         await self.session.delete(document)
         await self.session.flush()
-
-    async def find_orphans(self, cutoff: datetime, limit: int = 200) -> list[Document]:
-        """`cutoff` 이전 생성되고 아직 `uploaded`인 미완 업로드 행 (document-backend §4)."""
-        stmt = (
-            select(Document)
-            .where(Document.status == "uploaded", Document.created_at < cutoff)
-            .limit(limit)
-        )
-        return list((await self.session.execute(stmt)).scalars().all())

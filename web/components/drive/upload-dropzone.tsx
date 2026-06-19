@@ -2,31 +2,21 @@
 
 import * as React from "react";
 import { UploadCloud } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useUpload } from "@/lib/api/documents";
-import { errorMessage } from "@/lib/api/client";
+import { useUploadFiles } from "@/hooks/use-upload-files";
 import { useCurrentFolderId } from "@/hooks/use-current-folder";
 import { ROOT_FOLDER_ID } from "@/lib/routes";
 
 export const UploadDropzone = () => {
   const folderId = useCurrentFolderId() ?? ROOT_FOLDER_ID;
-  const upload = useUpload();
+  const uploadFiles = useUploadFiles();
   const [dragging, setDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // presigned 3단계(init → 브라우저 PUT → confirm)를 파일별로 실행, 완료 시 인제스트 시작.
+  // presigned 3단계(init → 브라우저 PUT → confirm) + 진행률은 공용 훅이 처리(frontend.md §10).
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    Array.from(files).forEach((f) =>
-      upload.mutate(
-        { folderId, file: f },
-        {
-          onSuccess: () => toast.success(`"${f.name}" 업로드 완료 — 인제스트 시작`),
-          onError: (e) => toast.error(errorMessage(e)),
-        },
-      ),
-    );
+    uploadFiles(folderId, files);
   };
 
   return (
@@ -60,7 +50,7 @@ export const UploadDropzone = () => {
         끌어다 놓아 업로드
       </div>
       <div className="text-xs text-muted-foreground">
-        PDF · 이미지 · TXT · MD — presigned PUT 직접 전송(목업)
+        PDF · 이미지 · TXT · MD — presigned PUT 직접 전송
       </div>
       <input
         ref={inputRef}

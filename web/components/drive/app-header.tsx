@@ -8,7 +8,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import { PanelLeft } from "lucide-react";
 import { ROOT_PATH } from "@/lib/routes";
 import { SearchBar } from "./search-bar";
-import { ThemeToggle } from "./theme-toggle";
+import { HeaderMenu } from "./header-menu";
 
 export const AppHeader = () => {
   const setMobileLeft = useDriveStore((s) => s.setMobileLeft);
@@ -62,7 +62,7 @@ export const AppHeader = () => {
 
       {!hideForSearch && (
         <div className="flex items-center gap-1">
-          <ThemeToggle />
+          <HeaderMenu />
         </div>
       )}
     </header>
