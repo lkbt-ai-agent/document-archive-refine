@@ -55,7 +55,7 @@ refs: research/01-mvp-research/00 §0, research/01-mvp-research/04 §6
 ```bash
 llama-server -m a.x-4.0-light-q4_k_m.gguf -ngl 99 -c 8192 --port 8080   # 생성
 llama-server -m kure-v1-q8_0.gguf --embeddings --pooling cls -ngl 99 \
-  --ctx-size 8192 --batch-size 8192 --port 8081                         # 임베딩
+  --ctx-size 8192 --batch-size 8192 --ubatch-size 8192 --port 8081      # 임베딩(ubatch=ctx: 입력 전체 1배치)
 ```
 - 모델 Docker 금지: macOS Docker는 Metal 불가(CPU-only로 느려짐) → 호스트 네이티브.
 - 모델 정의(선정 이유/출처/양자화)는 `models.md`.

@@ -10,5 +10,7 @@
 set -euo pipefail
 MODEL="${LLAMA_EMBED_MODEL:-kure-v1-q8_0.gguf}"
 PORT="${LLAMA_EMBED_PORT:-8081}"
+# --ubatch-size: 물리 마이크로배치. 임베딩은 입력 전체가 한 ubatch에 들어가야 하므로
+# ctx·논리 배치(8192)에 맞춰 키운다(기본 512면 ~512토큰 초과 청크가 500 실패). infra §6.
 exec llama-server -m "$MODEL" --embeddings --pooling cls -ngl 99 \
-  --ctx-size 8192 --batch-size 8192 --port "$PORT"
+  --ctx-size 8192 --batch-size 8192 --ubatch-size 8192 --port "$PORT"
