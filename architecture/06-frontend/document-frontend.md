@@ -20,9 +20,10 @@ refs: research/01-mvp-research/04 §5
 
 ## 2. 업로드 / 다운로드 / 원본 보기
 - 업로드: presigned 3단계(document.md §3) UX 유지하되 MVP UI 미노출(`UploadDropzone` 보존). 진행률 + 인제스트 폴링.
-- 원본 미리보기 영역 없음. DocumentDetail에 "원본 보기" 버튼만.
+- DocumentDetail에 "원본 보기" 버튼. MIME으로 분기한다.
   - 텍스트류(`text/markdown`·`text/plain`): `OriginalViewerDialog` 마크다운 뷰어(인앱 열람).
-  - 그 외(PDF·이미지·바이너리): presigned GET 다운로드(인앱 렌더 안 함).
+  - PDF: `OriginalViewerDialog` 인앱 미리보기(`<iframe>`), 이미지: 인앱 미리보기(`<img>`). presigned inline GET(`disposition=inline`)으로 받아 브라우저가 렌더한다. "새 탭에서 열기" 보조 링크 제공.
+  - 그 외 바이너리: presigned GET `attachment` 다운로드(인앱 렌더 안 함).
 - 표시 날짜는 등록일(`created_at`)만 — 인앱 편집 없어 수정일 무의미(`updated_at`·`doc_modified_at` 미노출).
 
 ## 3. DocumentDetail / 인제스트 폴링

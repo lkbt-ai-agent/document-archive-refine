@@ -36,6 +36,7 @@ refs: research/01-mvp-research/04 §2
 - 업로드: presigned PUT 발급 → 브라우저가 MinIO에 직접 PUT → upload confirm이 `stat_object`로 검증.
   - `stat_object`: 오브젝트 본문을 내려받지 않고 메타데이터(존재 여부·크기·etag·content-type)만 조회하는 호출. 업로드 완료·크기 일치를 가볍게 확인한다.
 - 다운로드: presigned GET 발급, 응답 `Content-Disposition`에 한국어 원본 파일명(RFC 5987). 발급 전 `owner_id` 검사.
+  - `GET /documents/{id}/download?disposition=inline`: 인앱 미리보기(PDF·이미지)용. `inline` disposition + 응답 `Content-Type`(`mime_type`) 오버라이드로 브라우저가 렌더한다. 기본은 `attachment`(다운로드).
 
 ## 4. 고아 방지
 

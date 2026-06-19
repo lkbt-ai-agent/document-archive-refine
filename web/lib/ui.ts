@@ -8,6 +8,17 @@
 export const dialogMobileFullscreen =
   "max-sm:inset-0 max-sm:h-dvh max-sm:w-screen max-sm:!max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:border-0 max-sm:ring-0 max-sm:flex max-sm:flex-col max-sm:items-stretch max-sm:justify-start max-sm:overflow-y-auto";
 
-// "원본 보기" 분기: 텍스트류는 마크다운 뷰어, 그 외는 다운로드 (arch 10 §10).
+// "원본 보기" 분기 (document-frontend §2):
+//  - 텍스트류 → 마크다운 뷰어
+//  - PDF·이미지 → 인앱 인라인 미리보기(iframe/img, presigned inline)
+//  - 그 외 → 다운로드
 export const isTextLike = (mime: string): boolean =>
   mime.startsWith("text/") || mime === "application/json";
+
+export const isPdf = (mime: string): boolean => mime === "application/pdf";
+
+export const isImage = (mime: string): boolean => mime.startsWith("image/");
+
+// 인앱 미리보기 가능 여부(텍스트/PDF/이미지)
+export const isPreviewable = (mime: string): boolean =>
+  isTextLike(mime) || isPdf(mime) || isImage(mime);

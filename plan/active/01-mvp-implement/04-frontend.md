@@ -51,4 +51,18 @@ overview: Phase 1 프로토타입 승계 → 목업 제거·실 API 배선(Left 
 
 ## 원본 미리보기 (후속)
 - 현재(document-frontend §2): 마크다운/텍스트만 인앱 뷰어, PDF·이미지는 presigned GET `attachment` 다운로드(인앱 렌더 안 함). MinIO는 바이트만 서빙 → 미리보기는 브라우저가 inline+Content-Type으로 렌더.
-- [ ] D17 PDF·이미지 인앱 미리보기 — "원본 보기"를 마크다운=뷰어(기존)·PDF/이미지=인라인 렌더로 확장. 백엔드: presigned GET에 inline 옵션(`response-content-disposition: inline` + `response-content-type=<mime>`) 추가(예: `GET /documents/{id}/download?disposition=inline` 또는 별도 `/preview`). 프론트: `onViewOriginal` 분기 확장 → `OriginalViewerDialog`에 PDF=`<iframe>`·이미지=`<img>` 임베드(또는 새 탭), 그 외 바이너리는 다운로드 유지. CORS(GET)는 기존 허용, Content-Type은 저장된 `mime_type` 사용. 아키텍처 document-frontend §2·document-backend §3 반영.
+- [x] D17 PDF·이미지 인앱 미리보기 — "원본 보기"를 마크다운=뷰어(기존)·PDF/이미지=인라인 렌더로 확장. 백엔드: presigned GET에 inline 옵션(`response-content-disposition: inline` + `response-content-type=<mime>`) 추가(예: `GET /documents/{id}/download?disposition=inline` 또는 별도 `/preview`). 프론트: `onViewOriginal` 분기 확장 → `OriginalViewerDialog`에 PDF=`<iframe>`·이미지=`<img>` 임베드(또는 새 탭), 그 외 바이너리는 다운로드 유지. CORS(GET)는 기존 허용, Content-Type은 저장된 `mime_type` 사용. 아키텍처 document-frontend §2·document-backend §3 반영.
+- [ ] D18 (미리보기 후속, 데스크톱 확인 후 결정) 모바일 PDF iframe 미렌더 — 안드로이드 Chrome은 `<iframe>` PDF를 인라인 렌더 못 하고 "열기" 스텁만 표시(데스크톱 Chrome은 정상, 이미지는 모바일도 정상). presign/Content-Type은 정상이며 브라우저 제약임. 옵션: (A) `react-pdf`(pdf.js) 앱 내 캔버스 렌더(데스크톱·모바일 공통, 번들↑) / (B) 모바일은 새 탭·뷰어로 열기(경량, 현 "새 탭에서 열기" 활용) / (C) 현행 유지. 데스크톱 실제 화면 확인 후 택일.
+
+## 검색 결과 청크 그룹화 (후속)
+- 증상: 키워드/의미 검색 결과가 청크 단위 row(키 `chunkId`)라 같은 문서가 여러 row로 중복 노출됨(예: 동일 문서 score 2.00·1.00, 의미검색 20건 대부분 동일 문서). 펼침은 단일 청크 카드 subrow.
+- 목표: 결과를 `documentId`로 그룹화해 문서당 1 카드 + 청크 캐러셀(◀/▶·i/N·스와이프). 정렬: 그룹=최고 청크 score desc, 그룹 내=score desc. row 액션(선택/열기/폴더이동/다운로드/삭제)은 문서 단위 유지.
+- 진행: **D19a 디자인 프로토타입 먼저 → 승인 후 D19b~d 실 기능/배선.**
+- [x] D19a 디자인 프로토타입 페이지 — throwaway 라우트(`/design/search-grouped`)에 정적 더미 데이터로 "문서 그룹 카드 + 청크 캐러셀(◀/▶·i/N 인디케이터)" 비주얼만 구현. 실 데이터·배선 없음. 디자인 승인용.
+- [x] D19b (승인 후) 그룹화 로직 — 검색 결과(청크 평면)를 `documentId`로 그룹화 + 정렬하는 프론트 변환 유틸(헤더용 최고 score·청크 수 포함).
+- [x] D19c SearchResults 적용 — **3안(더보기 토글) 확정** 이식: 문서당 1 카드 + 첫 청크 노출 + "더보기/접기", row 액션 문서 단위 유지. 공통 규칙: 키워드=하이라이트, 의미=문서 keywords 해시태그(`useDocument`). 그룹화는 `lib/search-group.ts`. 프로토타입 라우트 제거.
+- [x] D19d (승인 후) 아키텍처 — search-frontend §3a("청크 row 아래 카드형 subrow") 갱신.
+
+## 검색 결과 화면 보정 (후속)
+- [x] D20 검색 결과 세로 스크롤 — 키워드/의미(및 RAG) 결과가 스크롤 안 됨. 원인: `SearchResults`의 `ScrollArea`가 `flex-1`만 있고 `min-h-0` 없어 flex 자식이 콘텐츠보다 못 줄어 `overflow-hidden` 부모에 잘림(스크롤 불가). 수정: `ScrollArea`에 `min-h-0`(필요 시 루트 `flex h-full flex-col` 체인 점검). 전 모드 공통.
+- [x] D21 RAG 결과 가로 오버플로우 — 답변 문장·인용 파일명이 화면 밖으로 잘림(스크린샷). 수정: `RagAnswer` 답변 `<p>`에 `min-w-0 break-words`, `CitationCard` 파일명 `truncate` 상위 flex span에 `min-w-0` 보강해 카드가 뷰포트 폭 내로 제한되게. (답변 컨테이너 flex도 `min-w-0` 확인.)

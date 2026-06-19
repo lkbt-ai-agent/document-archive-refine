@@ -160,8 +160,16 @@ export const fetchDocument = async (id: string) =>
   mapDocument(await apiFetch<DocumentDTO>(`/documents/${id}`));
 
 // presigned GET URL 발급(document-backend §3). 다운로드/원본보기 공용.
-export const fetchDownloadUrl = async (id: string): Promise<string> =>
-  (await apiFetch<DownloadResponseDTO>(`/documents/${id}/download`)).url;
+// inline=true면 인앱 미리보기용(`disposition=inline` → Content-Type 인라인 렌더, PDF/이미지).
+export const fetchDownloadUrl = async (
+  id: string,
+  inline = false,
+): Promise<string> =>
+  (
+    await apiFetch<DownloadResponseDTO>(`/documents/${id}/download`, {
+      query: inline ? { disposition: "inline" } : undefined,
+    })
+  ).url;
 
 // 브라우저 다운로드 트리거 — presigned GET은 Content-Disposition attachment(RFC 5987).
 export const triggerDownload = async (id: string): Promise<void> => {

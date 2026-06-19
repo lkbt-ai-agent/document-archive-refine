@@ -23,13 +23,25 @@ async def presign_put(object_key: str, ttl: int | None = None) -> str:
     )
 
 
-async def presign_get(object_key: str, filename: str | None = None, ttl: int | None = None) -> str:
-    """다운로드용 presigned GET. 한국어 파일명은 RFC 5987로 Content-Disposition에 싣는다."""
+async def presign_get(
+    object_key: str,
+    filename: str | None = None,
+    ttl: int | None = None,
+    *,
+    inline: bool = False,
+    content_type: str | None = None,
+) -> str:
+    """presigned GET. 한국어 파일명은 RFC 5987로 Content-Disposition에 싣는다.
+    inline=True면 인앱 미리보기용(`inline` disposition + Content-Type 오버라이드, document-frontend §2)."""
     expiry = timedelta(seconds=ttl or settings.presign_ttl_seconds)
     extra: dict[str, str] = {}
+    disposition = "inline" if inline else "attachment"
     if filename:
         encoded = quote(filename)
-        extra["response-content-disposition"] = f"attachment; filename*=UTF-8''{encoded}"
+        extra["response-content-disposition"] = f"{disposition}; filename*=UTF-8''{encoded}"
+    if content_type:
+        # 업로드 시 content-type 누락/오류 대비 — 미리보기 렌더 위해 응답 타입 강제
+        extra["response-content-type"] = content_type
     return await asyncio.to_thread(
         get_minio().presigned_get_object,
         settings.minio_bucket,

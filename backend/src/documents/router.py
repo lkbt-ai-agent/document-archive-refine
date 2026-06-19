@@ -1,5 +1,6 @@
 """문서 라우터 (document-backend §1)."""
 
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Query, status
@@ -62,6 +63,12 @@ async def delete_document(document_id: UUID, session: SessionDep, owner: OwnerDe
 
 @router.get("/{document_id}/download", response_model=DownloadResponse)
 async def download_document(
-    document_id: UUID, session: SessionDep, owner: OwnerDep
+    document_id: UUID,
+    session: SessionDep,
+    owner: OwnerDep,
+    disposition: Literal["attachment", "inline"] = "attachment",
 ) -> DownloadResponse:
-    return await DocumentService(session).download(owner, document_id)
+    # disposition=inline: 인앱 미리보기(PDF/이미지)용 presigned GET (document-frontend §2)
+    return await DocumentService(session).download(
+        owner, document_id, inline=disposition == "inline"
+    )

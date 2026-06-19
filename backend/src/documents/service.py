@@ -111,9 +111,16 @@ class DocumentService:
         await self.session.refresh(doc)
         return DocumentRead.model_validate(doc)
 
-    async def download(self, owner_id: UUID, document_id: UUID) -> DownloadResponse:
+    async def download(
+        self, owner_id: UUID, document_id: UUID, *, inline: bool = False
+    ) -> DownloadResponse:
         doc = await self._require(owner_id, document_id)  # 발급 전 owner 검사
-        url = await storage.presign_get(doc.object_key, filename=doc.original_filename)
+        url = await storage.presign_get(
+            doc.object_key,
+            filename=doc.original_filename,
+            inline=inline,
+            content_type=doc.mime_type if inline else None,
+        )
         return DownloadResponse(url=url)
 
     async def delete(self, owner_id: UUID, document_id: UUID) -> None:

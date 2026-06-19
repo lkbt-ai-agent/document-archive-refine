@@ -27,7 +27,7 @@ import {
 import { errorMessage } from "@/lib/api/client";
 import { formatBytes, formatDate, formatDuration } from "@/lib/format";
 import { ingestProgress } from "@/lib/ingest";
-import { isTextLike } from "@/lib/ui";
+import { isPreviewable } from "@/lib/ui";
 
 const MetaRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="flex justify-between gap-4 py-1 text-sm">
@@ -64,9 +64,9 @@ export const DocumentDetail = () => {
     closeInspector();
   };
 
-  // "원본 보기": 텍스트류 = 마크다운 뷰어 / 그 외 = presigned 다운로드 (document-frontend §2)
+  // "원본 보기" (document-frontend §2): 텍스트=마크다운 뷰어 / PDF·이미지=인앱 미리보기 / 그 외=다운로드
   const onViewOriginal = () => {
-    if (isTextLike(doc.mime)) {
+    if (isPreviewable(doc.mime)) {
       setViewerOpen(true);
     } else {
       triggerDownload(doc.id).catch((e) => toast.error(errorMessage(e)));

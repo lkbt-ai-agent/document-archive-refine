@@ -16,16 +16,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +44,7 @@ import { useDocument, useDeleteDocument, triggerDownload } from "@/lib/api/docum
 import { errorMessage } from "@/lib/api/client";
 import { folderHref, ROOT_FOLDER_ID } from "@/lib/routes";
 import { formatDuration } from "@/lib/format";
+import { groupResults, type SearchGroup } from "@/lib/search-group";
 import type { Citation, SearchMode, SearchResultItem } from "@/lib/types";
 
 // 검색 결과 화면(search-frontend §3·§3a·§4) — Center 본문에 렌더. 조회 화면을 대체한다.
@@ -130,35 +123,193 @@ const RowActions = ({
   );
 };
 
-// 키워드/의미: 문서 목록 table 디자인을 따르고, 청크 정보는 해당 row 밑 subrow(확장)로 표시.
+// 공통 규칙(키워드): 청크 본문에서 질의 일치 부분 하이라이트 (search-frontend §3a).
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const Highlighted = ({ text, query }: { text: string; query: string }) => {
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${escapeRegExp(q)})`, "gi"));
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.toLowerCase() === q.toLowerCase() ? (
+          <mark
+            key={i}
+            className="rounded bg-yellow-200 px-0.5 text-foreground dark:bg-yellow-500/40"
+          >
+            {p}
+          </mark>
+        ) : (
+          <React.Fragment key={i}>{p}</React.Fragment>
+        ),
+      )}
+    </>
+  );
+};
+
+// 문서 그룹 카드(3안: 더보기 토글) — 같은 문서의 매칭 청크를 한 카드에 모은다.
+// 키워드: 청크 본문 하이라이트 / 의미: 문서 keywords를 컨셉 해시태그로 표시(청크 단위 컨셉은 백엔드 미제공).
+const ResultGroupCard = ({
+  group,
+  query,
+  mode,
+  activeDocId,
+  onOpen,
+  onSelect,
+}: {
+  group: SearchGroup;
+  query: string;
+  mode: SearchMode;
+  activeDocId: string | null;
+  onOpen: (documentId: string) => void;
+  onSelect: (documentId: string) => void;
+}) => {
+  const [open, setOpen] = React.useState(false);
+  const item = {
+    documentId: group.documentId,
+    folderId: group.folderId,
+    documentName: group.documentName,
+  };
+  const rest = group.chunks.length - 1;
+  const visible = open ? group.chunks : group.chunks.slice(0, 1);
+  // 의미 모드: 문서 keywords를 해시태그로(키워드 모드에선 조회 안 함)
+  const { data: doc } = useDocument(
+    mode === "semantic" ? group.documentId : null,
+  );
+  const concepts = mode === "semantic" ? (doc?.keywords ?? []) : [];
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className={cn(
+            "rounded-lg border",
+            activeDocId === group.documentId && "bg-accent/60",
+          )}
+        >
+          <div
+            className="flex cursor-pointer items-start gap-2 p-3"
+            onClick={() => onSelect(group.documentId)}
+            onDoubleClick={() => onOpen(group.documentId)}
+          >
+            <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{group.title}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {group.documentName}
+              </p>
+            </div>
+            <div
+              className="flex shrink-0 items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Badge variant="secondary" className="tabular-nums">
+                {group.topScore.toFixed(2)}
+              </Badge>
+              <Badge variant="outline">청크 {group.chunks.length}</Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                aria-label="상세 보기"
+                onClick={() => onOpen(group.documentId)}
+              >
+                <Eye className="size-4" />
+              </Button>
+              <RowActions item={item} variant="dropdown" />
+            </div>
+          </div>
+
+          {/* 의미 모드: 컨셉 해시태그(문서 단위) */}
+          {concepts.length > 0 && (
+            <div className="flex flex-wrap gap-1 px-3 pb-2">
+              {concepts.map((c) => (
+                <span
+                  key={c}
+                  className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                >
+                  #{c}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 청크 본문(3안 더보기 토글) */}
+          <div className="space-y-2 px-3 pb-3">
+            {visible.map((c) => (
+              <div
+                key={c.chunkId}
+                className="space-y-1 rounded-md border bg-muted/30 p-2.5 text-[11px]"
+              >
+                <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                  <span className="min-w-0 flex-1 truncate font-mono">
+                    {c.chunkId}
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    score {c.score.toFixed(4)}
+                  </span>
+                </div>
+                <p className="leading-relaxed break-words whitespace-pre-wrap text-muted-foreground">
+                  {mode === "keyword" ? (
+                    <Highlighted text={c.snippet} query={query} />
+                  ) : (
+                    c.snippet
+                  )}
+                </p>
+              </div>
+            ))}
+            {rest > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                aria-expanded={open}
+                onClick={() => setOpen((o) => !o)}
+              >
+                {open ? "접기" : `더보기 ${rest}개`}
+                <ChevronDown
+                  className={cn(
+                    "size-4 transition-transform",
+                    open && "rotate-180",
+                  )}
+                />
+              </Button>
+            )}
+          </div>
+        </div>
+      </ContextMenuTrigger>
+      <RowActions item={item} variant="context" />
+    </ContextMenu>
+  );
+};
+
+// 키워드/의미: 결과를 문서 단위로 그룹화해 카드로 렌더(문서당 1 카드 + 청크 더보기).
 const RetrievalList = ({
   results,
   elapsedMs,
+  query,
+  mode,
   activeDocId,
   onOpen,
   onSelect,
 }: {
   results: SearchResultItem[];
   elapsedMs: number;
+  query: string;
+  mode: SearchMode;
   activeDocId: string | null;
   onOpen: (documentId: string) => void;
   onSelect: (documentId: string) => void;
 }) => {
-  const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
-  const toggle = (id: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const groups = React.useMemo(() => groupResults(results), [results]);
 
   return (
     <>
       <p className="pt-1 text-[11px] text-muted-foreground tabular-nums">
-        응답 {formatDuration(elapsedMs)} · 결과 {results.length}건
+        응답 {formatDuration(elapsedMs)} · 문서 {groups.length}개 · 청크{" "}
+        {results.length}건
       </p>
-      {results.length === 0 ? (
+      {groups.length === 0 ? (
         <Empty className="py-12">
           <EmptyHeader>
             <EmptyTitle>결과 없음</EmptyTitle>
@@ -166,113 +317,19 @@ const RetrievalList = ({
           </EmptyHeader>
         </Empty>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>이름</TableHead>
-              <TableHead className="hidden text-right sm:table-cell">점수</TableHead>
-              <TableHead className="w-24" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {results.map((r) => {
-              const open = expanded.has(r.chunkId);
-              const item = {
-                documentId: r.documentId,
-                folderId: r.folderId,
-                documentName: r.documentName,
-              };
-              return (
-                <React.Fragment key={r.chunkId}>
-                  <ContextMenu>
-                    <ContextMenuTrigger asChild>
-                      <TableRow
-                        className={cn(
-                          "cursor-pointer select-none border-b-0",
-                          activeDocId === r.documentId && "bg-accent/60",
-                        )}
-                        onClick={() => onSelect(r.documentId)}
-                        onDoubleClick={() => onOpen(r.documentId)}
-                      >
-                        <TableCell className="max-w-0">
-                          <div className="flex items-center gap-2">
-                            <FileText className="size-4 shrink-0 text-muted-foreground" />
-                            <span className="truncate font-medium">{r.title}</span>
-                            <span className="shrink-0 text-xs text-muted-foreground tabular-nums sm:hidden">
-                              {r.score.toFixed(2)}
-                            </span>
-                          </div>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {r.documentName}
-                          </p>
-                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                            {r.snippet}
-                          </p>
-                        </TableCell>
-                        <TableCell className="hidden align-top text-right text-xs text-muted-foreground tabular-nums sm:table-cell">
-                          {r.score.toFixed(2)}
-                        </TableCell>
-                        <TableCell
-                          className="align-top"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex items-center justify-end gap-0.5">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7"
-                              aria-label="청크 정보"
-                              aria-expanded={open}
-                              onClick={() => toggle(r.chunkId)}
-                            >
-                              <ChevronDown
-                                className={cn(
-                                  "size-4 transition-transform",
-                                  open && "rotate-180",
-                                )}
-                              />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7"
-                              aria-label="상세 보기"
-                              onClick={() => onOpen(r.documentId)}
-                            >
-                              <Eye className="size-4" />
-                            </Button>
-                            <RowActions item={item} variant="dropdown" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    </ContextMenuTrigger>
-                    <RowActions item={item} variant="context" />
-                  </ContextMenu>
-                  {/* 청크 정보 subrow — 일치 청크를 잘림 없이 전부 표시 */}
-                  {open && (
-                    <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={3} className="p-0 pb-2">
-                        <div className="space-y-1 rounded-md border bg-muted/30 p-2 text-[11px]">
-                          <div className="flex justify-between gap-3">
-                            <span className="text-muted-foreground">chunk_id</span>
-                            <span className="font-mono">{r.chunkId}</span>
-                          </div>
-                          <div className="flex justify-between gap-3">
-                            <span className="text-muted-foreground">score</span>
-                            <span className="tabular-nums">{r.score.toFixed(4)}</span>
-                          </div>
-                          <p className="pt-1 leading-relaxed break-words whitespace-pre-wrap text-muted-foreground">
-                            {r.snippet}
-                          </p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </TableBody>
-        </Table>
+        <div className="space-y-2">
+          {groups.map((g) => (
+            <ResultGroupCard
+              key={g.documentId}
+              group={g}
+              query={query}
+              mode={mode}
+              activeDocId={activeDocId}
+              onOpen={onOpen}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
       )}
     </>
   );
@@ -314,7 +371,7 @@ const CitationCard = ({
               {citation.n}
             </span>
             <div className="min-w-0 flex-1">
-              <span className="flex items-center gap-1 text-sm font-medium">
+              <span className="flex min-w-0 items-center gap-1 text-sm font-medium">
                 <FileText className="size-3.5 shrink-0" />
                 <span className="truncate">{item.documentName}</span>
               </span>
@@ -389,7 +446,9 @@ const RagAnswer = ({
       </p>
       <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3">
         <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
-        <p className="text-sm leading-relaxed">{renderAnswer(answer)}</p>
+        <p className="min-w-0 flex-1 text-sm leading-relaxed break-words">
+          {renderAnswer(answer)}
+        </p>
       </div>
       <div>
         <p className="mb-1.5 text-xs font-semibold text-muted-foreground">
@@ -474,7 +533,9 @@ export const SearchResults = ({ q, mode }: { q: string; mode: SearchMode }) => {
           </EmptyHeader>
         </Empty>
       ) : (
-        <ScrollArea className="flex-1">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+          {/* 네이티브 스크롤 — radix ScrollArea의 display:table 래퍼는 콘텐츠 폭만큼 늘어나
+              가로 오버플로우(row 잘림)를 유발하므로, 폭 고정 + 세로 스크롤로 대체(D20·D21) */}
           <div className="space-y-3 px-3 pb-6 sm:px-4">
             {mode === "rag" ? (
               <RagAnswer
@@ -489,13 +550,15 @@ export const SearchResults = ({ q, mode }: { q: string; mode: SearchMode }) => {
               <RetrievalList
                 results={search.data?.results ?? []}
                 elapsedMs={search.data?.elapsedMs ?? 0}
+                query={q}
+                mode={mode}
                 activeDocId={activeDocId}
                 onOpen={onOpen}
                 onSelect={onSelect}
               />
             )}
           </div>
-        </ScrollArea>
+        </div>
       )}
     </div>
   );
