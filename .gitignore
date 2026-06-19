@@ -7,9 +7,6 @@
 # editor swap files
 *.swp
 
-# crawler downloaded test data (do not commit corpora)
-/sample-datas/
-
 # python / uv (crawler tool; keep uv.lock tracked)
 __pycache__/
 *.pyc
