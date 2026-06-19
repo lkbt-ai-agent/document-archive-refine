@@ -1,0 +1,32 @@
+[project]
+name = "test-data-crawler"
+version = "0.1.0"
+description = "공개 게시판의 청약공고 한글 PDF를 사이트별 추상화로 크롤링해 sample-datas/에 적재하는 테스트 데이터 크롤러"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28",
+    "selectolax>=0.3.25",
+    "pydantic>=2.7",
+    "filetype>=1.2",
+    "playwright>=1.50",
+]
+
+[project.scripts]
+crawler = "crawler.__main__:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["crawler"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

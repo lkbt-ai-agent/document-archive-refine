@@ -35,11 +35,12 @@ refs: research/01-mvp-research/01 §1, architecture/04-data/documents-schema.md 
 
 ## 2. 산출물 배치
 
-### 2.1 소스 디렉토리(제안: `crawler/`)
+### 2.1 소스 디렉토리(`crawler/`)
 
 - 소스 코드는 프로젝트 루트의 독립 디렉토리 `crawler/`에 둔다.
 - 기존 `web/`, `backend/` 디렉토리에는 크롤러 코드를 두지 않는다(요구사항 3).
-- 디렉토리 이름 `crawler/`는 제안값이다. 확정 전 변경할 수 있다.
+- 디렉토리 이름은 `crawler/`로 확정했다(구현, 2026-06-19, D2).
+- uv 프로젝트로 구성하고 Python 3.12를 핀한다. 실행은 `uv run crawler <source>`이다.
 
 ```
 crawler/                    # 루트의 별도 소스 디렉토리(web/, backend/ 와 분리)
@@ -232,8 +233,8 @@ dl_info.value.save_as(dest)              # 원하는 경로로 저장
 
 ## 6. 사이트별 크롤링 흐름
 
-- 아래 흐름은 공개 페이지 관찰에 기반한다.
-- 정확한 파라미터 이름과 토큰은 구현 시 브라우저 개발자도구(Network)로 캡처해 확정한다(§9 미해결).
+- 아래 흐름의 엔드포인트·파라미터는 구현 단계에서 캡처로 확정했다(2026-06-19).
+- 두 사이트 모두 서버 렌더 HTML이라 httpx로 수집한다(§6.2.1에서 LH 전략 결정).
 
 ### 6.1 SH 서울주택도시공사 (i-sh.co.kr)
 
@@ -244,7 +245,7 @@ dl_info.value.save_as(dest)              # 원하는 경로로 저장
 #### 6.1.1 페치 전략
 
 - SH는 서버 렌더 HTML이다. 따라서 HTTP 전략(httpx + 파서)을 쓴다.
-- 상세 진입은 onclick이 만드는 요청을 재현한다. eGovFrame은 보통 `nttId`, `bbsId`, `pageIndex` 파라미터로 `view.do`를 호출한다(구현 시 실제 파라미터명 확정).
+- 상세 진입은 `getDetailView('<seq>')` onclick이 만드는 요청을 재현한다. 실제로는 `view.do`에 `seq`를 POST 한다(캡처 확정).
 
 #### 6.1.2 검색 조건(`ShSearchParams`)
 
@@ -258,11 +259,13 @@ class ShSearchParams(SearchParams):
 
 #### 6.1.3 흐름
 
-1. `search`는 `list.do`를 `pageIndex`를 늘려가며 GET 한다.
-2. `search`는 응답 HTML의 목록 표에서 행마다 `post_id`(=nttId)와 제목을 파싱한다.
-3. `fetch_files`는 상세 `view.do`를 GET 해 첨부 영역을 파싱한다.
-4. `fetch_files`는 첨부 다운로드 URL(eGovFrame 관례 `/cmm/fms/FileDown.do?atchFileId=...&fileSn=...`)을 추출한다.
-5. `is_target_file`은 라벨/파일명에 "공고"가 있고 확장자가 `.pdf`인 첨부만 통과시킨다.
+확정 엔드포인트(2026-06-19 캡처):
+
+1. `search`는 `list.do`에 `{page, srchWord, srchTp}`(srchTp 0=제목, 1=내용)를 POST 하며 페이지를 늘린다.
+2. `search`는 제목 링크 `getDetailView('<seq>')`에서 `post_id`(=seq)와 제목을, 같은 행 끝에서 두 번째 칸에서 등록일을 파싱한다.
+3. `fetch_files`는 상세 `view.do`에 `{seq}`를 POST 하고, HTML 안 인라인 `initParam.downList = [{brdId, seq, fileSeq, oriFileNm, fileTp}, ...]`를 읽는다.
+4. `fetch_files`는 다운로드 URL `/com/file/innoFD.do?brdId=&seq=&fileSeq=&fileTp=`(innorix)를 조립한다.
+5. `is_target_file`은 파일명에 "공고"가 있고 확장자가 `.pdf`인 첨부만 통과시킨다.
 6. `download`는 httpx 스트리밍으로 파일을 저장한다.
 
 - `allowed_suffixes = {".pdf"}`.
@@ -270,14 +273,16 @@ class ShSearchParams(SearchParams):
 ### 6.2 LH 한국토지주택공사 (apply.lh.or.kr)
 
 - 대상 목록 URL은 `https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do`이다(요구사항 4).
-- 이 목록은 `mi` 메뉴 파라미터로 카테고리를 가른다(관찰됨): `mi=1026` 임대, `mi=1027` 분양, `mi=1062` 토지, `mi=1069` 상가.
-- 파라미터 없이 직접 GET 하면 에러 페이지를 돌려준다(관찰됨). 목록 데이터는 필터를 담은 POST/AJAX로 적재된다.
+- 이 목록은 `mi` 메뉴 파라미터로 카테고리를 가른다(확정): `mi=1026` 임대, `mi=1027` 분양, `mi=1062` 토지, `mi=1069` 상가.
+- `mi`를 주면 목록은 서버 렌더 HTML로 50행이 그대로 온다(캡처 확정). 첨부는 별도 AJAX와 직링으로 받는다.
 - 검색 필터는 지역, 공고상태, 공고유형, 검색어로 SH보다 복잡하다.
 
 #### 6.2.1 페치 전략
 
-- LH는 JS/세션 의존이 크다. 따라서 브라우저 전략(Playwright)을 기본으로 쓴다.
-- 대안은 AJAX 엔드포인트를 역설계해 httpx POST로 직접 호출하는 것이다. 토큰·세션이 단순하면 이 대안이 더 빠르다. 구현 단계에서 캡처 결과로 결정한다(§9).
+- 결정: LH도 httpx 역설계 POST로 수집한다(캡처 확정, 2026-06-19, plan U3).
+- 사유: 목록이 서버 렌더이고 첨부도 직링이라 Playwright가 필요 없다. 헤드리스 브라우저보다 가볍고 안정적이다.
+- 페이징 파라미터를 GET에 붙이면 빈 스텁이 오므로, 2페이지부터는 `pagingForm`을 POST로 재제출한다.
+- Playwright 인프라(`browser.py`)는 향후 JS 의존 사이트를 위해 남겨 둔다(MVP 미사용).
 
 #### 6.2.2 검색 조건(`LhSearchParams`)
 
@@ -288,19 +293,23 @@ from typing import Literal
 
 class LhSearchParams(SearchParams):
     category: Literal["임대", "분양", "토지", "상가"] = "임대"  # mi 매핑
-    region: str | None = None                # 지역 필터
-    status: Literal["공고중", "접수중", "마감"] | None = None  # 공고상태
-    keyword: str | None = None               # 공고명 검색어
+    region: str | None = None                # 지역명(클라이언트 측 대조)
+    status: Literal["공고중", "접수중", "접수마감", "정정공고중"] | None = None  # panSs(서버 필터)
+    keyword: str | None = None               # 공고명(클라이언트 측 대조)
 ```
+
+- 지역·키워드는 서버 GET 필터가 불안정해 클라이언트 측에서 대조한다(`cnpCd`는 행 파싱을 깨뜨림). `status`만 `panSs`로 서버 필터한다.
 
 #### 6.2.3 흐름
 
-1. `search`는 Playwright로 `selectWrtancList.do?mi=<category>` 페이지를 연다.
-2. `search`는 지역·공고상태·검색어 필터를 채우고 검색을 클릭한다.
-3. `search`는 목록 AJAX 응답(`expect_response`)을 가로채 게시글과 `panId`(공고일련번호)를 얻는다.
-4. `fetch_files`는 상세(`selectWrtancView.do` 류)를 열어 "공고문" 첨부 목록을 읽는다.
-5. `is_target_file`은 라벨에 "공고"가 있고 확장자가 `.pdf`인 첨부만 통과시킨다.
-6. `download`는 다운로드 이벤트(`expect_download`)를 받아 파일을 저장한다.
+확정 엔드포인트(2026-06-19 캡처):
+
+1. `search`는 page1을 `selectWrtancList.do?mi=<category>`(+`panSs`)로 GET 하고, 2페이지부터는 `pagingForm`을 POST 한다.
+2. `search`는 행마다 `a.wrtancInfoBtn[data-id1=panId, ...]`에서 제목·panId를, `a.listFileDown[data-id1..5]`에서 첨부 조회 파라미터를 뽑는다.
+3. `search`는 지역·키워드를 행 단위로 대조해 거른다.
+4. `fetch_files`는 `/lhapply/wt/wrtanc/wrtFileDownl.do`에 listFileDown 파라미터와 `csrfToken`을 POST 해 첨부 목록 JSON `[{cmnAhflSn, cmnAhflNm}, ...]`를 받는다.
+5. `is_target_file`은 파일명에 "공고"가 있고 확장자가 `.pdf`인 첨부만 통과시킨다.
+6. `download`는 `/lhapply/lhFile.do?fileid=<cmnAhflSn>`를 httpx 스트리밍으로 저장한다.
 
 - `allowed_suffixes = {".pdf"}`.
 
@@ -356,17 +365,17 @@ python -m crawler lh --category 임대 --region 서울 --status 공고중 --max-
 
 ### 9.1 마일스톤
 
-1. 골격: `models`, `base`, `runner`, `storage`, `registry`, CLI를 만든다.
-2. SH 구현(HTTP 전략)으로 첫 PDF를 `sample-datas/sh/`에 저장한다.
-3. LH 구현(Playwright 전략)으로 첫 PDF를 `sample-datas/lh/`에 저장한다.
-4. manifest, 중복 회피, 실패 격리를 마감한다.
+1. 골격: `models`, `base`, `runner`, `storage`, `registry`, CLI를 만든다. (완료)
+2. SH 구현(HTTP 전략)으로 첫 PDF를 `sample-datas/sh/`에 저장한다. (완료, 6건)
+3. LH 구현(HTTP 전략)으로 첫 PDF를 `sample-datas/lh/`에 저장한다. (완료, 46건)
+4. manifest, 중복 회피, 실패 격리를 마감한다. (완료)
 
-### 9.2 미해결(구현 시 확정)
+### 9.2 미해결 → 해소(2026-06-19 캡처)
 
-- SH 상세 진입과 첨부 다운로드의 정확한 파라미터명(`nttId`, `bbsId`, `atchFileId`, `fileSn` 등)은 개발자도구로 캡처해 확정한다.
-- LH 목록 AJAX의 정확한 엔드포인트, POST 바디, CSRF/세션 토큰은 캡처로 확정한다.
-- LH를 Playwright로 갈지 역설계 POST로 갈지는 캡처 난이도를 보고 §6.2.1에서 결정한다.
-- 지역·공고상태 필터의 실제 코드값(예: 지역 코드) 매핑표를 구현 시 작성한다.
+- SH: `list.do{page,srchWord,srchTp}`·`view.do{seq}`·`/com/file/innoFD.do{brdId,seq,fileSeq,fileTp}`로 확정(§6.1.3).
+- LH: `selectWrtancList.do`·`wrtFileDownl.do`(+`csrfToken`)·`lhFile.do{fileid}`로 확정(§6.2.3).
+- LH 전략: httpx 역설계 POST로 결정(§6.2.1). Playwright 미사용.
+- 필터: `status`만 `panSs` 서버 필터, 지역·키워드는 클라이언트 측 대조. 공고유형(aisTp) 필터는 미사용(추후 과제).
 
 ---
 
