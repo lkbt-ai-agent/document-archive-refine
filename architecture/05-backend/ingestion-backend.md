@@ -19,7 +19,9 @@ refs: research/01-mvp-research/01, research/01-mvp-research/04 §4
 - 멱등과 재시도는 페이지·스테이지 단위로 동작한다. 따라서 한 페이지(예: OCR 실패)나 한 스테이지가 실패해도 그 단위만 재처리되고 문서 전체 인제스트는 중단되지 않는다.
 - 진행 상황은 워커가 `documents.status`와 `documents.stage`를 갱신해 보고하며, 프론트엔드는 이 값을 폴링해 현재 단계를 표시한다.
 - 파이프라인 전체 소요 시간은 완료 시 `documents.ingest_ms`에 기록한다.
-- 워커는 abort 허용(arq `allow_abort_jobs`): 문서 삭제 시 진행/대기 중 인제스트 job을 선제 취소한다(`CancelledError`로 중단, `failed` 미기록). 삭제 흐름은 document-backend §2.
+- 워커는 abort 허용(arq `allow_abort_jobs`): 문서 삭제 시 진행/대기 중 인제스트 job을 선제 취소한다(`CancelledError`로 중단). 삭제 흐름은 document-backend §2.
+- 동시성과 타임아웃: 워커 `max_jobs`는 생성 서버 슬롯 수에 맞춘다(현재 4). `job_timeout`은 900초로 둔다(대형 PDF·과부하 대비). 근거는 lessons/01.
+- 취소·타임아웃 종결: `CancelledError`를 포함한 모든 종료 경로에서 문서를 종결 상태로 만든다. 취소 시 별도 세션으로 `failed`를 기록해 processing 좀비를 막는다(lessons/01).
 
 ## 2. 인제스트 파이프라인
 
@@ -55,6 +57,7 @@ refs: research/01-mvp-research/01, research/01-mvp-research/04 §4
 - 본문은 자연어 처리로 언어를 감지하고 주요 키워드를 뽑는다.
 - 제목·요약·키워드는 LLM으로 생성한다.
   - llama.cpp의 `--json-schema`(GBNF, backend.md §9)로 출력을 `{title, summary, keywords[]}` 형태로 강제해 받는다. MVP에서는 이 값을 읽기 전용으로 표시하고 사용자가 고치지 않는다.
+  - 프롬프트에 넣는 본문은 앞 5000자(`_MAX_CHARS`)로 제한한다. 슬롯당 컨텍스트(4096) 안에 프롬프트와 출력(512)이 들어가게 한다(lessons/01). 긴 문서의 정밀 요약은 AI 산출물 Summary가 담당한다.
 
 ### 2-4. 청킹
 

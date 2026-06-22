@@ -54,76 +54,97 @@ async def _embed_all(chunks: list[str]) -> list[list[float]]:
     return vectors
 
 
-async def run_ingest(document_id: str) -> None:
-    doc_uuid = UUID(document_id)
-    start = time.monotonic()
+async def _mark_failed(doc_uuid: UUID, message: str) -> None:
+    """별도 세션으로 문서를 failed로 종결한다(좀비 processing 방지, lessons/01 Fix-C3).
+
+    취소·타임아웃 시 기존 세션이 불안정할 수 있어 새 세션을 연다. 이미 삭제된 문서나
+    완료(ready)된 문서는 건드리지 않는다.
+    """
     async with async_session() as session:
         repo = IngestRepository(session)
         doc = await repo.get(doc_uuid)
-        if doc is None:
-            logger.warning("ingest: 문서 없음 %s", document_id)
-            return
-        try:
-            # 1) 추출 (OCR 포함)
-            doc.status, doc.stage, doc.error = "processing", "extracting", None
-            await session.commit()
-            data = await storage.get_bytes(doc.object_key)
-            doc.sha256 = hashlib.sha256(data).hexdigest()  # F7
-            kind = detect.detect_kind(data, doc.original_filename)
-            text, meta = await _extract(kind, data)
-            if meta.get("page_count") is not None:
-                doc.page_count = meta["page_count"]
-            if meta.get("author"):
-                doc.author = meta["author"]
-            if meta.get("doc_created_at"):
-                doc.doc_created_at = meta["doc_created_at"]
-            if meta.get("doc_modified_at"):
-                doc.doc_modified_at = meta["doc_modified_at"]
+        if doc is not None and doc.status != "ready":
+            doc.status, doc.stage = "failed", None
+            doc.error = message[:2000]
             await session.commit()
 
-            # 2) 메타 생성
-            doc.stage = "generating_meta"
-            await session.commit()
-            if text.strip():
-                doc.language = detect_language(text)
-                dm = await generate_meta(text)
-                doc.llm_title, doc.llm_summary = dm.title, dm.summary
-                doc.keywords = dm.keywords
+
+async def run_ingest(document_id: str) -> None:
+    doc_uuid = UUID(document_id)
+    start = time.monotonic()
+    try:
+        async with async_session() as session:
+            repo = IngestRepository(session)
+            doc = await repo.get(doc_uuid)
+            if doc is None:
+                logger.warning("ingest: 문서 없음 %s", document_id)
+                return
+            try:
+                # 1) 추출 (OCR 포함)
+                doc.status, doc.stage, doc.error = "processing", "extracting", None
+                await session.commit()
+                data = await storage.get_bytes(doc.object_key)
+                doc.sha256 = hashlib.sha256(data).hexdigest()  # F7
+                kind = detect.detect_kind(data, doc.original_filename)
+                text, meta = await _extract(kind, data)
+                if meta.get("page_count") is not None:
+                    doc.page_count = meta["page_count"]
+                if meta.get("author"):
+                    doc.author = meta["author"]
+                if meta.get("doc_created_at"):
+                    doc.doc_created_at = meta["doc_created_at"]
+                if meta.get("doc_modified_at"):
+                    doc.doc_modified_at = meta["doc_modified_at"]
                 await session.commit()
 
-            # 3) 청킹
-            doc.stage = "chunking"
-            await session.commit()
-            chunks = await chunk_text(text)
-
-            # 4) 임베딩 + 멱등 적재
-            doc.stage = "embedding"
-            await session.commit()
-            vectors = await _embed_all(chunks)
-            rows = [
-                {
-                    "document_id": doc_uuid,
-                    "chunk_index": i,
-                    "content": c,
-                    "embedding": v,
-                    "metadata": None,
-                    "parent_doc_id": None,
-                }
-                for i, (c, v) in enumerate(zip(chunks, vectors))
-            ]
-            await repo.upsert_chunks(doc_uuid, rows)
-
-            # 5) 완료
-            doc.status, doc.stage = "ready", None
-            doc.ingest_ms = int((time.monotonic() - start) * 1000)
-            await session.commit()
-            logger.info("ingest 완료 %s: chunks=%d ingest_ms=%d", document_id, len(rows), doc.ingest_ms)
-        except Exception as exc:
-            await session.rollback()
-            failed = await repo.get(doc_uuid)
-            if failed is not None:
-                failed.status, failed.stage = "failed", None
-                failed.error = str(exc)[:2000]
+                # 2) 메타 생성
+                doc.stage = "generating_meta"
                 await session.commit()
-            logger.exception("ingest 실패 %s: %s", document_id, exc)
-            raise
+                if text.strip():
+                    doc.language = detect_language(text)
+                    dm = await generate_meta(text)
+                    doc.llm_title, doc.llm_summary = dm.title, dm.summary
+                    doc.keywords = dm.keywords
+                    await session.commit()
+
+                # 3) 청킹
+                doc.stage = "chunking"
+                await session.commit()
+                chunks = await chunk_text(text)
+
+                # 4) 임베딩 + 멱등 적재
+                doc.stage = "embedding"
+                await session.commit()
+                vectors = await _embed_all(chunks)
+                rows = [
+                    {
+                        "document_id": doc_uuid,
+                        "chunk_index": i,
+                        "content": c,
+                        "embedding": v,
+                        "metadata": None,
+                        "parent_doc_id": None,
+                    }
+                    for i, (c, v) in enumerate(zip(chunks, vectors))
+                ]
+                await repo.upsert_chunks(doc_uuid, rows)
+
+                # 5) 완료
+                doc.status, doc.stage = "ready", None
+                doc.ingest_ms = int((time.monotonic() - start) * 1000)
+                await session.commit()
+                logger.info("ingest 완료 %s: chunks=%d ingest_ms=%d", document_id, len(rows), doc.ingest_ms)
+            except Exception as exc:
+                await session.rollback()
+                failed = await repo.get(doc_uuid)
+                if failed is not None:
+                    failed.status, failed.stage = "failed", None
+                    failed.error = str(exc)[:2000]
+                    await session.commit()
+                logger.exception("ingest 실패 %s: %s", document_id, exc)
+                raise
+    except asyncio.CancelledError:
+        # 잡 타임아웃·삭제 abort 등 취소 시에도 종결 상태로 기록한다(좀비 processing 방지).
+        # CancelledError는 BaseException이라 위 except Exception을 건너뛴다. shield로 정리를 마친다.
+        await asyncio.shield(_mark_failed(doc_uuid, "인제스트가 취소 또는 타임아웃으로 중단됨"))
+        raise

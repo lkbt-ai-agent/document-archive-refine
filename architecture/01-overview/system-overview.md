@@ -1,6 +1,6 @@
 ---
 created: 2026-06-11
-updated: 2026-06-12
+updated: 2026-06-22
 status: approved
 overview: 문서를 업로드하면 AI가 읽고 이해해 검색·RAG·요약/초안/보고서를 제공하는 한국어 문서 아카이브.
 refs: research/01-mvp-research/00, research/01-mvp-research/04
@@ -67,10 +67,18 @@ refs: research/01-mvp-research/00, research/01-mvp-research/04
 - 한국어 처리(UTF-8·PGroonga)
 - 소유자 스코프(`owner_id` 강제).
 
-## 6. 실행 흐름
+## 6. 인제스트 워크플로
 
-- 브라우저가 web(Next.js)을 거쳐 api를 호출한다.
-- api는 Redis·worker·llama-server를 사용한다.
-- api·worker는 원격 PostgreSQL(psycopg3)에 접속한다.
-- api는 원격 MinIO presign을 발급한다.
-- 브라우저는 원격 MinIO와 presigned PUT/GET으로 직접 주고받는다.
+문서 업로드부터 검색 가능 상태까지 모듈이 동작하는 시간 순서다.
+
+1. 업로드 준비: 브라우저가 api에 업로드를 요청하고, api는 `documents` 행을 만들고(`status=uploaded`) MinIO presigned PUT URL을 발급한다.
+2. 원본 적재: 브라우저가 그 URL로 MinIO에 파일을 직접 올린다(api를 거치지 않는다).
+3. 업로드 확정: 브라우저가 api에 확정을 알리고, api는 MinIO에서 업로드를 확인한 뒤 Redis 큐에 인제스트 작업을 등록한다.
+4. 추출(extracting): 워커가 MinIO에서 파일을 받아 타입을 판별하고 본문과 표를 추출한다. 스캔이나 이미지는 OCR로 처리한다.
+5. 메타 생성(generating_meta): 워커가 언어를 감지하고 생성 LLM(8080)으로 제목·요약·키워드를 만든다.
+6. 청킹(chunking): 워커가 본문을 검색용 청크로 나눈다.
+7. 임베딩(embedding): 워커가 임베딩 LLM(8081)으로 각 청크를 벡터로 바꿔 PostgreSQL(pgvector)에 적재한다.
+8. 완료(ready): 워커가 상태를 `ready`로 두고 소요 시간을 기록한다. 실패하면 `failed`로 종결한다.
+9. 표시: 프론트가 상태와 단계를 폴링해 진행을 보여주고, 완료 뒤 메타·검색·RAG에 쓴다.
+
+- 4단계부터 8단계까지는 워커가 비동기로 처리하며 각 단계는 멱등이다(횡단 사항은 §5).

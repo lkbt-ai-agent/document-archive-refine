@@ -10,4 +10,6 @@
 set -euo pipefail
 MODEL="${LLAMA_CHAT_MODEL:-ax-4.0-light-q4_k_m.gguf}"
 PORT="${LLAMA_CHAT_PORT:-8080}"
-exec llama-server -m "$MODEL" -ngl 99 -c 8192 --port "$PORT"
+# --parallel 4 -c 16384: 슬롯 4개에 슬롯당 약 4096토큰을 준다(8192÷4=2048은 메타 프롬프트
+# 초과로 KV 캐시 고갈·500을 냈다). 워커 max_jobs(4)와 슬롯 수를 맞춘다. lessons/01 §0·Fix-A.
+exec llama-server -m "$MODEL" -ngl 99 --parallel 4 -c 16384 --port "$PORT"

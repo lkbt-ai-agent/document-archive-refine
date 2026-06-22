@@ -17,7 +17,7 @@ _META_SYSTEM = (
     "너는 한국어 문서 분석기다. 주어진 문서를 읽고 제목, 3~5문장 요약, "
     "핵심 키워드를 한국어로 생성해 JSON으로만 출력한다."
 )
-_MAX_CHARS = 6000  # 컨텍스트 한도 고려(A.X 4.0 Light 8192 ctx)
+_MAX_CHARS = 5000  # 슬롯당 컨텍스트(16384÷4=4096) 내에 출력 512와 함께 들어가게. lessons/01 Fix-A.
 
 
 class DocMeta(BaseModel):
