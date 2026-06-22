@@ -8,8 +8,8 @@ from fastapi import APIRouter, Query, status
 from src.common.deps import OwnerDep, SessionDep
 from src.common.pagination import Page
 from src.documents.schemas import (
-    DocumentMove,
     DocumentRead,
+    DocumentUpdate,
     DownloadResponse,
     UploadInitRequest,
     UploadInitResponse,
@@ -50,10 +50,11 @@ async def complete_upload(
 
 
 @router.patch("/{document_id}", response_model=DocumentRead)
-async def move_document(
-    document_id: UUID, data: DocumentMove, session: SessionDep, owner: OwnerDep
+async def update_document(
+    document_id: UUID, data: DocumentUpdate, session: SessionDep, owner: OwnerDep
 ) -> DocumentRead:
-    return await DocumentService(session).move(owner, document_id, data.folder_id)
+    # 부분 갱신 — 폴더 이동(folder_id)·현재 파일명 변경(display_filename) 공용.
+    return await DocumentService(session).update(owner, document_id, data)
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)

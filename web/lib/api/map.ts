@@ -40,7 +40,8 @@ export const mapFolders = (dtos: FolderDTO[]): Folder[] => [
 export const mapDocument = (d: DocumentDTO): DocumentItem => ({
   id: d.id,
   folderId: d.folder_id ?? ROOT_FOLDER_ID,
-  name: d.original_filename,
+  name: d.display_filename, // 현재 파일명
+  originalName: d.original_filename,
   mime: d.mime_type ?? "application/octet-stream",
   sizeBytes: d.size_bytes ?? 0,
   status: d.status,
@@ -60,8 +61,8 @@ export const mapSearchResult = (r: SearchResultItemDTO): SearchResultItem => ({
   chunkId: r.chunk_id,
   score: r.score,
   snippet: r.content,
-  documentName: r.original_filename,
-  title: r.llm_title ?? r.original_filename,
+  documentName: r.display_filename,
+  llmTitle: r.llm_title ?? undefined,
   keywords: r.keywords ?? [],
   folderId: r.folder_id ?? ROOT_FOLDER_ID,
 });

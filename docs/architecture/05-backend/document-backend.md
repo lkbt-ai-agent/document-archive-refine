@@ -16,11 +16,12 @@ refs: docs/research/01-mvp-research/04 §2
 | GET    | `/documents/{id}`                      | 문서 상세(`documents` 메타 + `status`/`stage`/`error`)를 조회한다.             |
 | POST   | `/documents`                           | upload init: `uploaded` 행을 생성하고 presigned PUT을 발급한다.                |
 | POST   | `/documents/{id}/complete`             | upload confirm: `stat_object`로 검증하고 `processing` 전이 + 인제스트 enqueue. |
-| PATCH  | `/documents/{id}`                      | 문서를 지정 폴더로 이동한다(`{folder_id}`).                                    |
+| PATCH  | `/documents/{id}`                      | 부분 갱신: 폴더 이동(`{folder_id}`)·현재 파일명 변경(`{display_filename}`).    |
 | DELETE | `/documents/{id}`                      | 삭제 수명주기를 실행한다.                                                      |
-| GET    | `/documents/{id}/download`             | presigned GET을 발급한다(발급 전 `owner_id` 검사).                             |
+| GET    | `/documents/{id}/download`             | presigned GET을 발급한다(발급 전 `owner_id` 검사, 파일명=현재 파일명).         |
 
 - 에러: 권한 외 404, 이동 충돌은 폴더 정책 준수, upload confirm 검증 실패 4xx. 모든 쿼리 `owner_id` 강제.
+- PATCH는 보낸 필드만 반영한다(`model_fields_set`). `folder_id=null`은 루트 이동이고, `display_filename`은 현재 파일명만 바꾼다(원본 파일명·AI 메타 보존, document.md §5).
 
 ## 2. 모듈 흐름
 

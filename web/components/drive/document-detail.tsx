@@ -137,6 +137,9 @@ export const DocumentDetail = () => {
       <Separator />
 
       <div>
+        {doc.name !== doc.originalName && (
+          <MetaRow label="원본 파일명" value={doc.originalName} />
+        )}
         <MetaRow label="크기" value={formatBytes(doc.sizeBytes)} />
         <MetaRow label="형식" value={doc.mime} />
         {doc.pageCount != null && (

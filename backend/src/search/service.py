@@ -73,7 +73,7 @@ class SearchService:
             chunk_id=row["chunk_id"],
             score=score,
             content=row["content"],
-            original_filename=row["original_filename"],
+            display_filename=row["display_filename"],
             llm_title=row["llm_title"],
             keywords=row["keywords"] or [],
             folder_id=row["folder_id"],
@@ -122,7 +122,7 @@ class SearchService:
         blocks, mapping = [], {}
         for i, r in enumerate(rows, start=1):
             mapping[i] = (r["chunk_id"], r["document_id"])
-            title = r["llm_title"] or r["original_filename"]
+            title = r["llm_title"] or r["display_filename"]
             date = r["created_at"].date().isoformat()
             blocks.append(f"[{i}] (제목: {title} · 날짜: {date})\n{r['content']}")
         return "\n\n".join(blocks), mapping

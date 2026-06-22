@@ -17,6 +17,7 @@ refs: docs/research/01-mvp-research/02
 
 - UI는 단일 검색 진입에서 모드(키워드/의미/rag)를 고르고, 진입은 같되 출력만 갈린다. 키워드/의미는 `/search`(결과 리스트), rag는 `/search/ask`(답변)로 라우팅된다.
 - 두 응답 모두 `elapsed_ms`(서버 처리 시간) 포함.
+- `/search` 결과 항목은 `{document_id, chunk_id, score, content, display_filename, llm_title, keywords, folder_id, created_at}`이다. 파일명은 현재 파일명(`display_filename`)을 노출하고, `keywords`는 문서 keywords로 프론트가 추가 단건 조회 없이 카드 해시태그를 그리게 응답에 포함한다.
 
 ## 2. 모듈 흐름
 

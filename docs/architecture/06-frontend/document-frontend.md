@@ -14,8 +14,11 @@ refs: docs/research/01-mvp-research/04 §5
 - DocumentList: shadcn `Table` + TanStack Table v8 헤드리스(`useReactTable`/`getCoreRowModel`, `manualPagination: true`) — 서버 페이지네이션.
 - 목록 계약 `GET /documents?folder_id=&limit=&cursor=`(document-backend.md) + react-query 바인딩. API·옵션은 context7로 v8 확인 후 작성.
 - 컬럼: 이름, 상태, 크기, 등록일. 폴더 행은 상태/크기에 대시 자리표시(`-`)를 둔다.
+- "이름" 컬럼은 사용자 리사이즈를 지원한다(TanStack `enableColumnResizing`+`columnResizeMode:"onChange"`, 헤더 우측 드래그 핸들·더블클릭 초기화). 모바일(<md)에서는 비활성화하고 축소(truncate)로 제목·행 버튼이 한 화면에 들어오게 한다.
+- 목록 "이름"은 현재 파일명(`display_filename`)을 표시한다.
 - 하위 폴더 row + 문서 row(폴더 먼저). 단일 클릭=선택(하이라이트), 더블 클릭/눈 버튼=열기(문서=문서 인스펙터, 폴더 더블=진입/폴더 눈=폴더 인스펙터). 상세 규칙은 frontend.md §5.
-- 행 "⋯" 드롭다운과 우클릭 컨텍스트 메뉴(문서=다운로드/삭제, 폴더=FolderActions, folders-frontend.md).
+- 행 "⋯" 드롭다운과 우클릭 컨텍스트 메뉴(문서=이름 변경/다운로드/삭제, 폴더=FolderActions, folders-frontend.md).
+- 이름 변경: `DocumentRenameDialog`로 현재 파일명(`display_filename`)만 수정한다(낙관·롤백, `useRenameDocument`). 목록 "이름"·메타패널 큰 제목은 현재 파일명을 표시하고, 원본 파일명·AI 논리 제목은 보존한다(document.md §5).
 - AI 산출물도 일반 문서 행으로 표기(ai-outputs-frontend.md).
 
 ## 2. 업로드 / 다운로드 / 원본 보기
@@ -28,7 +31,8 @@ refs: docs/research/01-mvp-research/04 §5
 
 ## 3. DocumentDetail / 인제스트 폴링
 - 인스펙터는 "문서 상세" 헤더만 고정하고 그 아래 전체를 단일 스크롤한다.
-- 본문은 상세(크기/형식/페이지/작성자/등록일/처리 시간)와 메타데이터/산출물 탭으로 구성한다.
+- 헤더 제목은 두 줄로, 큰 제목=현재 파일명(`display_filename`, 말줄임 없이 전체 표시), 작은 제목=AI 논리 제목(`llm_title`, 있을 때만)이다.
+- 본문은 상세(크기/형식/페이지/작성자/등록일/처리 시간)와 메타데이터/산출물 탭으로 구성한다. 이름이 변경된 경우 상세에 "원본 파일명" 행을 함께 보여 준다.
 - DocumentDetail(Right): `status`/`stage` react-query 폴링(ready/failed 정지) + "원본 보기".
 - MetadataView: AI 메타(제목/요약/키워드) 읽기 전용 + 인제스트 소요(`documents.ingest_ms`).
 - 소요 시간은 초 단위 표기.

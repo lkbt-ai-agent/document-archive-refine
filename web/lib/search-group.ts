@@ -10,8 +10,8 @@ export interface SearchGroupChunk {
 
 export interface SearchGroup {
   documentId: string;
-  title: string;
-  documentName: string;
+  documentName: string; // 현재 파일명(카드 큰 제목)
+  llmTitle?: string; // ai 보정 제목(카드 작은 제목)
   folderId: string;
   keywords: string[]; // 문서 keywords — 결과 카드 해시태그
   topScore: number; // 그룹 정렬·헤더 표시용 최고 score
@@ -26,8 +26,8 @@ export const groupResults = (results: SearchResultItem[]): SearchGroup[] => {
     if (!g) {
       g = {
         documentId: r.documentId,
-        title: r.title,
         documentName: r.documentName,
+        llmTitle: r.llmTitle,
         folderId: r.folderId,
         keywords: r.keywords,
         topScore: r.score,

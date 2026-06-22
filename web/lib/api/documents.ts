@@ -3,6 +3,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type InfiniteData,
 } from "@tanstack/react-query";
 import { ROOT_FOLDER_ID } from "@/lib/routes";
 import {
@@ -19,6 +20,7 @@ import type {
 } from "./dto";
 import { qk } from "./keys";
 import { mapDocument } from "./map";
+import type { DocumentItem } from "@/lib/types";
 
 const POLL_MS = 1500;
 
@@ -71,6 +73,56 @@ export const useDeleteDocument = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents"] });
       qc.invalidateQueries({ queryKey: ["generations"] });
+    },
+  });
+};
+
+// 현재 파일명 변경(display_filename) — PATCH 부분 갱신. 목록·단건 캐시 낙관 갱신 후 롤백.
+export const useRenameDocument = (folderId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { id: string; name: string }) =>
+      apiFetch<DocumentDTO>(`/documents/${v.id}`, {
+        method: "PATCH",
+        body: { display_filename: v.name },
+      }),
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: qk.documents(folderId) });
+      await qc.cancelQueries({ queryKey: qk.document(v.id) });
+      const prevList = qc.getQueryData<InfiniteData<PageDTO<DocumentDTO>>>(
+        qk.documents(folderId),
+      );
+      const prevDoc = qc.getQueryData<DocumentItem>(qk.document(v.id));
+      // 목록(DTO 페이지) 낙관 갱신
+      qc.setQueryData<InfiniteData<PageDTO<DocumentDTO>>>(
+        qk.documents(folderId),
+        (old) =>
+          old
+            ? {
+                ...old,
+                pages: old.pages.map((p) => ({
+                  ...p,
+                  items: p.items.map((d) =>
+                    d.id === v.id ? { ...d, display_filename: v.name } : d,
+                  ),
+                })),
+              }
+            : old,
+      );
+      // 단건(매핑된 DocumentItem) 낙관 갱신
+      qc.setQueryData<DocumentItem>(qk.document(v.id), (old) =>
+        old ? { ...old, name: v.name } : old,
+      );
+      return { prevList, prevDoc, id: v.id };
+    },
+    onError: (_e, _v, ctx) => {
+      if (!ctx) return;
+      qc.setQueryData(qk.documents(folderId), ctx.prevList);
+      qc.setQueryData(qk.document(ctx.id), ctx.prevDoc);
+    },
+    onSettled: (_d, _e, v) => {
+      qc.invalidateQueries({ queryKey: qk.documents(folderId) });
+      qc.invalidateQueries({ queryKey: qk.document(v.id) });
     },
   });
 };

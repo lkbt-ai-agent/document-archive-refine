@@ -17,6 +17,7 @@ import {
   Eye,
   FolderPlus,
   Upload,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -65,8 +66,10 @@ import { useFolders } from "@/lib/api/folders";
 import {
   useDocuments,
   useDeleteDocument,
+  useRenameDocument,
   triggerDownload,
 } from "@/lib/api/documents";
+import { DocumentRenameDialog } from "./document-rename-dialog";
 import { mapDocument } from "@/lib/api/map";
 import { errorMessage } from "@/lib/api/client";
 import { folderHref } from "@/lib/routes";
@@ -91,6 +94,11 @@ export const DocumentList = ({
   const { data: folders = [] } = useFolders();
   const docsQuery = useDocuments(folderId);
   const deleteDoc = useDeleteDocument();
+  const renameDoc = useRenameDocument(folderId);
+  // 우클릭 "이름 변경" 대상 문서(다이얼로그)
+  const [renameTarget, setRenameTarget] = React.useState<DocumentItem | null>(
+    null,
+  );
 
   const selectedDocumentId = useDriveStore((s) => s.selectedDocumentId);
   const highlightedDocId = useDriveStore((s) => s.highlightedDocId);
@@ -145,6 +153,15 @@ export const DocumentList = ({
       onSuccess: () => toast.success(`"${name}" 문서를 삭제했습니다.`),
       onError: (e) => toast.error(errorMessage(e)),
     });
+  // 현재 파일명 변경(낙관·롤백). 원본 파일명·AI 논리명은 보존.
+  const onRenameDoc = (id: string, name: string) =>
+    renameDoc.mutate(
+      { id, name },
+      {
+        onSuccess: () => toast.success(`이름을 "${name}"(으)로 변경했습니다.`),
+        onError: (e) => toast.error(errorMessage(e)),
+      },
+    );
 
   // 단일 클릭=선택(하이라이트), 더블 클릭=문서 인스펙터 열기 / 폴더 진입.
   const onFolderDoubleClick = (id: string) => router.push(folderHref(id));
@@ -273,6 +290,9 @@ export const DocumentList = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setRenameTarget(d)}>
+                    <Pencil className="size-4" /> 이름 변경
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onDownload(d.id)}>
                     <Download className="size-4" /> 다운로드
                   </DropdownMenuItem>
@@ -482,6 +502,11 @@ export const DocumentList = ({
                               {tableRow}
                             </ContextMenuTrigger>
                             <ContextMenuContent>
+                              <ContextMenuItem
+                                onClick={() => setRenameTarget(d)}
+                              >
+                                <Pencil className="size-4" /> 이름 변경
+                              </ContextMenuItem>
                               <ContextMenuItem onClick={() => onDownload(d.id)}>
                                 <Download className="size-4" /> 다운로드
                               </ContextMenuItem>
@@ -531,6 +556,16 @@ export const DocumentList = ({
       {dialogs}
       {/* 빈 목록 컨텍스트 메뉴용 숨은 input + 새 폴더 다이얼로그 */}
       {elements}
+      {/* 문서 현재 파일명 변경 다이얼로그 — key 로 매번 initialName 리마운트 */}
+      {renameTarget && (
+        <DocumentRenameDialog
+          key={`rename-${renameTarget.id}`}
+          open
+          onOpenChange={(v) => !v && setRenameTarget(null)}
+          initialName={renameTarget.name}
+          onSubmit={(name) => onRenameDoc(renameTarget.id, name)}
+        />
+      )}
     </div>
   );
 };

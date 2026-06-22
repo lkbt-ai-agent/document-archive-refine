@@ -44,7 +44,7 @@ class SearchRepository:
         params |= {"u": owner_id, "q": q, "limit": limit}
         select_cols = (
             "c.document_id, c.id AS chunk_id, c.content, "
-            "d.original_filename, d.llm_title, d.keywords, d.folder_id, d.created_at"
+            "d.display_filename, d.llm_title, d.keywords, d.folder_id, d.created_at"
         )
         join = "JOIN archive.documents d ON d.id = c.document_id"
         where = f"d.owner_id = :u {filt}"
@@ -84,7 +84,7 @@ class SearchRepository:
                 DocumentChunk.document_id,
                 DocumentChunk.id.label("chunk_id"),
                 DocumentChunk.content,
-                Document.original_filename,
+                Document.display_filename,
                 Document.llm_title,
                 Document.keywords,
                 Document.folder_id,

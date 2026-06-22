@@ -21,7 +21,8 @@ CREATE TABLE archive.documents (                                        -- 문�
   owner_id          UUID NOT NULL REFERENCES archive.users(id),         -- 소유자 ID
   object_key        TEXT NOT NULL UNIQUE,                               -- 오브젝트 키
   bucket            TEXT NOT NULL,                                      -- 버킷명
-  original_filename TEXT NOT NULL,                                      -- 원본 파일명
+  original_filename TEXT NOT NULL,                                      -- 원본 파일명(불변)
+  display_filename  TEXT NOT NULL,                                      -- 현재 파일명(최초=원본명, 변경 가능)
   mime_type         TEXT,                                               -- MIME 타입
   size_bytes        BIGINT,                                             -- 파일 크기(바이트)
   sha256            CHAR(64),                                           -- 본문 SHA-256 해시
@@ -75,3 +76,11 @@ CREATE INDEX ix_chunks_metadata ON archive.document_chunks USING gin (metadata);
 - `sha256` 컬럼: 파일 본문 해시(무결성 검증·동일 파일 식별).
 - `ix_documents_sha256` 인덱스로 동일 파일 조회를 가속한다.
 - 중복 처리 규칙은 document.md §4.
+
+## 4. 파일명 3중 모델
+- `documents`는 파일명을 세 가지로 분리 보관한다.
+  - `original_filename`: 업로드 당시 원본명. 불변이며 출처 추적 기준이다.
+  - `display_filename`: 사용자가 바꾸는 현재 파일명. 최초값은 `original_filename`과 같고 변경 시 갱신된다. `NOT NULL`이다.
+  - `llm_title`: AI가 본문에서 뽑은 논리 제목(읽기 전용, ingestion.md §3-3).
+- 이름 변경 여부는 `display_filename != original_filename`로 판별한다.
+- 화면 표시·다운로드 파일명은 `display_filename`을 쓴다(document-backend §3).

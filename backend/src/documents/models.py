@@ -48,7 +48,8 @@ class Document(Base):
     # 오브젝트 저장 (documents-minio §1)
     object_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     bucket: Mapped[str] = mapped_column(Text, nullable=False)
-    original_filename: Mapped[str] = mapped_column(Text, nullable=False)
+    original_filename: Mapped[str] = mapped_column(Text, nullable=False)  # 업로드 당시 원본명(불변)
+    display_filename: Mapped[str] = mapped_column(Text, nullable=False)  # 현재 파일명(최초=원본명, 변경 가능)
     mime_type: Mapped[str | None] = mapped_column(Text)
     size_bytes: Mapped[int | None] = mapped_column(BigInteger)
     sha256: Mapped[str | None] = mapped_column(CHAR(64), index=True)  # ix_documents_sha256

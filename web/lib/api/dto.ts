@@ -14,6 +14,7 @@ export interface DocumentDTO {
   id: string;
   folder_id: string | null;
   original_filename: string;
+  display_filename: string;
   mime_type: string | null;
   size_bytes: number | null;
   sha256: string | null;
@@ -54,7 +55,7 @@ export interface SearchResultItemDTO {
   chunk_id: string;
   score: number;
   content: string;
-  original_filename: string;
+  display_filename: string;
   llm_title: string | null;
   keywords: string[];
   folder_id: string | null;

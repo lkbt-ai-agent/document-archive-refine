@@ -202,10 +202,15 @@ const ResultGroupCard = ({
           >
             <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{group.title}</p>
-              <p className="truncate text-xs text-muted-foreground">
+              {/* 큰 제목=현재 파일명, 작은 제목=ai 보정 제목(있을 때) */}
+              <p className="truncate text-sm font-medium">
                 {group.documentName}
               </p>
+              {group.llmTitle && (
+                <p className="truncate text-xs text-muted-foreground">
+                  {group.llmTitle}
+                </p>
+              )}
             </div>
             <div
               className="flex shrink-0 items-center gap-1"
@@ -396,13 +401,16 @@ const CitationCard = ({
               {citation.n}
             </span>
             <div className="min-w-0 flex-1">
+              {/* 큰 제목=현재 파일명, 작은 제목=ai 보정 제목(있을 때) */}
               <span className="flex min-w-0 items-center gap-1 text-sm font-medium">
                 <FileText className="size-3.5 shrink-0" />
                 <span className="truncate">{item.documentName}</span>
               </span>
-              <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
-                {citation.chunkId}
-              </p>
+              {doc?.llmTitle && (
+                <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                  {doc.llmTitle}
+                </p>
+              )}
             </div>
             <div
               className="flex shrink-0 items-center gap-0.5"

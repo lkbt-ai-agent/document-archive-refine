@@ -16,6 +16,7 @@ from src.documents.models import Document
 from src.documents.repository import DocumentRepository
 from src.documents.schemas import (
     DocumentRead,
+    DocumentUpdate,
     DownloadResponse,
     UploadInitRequest,
     UploadInitResponse,
@@ -54,6 +55,7 @@ class DocumentService:
             object_key=object_key,
             bucket=settings.minio_bucket,
             original_filename=data.original_filename,
+            display_filename=data.original_filename,  # 현재 파일명 최초값 = 원본명
             mime_type=data.mime_type,
             size_bytes=data.size_bytes,
             status="uploaded",
@@ -103,10 +105,15 @@ class DocumentService:
             rows = rows[:n]
         return Page(items=[DocumentRead.model_validate(r) for r in rows], next_cursor=next_cursor)
 
-    async def move(self, owner_id: UUID, document_id: UUID, folder_id: UUID | None) -> DocumentRead:
+    async def update(self, owner_id: UUID, document_id: UUID, data: DocumentUpdate) -> DocumentRead:
+        # 부분 갱신 — 보낸 필드만 반영. 폴더 이동·현재 파일명 변경 공용.
         doc = await self._require(owner_id, document_id)
-        await self._validate_folder(owner_id, folder_id)
-        doc.folder_id = folder_id
+        fields = data.model_fields_set
+        if "folder_id" in fields:
+            await self._validate_folder(owner_id, data.folder_id)
+            doc.folder_id = data.folder_id
+        if "display_filename" in fields and data.display_filename is not None:
+            doc.display_filename = data.display_filename.strip()
         await self.session.commit()
         await self.session.refresh(doc)
         return DocumentRead.model_validate(doc)
@@ -117,7 +124,7 @@ class DocumentService:
         doc = await self._require(owner_id, document_id)  # 발급 전 owner 검사
         url = await storage.presign_get(
             doc.object_key,
-            filename=doc.original_filename,
+            filename=doc.display_filename,  # 다운로드는 현재 파일명으로
             inline=inline,
             content_type=doc.mime_type if inline else None,
         )

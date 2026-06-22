@@ -27,7 +27,7 @@ class SearchResultItem(BaseModel):
     chunk_id: UUID
     score: float  # 키워드=pgroonga_score, 의미=유사도(1-distance)
     content: str
-    original_filename: str
+    display_filename: str
     llm_title: str | None
     keywords: list[str]
     folder_id: UUID | None

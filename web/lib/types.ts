@@ -17,7 +17,8 @@ export interface Folder {
 export interface DocumentItem {
   id: string;
   folderId: string;
-  name: string;
+  name: string; // 현재 파일명(display_filename) — 변경 가능
+  originalName: string; // 업로드 당시 원본 파일명(불변)
   mime: string;
   sizeBytes: number;
   status: DocStatus;
@@ -60,8 +61,8 @@ export type SearchMode = "keyword" | "semantic" | "rag";
 
 export interface SearchResultItem {
   documentId: string;
-  documentName: string; // original_filename
-  title: string; // llm_title ?? original_filename
+  documentName: string; // display_filename(현재 파일명, 카드 큰 제목)
+  llmTitle?: string; // llm_title(ai 보정 제목, 카드 작은 제목)
   snippet: string; // 매칭 청크 본문(content)
   score: number; // 키워드=pgroonga_score, 의미=유사도
   chunkId: string; // 매칭 청크 id — row 아래 "청크 정보" toggle 표시용(search-frontend §3a)

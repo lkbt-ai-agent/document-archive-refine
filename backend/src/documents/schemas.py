@@ -22,9 +22,11 @@ class UploadInitResponse(BaseModel):
     upload_url: str  # presigned PUT
 
 
-class DocumentMove(BaseModel):
+class DocumentUpdate(BaseModel):
+    # 부분 갱신 — 보낸 필드만 반영(model_fields_set). folder_id=null 은 루트 이동(의미 있는 값).
     model_config = ConfigDict(extra="forbid")
     folder_id: UUID | None = None
+    display_filename: str | None = Field(default=None, min_length=1)  # 현재 파일명 변경
 
 
 class DownloadResponse(BaseModel):
@@ -37,6 +39,7 @@ class DocumentRead(BaseModel):
     id: UUID
     folder_id: UUID | None
     original_filename: str
+    display_filename: str
     mime_type: str | None
     size_bytes: int | None
     sha256: str | None
