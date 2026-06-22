@@ -36,7 +36,7 @@ export const DriveShell = ({ children }: { children: React.ReactNode }) => {
       <AppHeader />
 
       {/* ≥md: Left 트리 + Center(라우트) + Right 인스펙터(토글) */}
-      <div className="hidden flex-1 overflow-hidden md:block">
+      <div className="hidden min-h-0 flex-1 overflow-hidden md:block">
         <ResizablePanelGroup orientation="horizontal">
           {!leftCollapsed && (
             <>
@@ -70,7 +70,7 @@ export const DriveShell = ({ children }: { children: React.ReactNode }) => {
       </div>
 
       {/* <md: 단일 패널 (모바일) */}
-      <div className="flex-1 overflow-hidden md:hidden">{children}</div>
+      <div className="min-h-0 flex-1 overflow-hidden md:hidden">{children}</div>
 
       {/* 모바일 전용 오버레이 — 데스크톱에서는 마운트하지 않음(포털 회피) */}
       {isMobile && (

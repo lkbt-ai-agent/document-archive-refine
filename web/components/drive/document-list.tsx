@@ -310,7 +310,7 @@ export const DocumentList = ({
         <span className="text-xs text-muted-foreground">{docCount}개 문서</span>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         {docsQuery.isLoading ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
             <Spinner /> 불러오는 중…
