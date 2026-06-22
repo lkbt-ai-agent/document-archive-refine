@@ -147,7 +147,7 @@ const Highlighted = ({ text, query }: { text: string; query: string }) => {
   );
 };
 
-// 문서 그룹 카드(3안: 더보기 토글) — 같은 문서의 매칭 청크를 한 카드에 모은다.
+// 문서 그룹 카드(화살표 토글 행 + 더보기) — 같은 문서의 매칭 청크를 한 카드에 모은다.
 // 키워드: 청크 본문 하이라이트 / 의미: 문서 keywords를 컨셉 해시태그로 표시(청크 단위 컨셉은 백엔드 미제공).
 const ResultGroupCard = ({
   group,
@@ -164,14 +164,25 @@ const ResultGroupCard = ({
   onOpen: (documentId: string) => void;
   onSelect: (documentId: string) => void;
 }) => {
-  const [open, setOpen] = React.useState(false);
+  const [showAll, setShowAll] = React.useState(false);
+  // 청크별 본문 펼침 상태(행 클릭 시 토글) — 첫 청크는 기본 펼침
+  const [expanded, setExpanded] = React.useState<Set<string>>(
+    () => new Set(group.chunks[0] ? [group.chunks[0].chunkId] : []),
+  );
+  const toggleChunk = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const item = {
     documentId: group.documentId,
     folderId: group.folderId,
     documentName: group.documentName,
   };
   const rest = group.chunks.length - 1;
-  const visible = open ? group.chunks : group.chunks.slice(0, 1);
+  const visible = showAll ? group.chunks : group.chunks.slice(0, 1);
   // 의미 모드: 문서 keywords를 해시태그로(키워드 모드에선 조회 안 함)
   const { data: doc } = useDocument(
     mode === "semantic" ? group.documentId : null,
@@ -234,43 +245,60 @@ const ResultGroupCard = ({
             </div>
           )}
 
-          {/* 청크 본문(3안 더보기 토글) */}
-          <div className="space-y-2 px-3 pb-3">
-            {visible.map((c) => (
-              <div
-                key={c.chunkId}
-                className="space-y-1 rounded-md border bg-muted/30 p-2.5 text-[11px]"
-              >
-                <div className="flex items-center justify-between gap-2 text-muted-foreground">
-                  <span className="min-w-0 flex-1 truncate font-mono">
-                    {c.chunkId}
-                  </span>
-                  <span className="shrink-0 tabular-nums">
-                    score {c.score.toFixed(4)}
-                  </span>
-                </div>
-                <p className="leading-relaxed break-words whitespace-pre-wrap text-muted-foreground">
-                  {mode === "keyword" ? (
-                    <Highlighted text={c.snippet} query={query} />
-                  ) : (
-                    c.snippet
-                  )}
-                </p>
-              </div>
-            ))}
+          {/* 청크 본문 — 화살표 토글 행 + 더보기(첫 청크만 노출, 행 클릭 시 본문 펼침) */}
+          <div className="px-3 pb-3">
+            <div className="divide-y overflow-hidden rounded-md border">
+              {visible.map((c) => {
+                const isOpen = expanded.has(c.chunkId);
+                return (
+                  <div key={c.chunkId}>
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      onClick={() => toggleChunk(c.chunkId)}
+                      className="flex w-full items-center gap-2 px-2.5 py-2 text-left text-[11px] hover:bg-accent/40"
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "size-3.5 shrink-0 text-muted-foreground transition-transform",
+                          isOpen && "rotate-180",
+                        )}
+                      />
+                      <span className="min-w-0 flex-1 truncate font-mono text-muted-foreground">
+                        {c.chunkId}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">
+                        score {c.score.toFixed(4)}
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div className="bg-muted/30 px-2.5 pt-1 pb-2.5">
+                        <p className="text-[11px] leading-relaxed break-words whitespace-pre-wrap text-muted-foreground">
+                          {mode === "keyword" ? (
+                            <Highlighted text={c.snippet} query={query} />
+                          ) : (
+                            c.snippet
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
             {rest > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full"
-                aria-expanded={open}
-                onClick={() => setOpen((o) => !o)}
+                className="mt-2 w-full"
+                aria-expanded={showAll}
+                onClick={() => setShowAll((o) => !o)}
               >
-                {open ? "접기" : `더보기 ${rest}개`}
+                {showAll ? "접기" : `더보기 ${rest}개`}
                 <ChevronDown
                   className={cn(
                     "size-4 transition-transform",
-                    open && "rotate-180",
+                    showAll && "rotate-180",
                   )}
                 />
               </Button>

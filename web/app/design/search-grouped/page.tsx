@@ -1,7 +1,7 @@
 "use client";
 
 // [디자인 참고용 페이지] 검색 결과 "문서 그룹 + 청크" 비주얼 시안.
-// 정적 더미 데이터. 실 화면은 SearchResults(3안=더보기 토글)로 구현됨 — 여기는 안 비교 보존용.
+// 정적 더미 데이터. 실 화면은 SearchResults(4안=화살표+더보기)로 구현됨 — 여기는 안 비교 보존용.
 // 안: 1=캐러셀 / 2=토글(아코디언) / 3=더보기 토글 / 4=화살표 토글 행 + 더보기(첫 청크만 노출).
 // 공통: 키워드=하이라이트, 의미=컨셉 해시태그.
 
@@ -377,7 +377,10 @@ const ChunkMore = ({ chunks, mode }: { chunks: Chunk[]; mode: Mode }) => {
 //       각 행은 좌측 화살표 버튼(2안 방식)으로 본문을 펼침·접힘.
 const ChunkArrowMore = ({ chunks, mode }: { chunks: Chunk[]; mode: Mode }) => {
   const [showAll, setShowAll] = React.useState(false);
-  const [open, setOpen] = React.useState<Set<string>>(() => new Set());
+  // 첫 청크는 기본 펼침
+  const [open, setOpen] = React.useState<Set<string>>(
+    () => new Set(chunks[0] ? [chunks[0].chunkId] : []),
+  );
   const toggle = (id: string) =>
     setOpen((prev) => {
       const next = new Set(prev);
@@ -446,8 +449,8 @@ const ChunkArrowMore = ({ chunks, mode }: { chunks: Chunk[]; mode: Mode }) => {
 const VARIANTS = [
   "1안 캐러셀",
   "2안 토글",
-  "3안 더보기(실 적용)",
-  "4안 화살표+더보기",
+  "3안 더보기",
+  "4안 화살표+더보기(실 적용)",
 ];
 
 const DesignSearchGroupedPage = () => {
@@ -478,7 +481,7 @@ const DesignSearchGroupedPage = () => {
             {mode === "keyword"
               ? `키워드 · "${QUERY}" 일치 하이라이트`
               : "의미 · 일치 컨셉 해시태그"}{" "}
-            · 1·2·3안 비교(보존용)
+            · 1~4안 비교(보존용)
           </p>
         </div>
       </header>

@@ -103,7 +103,14 @@ overview: Phase 1 프로토타입 승계 → 목업 제거·실 API 배선(Left 
 ## 검색 결과 청크 토글 행 (후속)
 
 - 대상: 키워드·의미 검색 결과에서 chunk id·score를 렌더링하는 행.
-- [ ] D28 (디자인 프로토타입 우선) 청크 행 맨 좌측에 토글 스위치 추가 + 행 클릭 시 청크 본문 펼침·접힘 — `web/app/design/search-grouped/page.tsx`에 정적 더미로 반드시 프로토타이핑·승인 후 실 검색 결과에 이식. 프로토타입(4안 스위치 행) 완료, 실 검색 결과 이식은 디자인 승인 후 후속.
+- [x] D28 (디자인 프로토타입 우선) 청크 행 맨 좌측에 토글 스위치 추가 + 행 클릭 시 청크 본문 펼침·접힘 — `web/app/design/search-grouped/page.tsx`에 정적 더미로 반드시 프로토타이핑·승인 후 실 검색 결과에 이식. 승인 디자인은 4안(화살표 토글 행 + 더보기)으로 확정, `search-results.tsx` `ResultGroupCard`에 이식. 스위치 대신 화살표 버튼 채택.
+
+## 키워드 검색 해시태그 표시 (후속)
+
+- 현재(search-frontend §3a): `search-results.tsx` `ResultGroupCard`가 `mode === "semantic"`일 때만 `useDocument`(`GET /documents/{id}`)로 문서 `keywords`를 조회해 컨셉 해시태그(`#키워드`)를 표시하고, 키워드 모드는 본문 하이라이트만 보여 준다.
+- 방향: 프론트의 결과별 `useDocument` 단건 조회를 늘리는 대신, 검색 응답에 문서 `keywords`를 포함하도록 백엔드를 보강한다. 이러면 키워드·의미 모드 모두 추가 GET 없이 해시태그를 렌더하고, 의미 모드의 기존 `useDocument` 호출도 제거된다.
+- [ ] D31 검색 응답에 keywords 포함(백엔드) — `repository.py`의 `keyword()`·`semantic()` select에 `Document.keywords`를 추가하고, `schemas.py` `SearchResultItem`에 `keywords: list[str]` 필드를, `service.py` `_item`에 `keywords=row["keywords"]` 매핑을 더한다.
+- [ ] D32 검색 결과 카드 해시태그(프론트) — `dto.ts` `SearchResultItemDTO`·`types.ts` `SearchResultItem`에 `keywords`를 추가하고 `map.ts` `mapSearchResult`에서 매핑하며, `lib/search-group.ts` `SearchGroup`에 문서 `keywords`를 실어 `ResultGroupCard`가 키워드·의미 모드 모두 응답값으로 `#키워드` 해시태그를 렌더하고 `useDocument` 의존을 제거한다.
 
 ## 물리 파일명 변경 + 3중 이름 모델 (후속)
 
