@@ -14,3 +14,4 @@
 - Define common terms once in `docs/glossary.md`.
 - Cross-reference related docs with `[00 §1.2]`.
 - Do not over-compress. Remove redundancy, not facts.
+- Write complete sentences with subject, object, and verb.
