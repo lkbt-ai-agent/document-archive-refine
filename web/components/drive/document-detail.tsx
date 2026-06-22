@@ -78,8 +78,11 @@ export const DocumentDetail = () => {
   return (
     <div className="space-y-4 p-4">
       <div className="min-w-0">
-        <h3 className="truncate font-semibold">{doc.llmTitle ?? doc.name}</h3>
-        <p className="truncate text-xs text-muted-foreground">{doc.name}</p>
+        {/* 큰 제목=원본 파일명(전체 표시, 잘림 없음) / 작은 제목=논리 제목(ai 보정) */}
+        <h3 className="font-semibold break-words">{doc.name}</h3>
+        {doc.llmTitle && (
+          <p className="truncate text-xs text-muted-foreground">{doc.llmTitle}</p>
+        )}
       </div>
 
       <StatusBadge status={doc.status} stage={doc.stage} progress={doc.progress} />
@@ -154,7 +157,7 @@ export const DocumentDetail = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>처리를 취소할까요?</AlertDialogTitle>
             <AlertDialogDescription>
-              &quot;{doc.llmTitle ?? doc.name}&quot; 문서와 진행 중인 처리가 삭제됩니다. 되돌릴 수 없습니다.
+              &quot;{doc.name}&quot; 문서와 진행 중인 처리가 삭제됩니다. 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

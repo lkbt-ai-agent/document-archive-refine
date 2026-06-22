@@ -59,6 +59,7 @@ import {
   FolderContextMenu,
 } from "./folder-actions";
 import { useArchiveActions } from "@/hooks/use-archive-actions";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useDriveStore } from "@/lib/store";
 import { useFolders } from "@/lib/api/folders";
 import {
@@ -85,6 +86,8 @@ export const DocumentList = ({
   docId?: string;
 }) => {
   const router = useRouter();
+  // 모바일(<md)에선 제목 리사이즈 비활성 — 제목·행 버튼이 한 화면에 들어오도록 축소(shrink) 유지.
+  const isMobile = useIsMobile();
   const { data: folders = [] } = useFolders();
   const docsQuery = useDocuments(folderId);
   const deleteDoc = useDeleteDocument();
@@ -155,6 +158,11 @@ export const DocumentList = ({
       {
         id: "name",
         header: "이름",
+        // 사용자 리사이즈 대상 컬럼. 나머지 컬럼은 defaultColumn 에서 비활성.
+        enableResizing: true,
+        size: 320,
+        minSize: 160,
+        maxSize: 640,
         cell: ({ row }) => {
           const r = row.original;
           if (r.kind === "folder") {
@@ -291,6 +299,10 @@ export const DocumentList = ({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
+    // "이름" 컬럼만 사용자 리사이즈, 드래그 중 실시간 폭 반영
+    enableColumnResizing: true,
+    columnResizeMode: "onChange",
+    defaultColumn: { enableResizing: false },
   });
 
   const cellHiddenClass: Record<string, string> = {
@@ -310,167 +322,196 @@ export const DocumentList = ({
         <span className="text-xs text-muted-foreground">{docCount}개 문서</span>
       </div>
 
-      <ScrollArea className="min-h-0 flex-1">
-        {docsQuery.isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-            <Spinner /> 불러오는 중…
-          </div>
-        ) : docsQuery.isError ? (
-          <Empty className="py-12">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileText />
-              </EmptyMedia>
-              <EmptyTitle>불러오지 못했습니다</EmptyTitle>
-              <EmptyDescription>{errorMessage(docsQuery.error)}</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : isEmpty ? (
-          <ContextMenu>
-            <ContextMenuTrigger asChild>
-              <div className="flex min-h-[60vh] items-center justify-center">
+      {/* 배경(행 밖·빈 영역) 우클릭/롱프레스 → 폴더/파일 추가. ScrollArea 전체를
+          트리거로 감싸 행 아래 빈 공간까지 포함(행 메뉴는 Radix 중첩으로 격리). */}
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ScrollArea className="min-h-0 flex-1">
+              {docsQuery.isLoading ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+                  <Spinner /> 불러오는 중…
+                </div>
+              ) : docsQuery.isError ? (
                 <Empty className="py-12">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
                       <FileText />
                     </EmptyMedia>
-                    <EmptyTitle>비어 있음</EmptyTitle>
+                    <EmptyTitle>불러오지 못했습니다</EmptyTitle>
                     <EmptyDescription>
-                      이 폴더에는 하위 폴더나 문서가 없습니다.
-                      <br />
-                      우클릭해 폴더나 파일을 추가하세요.
+                      {errorMessage(docsQuery.error)}
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
-              </div>
-            </ContextMenuTrigger>
-            <ContextMenuContent>
-              <ContextMenuItem onSelect={openNewFolder}>
-                <FolderPlus className="size-4" /> 폴더 추가
-              </ContextMenuItem>
-              <ContextMenuItem onSelect={openFilePicker}>
-                <Upload className="size-4" /> 파일 추가
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
-        ) : (
-          // 채워진 목록도 배경 우클릭/롱프레스 시 폴더/파일 추가 (D16, 행 메뉴는 Radix가 격리)
-          <ContextMenu>
-            <ContextMenuTrigger asChild>
-              <div className="min-h-[60vh] px-2 sm:px-4">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((hg) => (
-                  <TableRow key={hg.id}>
-                    {hg.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        className={cellHiddenClass[header.column.id]}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => {
-                  const r = row.original;
-                  const isActive =
-                    r.kind === "doc"
-                      ? selectedDocumentId === r.doc.id ||
-                        highlightedDocId === r.doc.id
-                      : inspectedFolderId === r.folder.id ||
-                        highlightedFolderId === r.folder.id;
-                  const tableRow = (
-                    <TableRow
-                      onClick={
-                        r.kind === "doc"
-                          ? () => highlightDocument(r.doc.id)
-                          : () => highlightFolder(r.folder.id)
-                      }
-                      onDoubleClick={
-                        r.kind === "folder"
-                          ? () => onFolderDoubleClick(r.folder.id)
-                          : () => onDocOpen(r.doc.id)
-                      }
-                      className={cn(
-                        "cursor-pointer select-none",
-                        isActive && "bg-accent/60",
-                      )}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className={cn(
-                            cell.column.id === "name" && "max-w-0",
-                            cellHiddenClass[cell.column.id],
-                          )}
-                          onClick={
-                            cell.column.id === "actions"
-                              ? (e) => e.stopPropagation()
-                              : undefined
-                          }
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
+              ) : isEmpty ? (
+                <div className="flex min-h-[60vh] items-center justify-center">
+                  <Empty className="py-12">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <FileText />
+                      </EmptyMedia>
+                      <EmptyTitle>비어 있음</EmptyTitle>
+                      <EmptyDescription>
+                        이 폴더에는 하위 폴더나 문서가 없습니다.
+                        <br />
+                        우클릭해 폴더나 파일을 추가하세요.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </div>
+              ) : (
+                <div className="px-2 sm:px-4">
+                  <Table>
+                    <TableHeader>
+                      {table.getHeaderGroups().map((hg) => (
+                        <TableRow key={hg.id}>
+                          {hg.headers.map((header) => (
+                            <TableHead
+                              key={header.id}
+                              className={cn(
+                                "relative",
+                                cellHiddenClass[header.column.id],
+                              )}
+                              style={
+                                !isMobile && header.column.id === "name"
+                                  ? { width: header.getSize() }
+                                  : undefined
+                              }
+                            >
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext(),
+                                  )}
+                              {!isMobile && header.column.getCanResize() && (
+                                <div
+                                  onMouseDown={header.getResizeHandler()}
+                                  onTouchStart={header.getResizeHandler()}
+                                  onDoubleClick={() =>
+                                    header.column.resetSize()
+                                  }
+                                  className={cn(
+                                    "absolute top-0 -right-1 z-10 h-full w-2 cursor-col-resize touch-none select-none",
+                                    "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-transparent hover:before:bg-border",
+                                    header.column.getIsResizing() &&
+                                      "before:bg-primary",
+                                  )}
+                                />
+                              )}
+                            </TableHead>
+                          ))}
+                        </TableRow>
                       ))}
-                    </TableRow>
-                  );
+                    </TableHeader>
+                    <TableBody>
+                      {table.getRowModel().rows.map((row) => {
+                        const r = row.original;
+                        const isActive =
+                          r.kind === "doc"
+                            ? selectedDocumentId === r.doc.id ||
+                              highlightedDocId === r.doc.id
+                            : inspectedFolderId === r.folder.id ||
+                              highlightedFolderId === r.folder.id;
+                        const tableRow = (
+                          <TableRow
+                            onClick={
+                              r.kind === "doc"
+                                ? () => highlightDocument(r.doc.id)
+                                : () => highlightFolder(r.folder.id)
+                            }
+                            onDoubleClick={
+                              r.kind === "folder"
+                                ? () => onFolderDoubleClick(r.folder.id)
+                                : () => onDocOpen(r.doc.id)
+                            }
+                            className={cn(
+                              "cursor-pointer select-none",
+                              isActive && "bg-accent/60",
+                            )}
+                          >
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell
+                                key={cell.id}
+                                className={cn(
+                                  // 모바일: 고정 폭 대신 max-w-0 로 축소(truncate) 유지
+                                  isMobile &&
+                                    cell.column.id === "name" &&
+                                    "max-w-0",
+                                  cellHiddenClass[cell.column.id],
+                                )}
+                                style={
+                                  !isMobile && cell.column.id === "name"
+                                    ? {
+                                        width: cell.column.getSize(),
+                                        maxWidth: cell.column.getSize(),
+                                      }
+                                    : undefined
+                                }
+                                onClick={
+                                  cell.column.id === "actions"
+                                    ? (e) => e.stopPropagation()
+                                    : undefined
+                                }
+                              >
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext(),
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
 
-                  if (r.kind === "folder") {
-                    return (
-                      <FolderContextMenu
-                        key={row.id}
-                        folder={r.folder}
-                        onAction={onAction}
-                      >
-                        {tableRow}
-                      </FolderContextMenu>
-                    );
-                  }
-                  const d = r.doc;
-                  return (
-                    <ContextMenu key={row.id}>
-                      <ContextMenuTrigger asChild>{tableRow}</ContextMenuTrigger>
-                      <ContextMenuContent>
-                        <ContextMenuItem onClick={() => onDownload(d.id)}>
-                          <Download className="size-4" /> 다운로드
-                        </ContextMenuItem>
-                        <ContextMenuSeparator />
-                        <ContextMenuItem
-                          variant="destructive"
-                          onClick={() => onDeleteDoc(d.id, d.name)}
-                        >
-                          <Trash2 className="size-4" /> 삭제
-                        </ContextMenuItem>
-                      </ContextMenuContent>
-                    </ContextMenu>
-                  );
-                })}
-              </TableBody>
-            </Table>
-              </div>
-            </ContextMenuTrigger>
-            <ContextMenuContent>
-              <ContextMenuItem onSelect={openNewFolder}>
-                <FolderPlus className="size-4" /> 폴더 추가
-              </ContextMenuItem>
-              <ContextMenuItem onSelect={openFilePicker}>
-                <Upload className="size-4" /> 파일 추가
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
-        )}
-      </ScrollArea>
+                        if (r.kind === "folder") {
+                          return (
+                            <FolderContextMenu
+                              key={row.id}
+                              folder={r.folder}
+                              onAction={onAction}
+                            >
+                              {tableRow}
+                            </FolderContextMenu>
+                          );
+                        }
+                        const d = r.doc;
+                        return (
+                          <ContextMenu key={row.id}>
+                            <ContextMenuTrigger asChild>
+                              {tableRow}
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuItem onClick={() => onDownload(d.id)}>
+                                <Download className="size-4" /> 다운로드
+                              </ContextMenuItem>
+                              <ContextMenuSeparator />
+                              <ContextMenuItem
+                                variant="destructive"
+                                onClick={() => onDeleteDoc(d.id, d.name)}
+                              >
+                                <Trash2 className="size-4" /> 삭제
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={openNewFolder}>
+            <FolderPlus className="size-4" /> 폴더 추가
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={openFilePicker}>
+            <Upload className="size-4" /> 파일 추가
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
       {/* 서버 keyset 페이지네이션 — 다음 페이지 cursor 가 있으면 더 보기 */}
       {docsQuery.hasNextPage && (

@@ -1,8 +1,9 @@
 "use client";
 
-// [디자인 참고용 페이지] 검색 결과 "문서 그룹 + 청크" 비주얼 시안 (plan D19).
-// 정적 더미 데이터. 실 화면은 SearchResults(3안=더보기 토글)로 구현됨 — 여기는 1·2·3안 비교 보존용.
-// 안: 1=캐러셀 / 2=토글(아코디언) / 3=더보기 토글. 공통: 키워드=하이라이트, 의미=컨셉 해시태그.
+// [디자인 참고용 페이지] 검색 결과 "문서 그룹 + 청크" 비주얼 시안.
+// 정적 더미 데이터. 실 화면은 SearchResults(3안=더보기 토글)로 구현됨 — 여기는 안 비교 보존용.
+// 안: 1=캐러셀 / 2=토글(아코디언) / 3=더보기 토글 / 4=화살표 토글 행 + 더보기(첫 청크만 노출).
+// 공통: 키워드=하이라이트, 의미=컨셉 해시태그.
 
 import * as React from "react";
 import {
@@ -116,6 +117,34 @@ const GROUPS: Group[] = [
         content:
           "신청 방법 : 인터넷 청약 또는 현장 접수. 잔여 세대 발생 시 예비입주자 순번에 따라 추가 계약을 진행한다.",
         concepts: ["신청방법", "예비순번"],
+      },
+    ],
+  },
+  {
+    documentId: "0e1d2c3b-4a59-6877-8695-a4b3c2d1e0f9",
+    title: "공공임대주택 잔여세대 추가공급 운영지침",
+    filename: "공공임대_잔여세대_추가공급_운영지침.pdf",
+    chunks: [
+      {
+        chunkId: "aaaa1111-bbbb-2222-cccc-3333dddd4444",
+        score: 0.366,
+        content:
+          "잔여세대는 정기공급 후 미계약·미입주로 발생한 물량을 말하며, 운영기관은 발생 즉시 잔여세대 현황을 갱신하여야 한다.",
+        concepts: ["잔여세대정의", "현황갱신"],
+      },
+      {
+        chunkId: "bbbb2222-cccc-3333-dddd-4444eeee5555",
+        score: 0.354,
+        content:
+          "추가공급 순위는 예비입주자 명부 순번을 우선하고, 명부 소진 시 선착순 접수로 전환한다.",
+        concepts: ["공급순위", "선착순전환"],
+      },
+      {
+        chunkId: "cccc3333-dddd-4444-eeee-5555ffff6666",
+        score: 0.343,
+        content:
+          "계약 포기·해지로 재발생한 잔여세대는 동일 절차를 반복 적용하며, 회차별 공고를 별도로 게시한다.",
+        concepts: ["재발생처리", "회차공고"],
       },
     ],
   },
@@ -344,7 +373,82 @@ const ChunkMore = ({ chunks, mode }: { chunks: Chunk[]; mode: Mode }) => {
   );
 };
 
-const VARIANTS = ["1안 캐러셀", "2안 토글", "3안 더보기(실 적용)"];
+// 4안: 화살표 토글 행 + 더보기 — 첫 청크 행만 노출, 나머지는 "더보기"로 펼침.
+//       각 행은 좌측 화살표 버튼(2안 방식)으로 본문을 펼침·접힘.
+const ChunkArrowMore = ({ chunks, mode }: { chunks: Chunk[]; mode: Mode }) => {
+  const [showAll, setShowAll] = React.useState(false);
+  const [open, setOpen] = React.useState<Set<string>>(() => new Set());
+  const toggle = (id: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const rest = chunks.length - 1;
+  const visible = showAll ? chunks : chunks.slice(0, 1);
+
+  return (
+    <div className="space-y-2">
+      <div className="divide-y overflow-hidden rounded-md border">
+        {visible.map((c) => {
+          const isOpen = open.has(c.chunkId);
+          return (
+            <div key={c.chunkId}>
+              <button
+                onClick={() => toggle(c.chunkId)}
+                aria-expanded={isOpen}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent/40"
+              >
+                <ChevronDown
+                  className={cn(
+                    "size-4 shrink-0 text-muted-foreground transition-transform",
+                    isOpen && "rotate-180",
+                  )}
+                />
+                <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
+                  {c.chunkId}
+                </span>
+                <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
+                  score {c.score.toFixed(4)}
+                </span>
+              </button>
+              {isOpen && (
+                <div className="space-y-2 bg-muted/30 px-3 pt-1 pb-3">
+                  <ChunkBody chunk={c} mode={mode} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {rest > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => setShowAll((o) => !o)}
+        >
+          {showAll ? "접기" : `더보기 ${rest}개`}
+          <ChevronDown
+            className={cn(
+              "size-4 transition-transform",
+              showAll && "rotate-180",
+            )}
+          />
+        </Button>
+      )}
+    </div>
+  );
+};
+
+const VARIANTS = [
+  "1안 캐러셀",
+  "2안 토글",
+  "3안 더보기(실 적용)",
+  "4안 화살표+더보기",
+];
 
 const DesignSearchGroupedPage = () => {
   const [mode, setMode] = React.useState<Mode>("keyword");
@@ -407,8 +511,10 @@ const DesignSearchGroupedPage = () => {
               <ChunkCarousel chunks={g.chunks} mode={mode} />
             ) : idx === 1 ? (
               <ChunkToggleList chunks={g.chunks} mode={mode} />
-            ) : (
+            ) : idx === 2 ? (
               <ChunkMore chunks={g.chunks} mode={mode} />
+            ) : (
+              <ChunkArrowMore chunks={g.chunks} mode={mode} />
             )}
           </CardContent>
         </Card>

@@ -86,15 +86,15 @@ overview: Phase 1 프로토타입 승계 → 목업 제거·실 API 배선(Left 
 
 ## 목록 제목 컬럼 리사이즈 (후속)
 
-- [ ] D25 파일·폴더 목록 "이름" 컬럼 사용자 리사이즈 — TanStack Table `enableColumnResizing`+`columnResizeMode: "onChange"`로 헤더 우측 드래그 핸들 제공, 리사이즈 중 폭 반영. 설치된 `@tanstack/react-table` 버전의 컬럼 리사이즈 API를 context7로 확인 후 적용.
+- [x] D25 파일·폴더 목록 "이름" 컬럼 사용자 리사이즈 — TanStack Table `enableColumnResizing`+`columnResizeMode: "onChange"`로 헤더 우측 드래그 핸들 제공, 리사이즈 중 폭 반영. 설치된 `@tanstack/react-table` 버전의 컬럼 리사이즈 API를 context7로 확인 후 적용.
 
 ## 메타데이터 패널 제목 전체 표시 (후속)
 
-- [ ] D26 메타패널 큰 제목 말줄임 제거 — `document-detail.tsx` 제목 `h3`의 `truncate`를 제거하고, 길면 줄바꿈으로 제목 전체 노출(`break-words`, 잘림 없음).
+- [x] D26 메타패널 큰 제목 말줄임 제거 — `document-detail.tsx` 제목 `h3`의 `truncate`를 제거하고, 길면 줄바꿈으로 제목 전체 노출(`break-words`, 잘림 없음).
 
 ## 파일명 표기 순서 변경 (후속)
 
-- [ ] D27 표기 순서 정정
+- [x] D27 표기 순서 정정
   - 목록 "이름"=원본 파일명(현행 `d.name` 유지)
   - 메타패널 큰 제목=원본 파일명(`doc.name`)
   - 작은 제목=논리 제목(`doc.llmTitle`, ai 보정).
@@ -103,7 +103,7 @@ overview: Phase 1 프로토타입 승계 → 목업 제거·실 API 배선(Left 
 ## 검색 결과 청크 토글 행 (후속)
 
 - 대상: 키워드·의미 검색 결과에서 chunk id·score를 렌더링하는 행.
-- [ ] D28 (디자인 프로토타입 우선) 청크 행 맨 좌측에 토글 스위치 추가 + 행 클릭 시 청크 본문 펼침·접힘 — `web/app/design/search-grouped/page.tsx`에 정적 더미로 반드시 프로토타이핑·승인 후 실 검색 결과에 이식.
+- [ ] D28 (디자인 프로토타입 우선) 청크 행 맨 좌측에 토글 스위치 추가 + 행 클릭 시 청크 본문 펼침·접힘 — `web/app/design/search-grouped/page.tsx`에 정적 더미로 반드시 프로토타이핑·승인 후 실 검색 결과에 이식. 프로토타입(4안 스위치 행) 완료, 실 검색 결과 이식은 디자인 승인 후 후속.
 
 ## 물리 파일명 변경 + 3중 이름 모델 (후속)
 
