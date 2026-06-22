@@ -3,7 +3,7 @@ type: failure-pattern
 area: backend
 tags: [postgresql, psycopg, ingestion, pdf, extraction, control-characters]
 severity: high
-status: open
+status: resolved
 ---
 
 # Problem
@@ -45,13 +45,13 @@ status: open
 
 # Fix
 
-아직 적용하지 않았다(진단만 완료). 방향은 NUL과 일부 C0 제어 문자를 추출 직후 한 곳에서 제거하는 것이다.
+2026-06-22에 적용해 해결했다. NUL과 일부 C0 제어 문자를 추출 직후 한 곳에서 제거한다.
 
-- (제안) 추출 직후 본문을 정제한다. 탭(`\x09`)·LF(`\x0a`)·CR(`\x0d`)는 보존하고 나머지 C0 제어 문자(`\x00`–`\x08`, `\x0b`, `\x0c`, `\x0e`–`\x1f`)를 제거한다.
-- (제안) 정제 위치를 `backend/src/ingestion/pipeline.py`의 `_extract` 반환 직전에 둔다. 그래야 PDF 본문·표 셀·OCR 결과가 모두 한 번에 정제되고 메타·청킹·적재가 깨끗한 텍스트를 받는다.
-- 정제 규칙 예시는 아래와 같다.
+- (적용함) 추출 직후 본문을 정제한다. 탭(`\x09`)·LF(`\x0a`)·CR(`\x0d`)는 보존하고 나머지 C0 제어 문자(`\x00`–`\x08`, `\x0b`, `\x0c`, `\x0e`–`\x1f`)를 제거한다.
+- (적용함) 정제 위치를 `backend/src/ingestion/pipeline.py`의 `_extract` 반환 직전에 두었다. PDF 본문·표 셀·OCR 결과가 모두 한 번에 정제되고 메타·청킹·적재가 깨끗한 텍스트를 받는다.
+- (적용함) 정제 규칙을 `backend/src/ingestion/sanitize.py`의 `sanitize_text`로 분리했다.
   - `re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", text)`
-- 본 문서를 포함해 같은 에러로 실패한 기존 문서는 재인제스트로 복구한다.
+- (적용함) 같은 에러로 실패한 문서 3개를 재인제스트로 복구했다. 원본 PDF 재추출 결과 NUL 18개가 정제 후 0개가 됐고(길이 53108에서 53090) 3개 모두 `ready`로 끝났다.
 
 ### C0 제어 문자
 

@@ -23,6 +23,7 @@ from src.ingestion.extract_text import extract_md, extract_txt
 from src.ingestion.meta import detect_language, generate_meta
 from src.ingestion.ocr import ocr_image
 from src.ingestion.repository import IngestRepository
+from src.ingestion.sanitize import sanitize_text
 from src.storage import service as storage
 
 logger = logging.getLogger("mechive.ingest")
@@ -31,19 +32,23 @@ EMBED_BATCH = 32
 
 
 async def _extract(kind: str, data: bytes) -> tuple[str, dict]:
-    """파일 타입별 4갈래 택일 추출 (ingestion.md §3-2). CPU 작업은 스레드로 오프로드."""
+    """파일 타입별 4갈래 택일 추출 (ingestion.md §3-2). CPU 작업은 스레드로 오프로드.
+
+    네 경로가 합쳐지는 반환 직전에 NUL·비허용 C0 제어 문자를 제거한다(lessons/02).
+    """
     if kind == detect.PDF:
         result = await asyncio.to_thread(extract_pdf, data)
-        return result["text"], result["meta"]
-    if kind == detect.IMAGE:
+        text, meta = result["text"], result["meta"]
+    elif kind == detect.IMAGE:
         img = Image.open(io.BytesIO(data))
-        text = await asyncio.to_thread(ocr_image, img)
-        return text, {}
-    if kind == detect.MARKDOWN:
-        return extract_md(data), {}
-    if kind == detect.TEXT:
-        return extract_txt(data), {}
-    raise ValueError(f"지원하지 않는 파일 형식: {kind}")
+        text, meta = await asyncio.to_thread(ocr_image, img), {}
+    elif kind == detect.MARKDOWN:
+        text, meta = extract_md(data), {}
+    elif kind == detect.TEXT:
+        text, meta = extract_txt(data), {}
+    else:
+        raise ValueError(f"지원하지 않는 파일 형식: {kind}")
+    return sanitize_text(text), meta
 
 
 async def _embed_all(chunks: list[str]) -> list[list[float]]:

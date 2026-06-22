@@ -1,6 +1,6 @@
 ---
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-22
 status: approved
 overview: 인제스트 파이프라인의 백엔드 구현(arq 워커·추출/OCR/메타/청킹/임베딩)을 정의한다.
 refs: research/01-mvp-research/01, research/01-mvp-research/04 §4
@@ -74,6 +74,13 @@ refs: research/01-mvp-research/01, research/01-mvp-research/04 §4
 - KURE-v1 출력은 이미 L2 정규화(벡터를 그 길이로 나눠 크기를 1로 맞추는 처리)되어 나오므로 애플리케이션에서 다시 정규화하지 않는다(이미 정규화된 벡터를 다시 정규화하면 코사인 거리가 왜곡됨).
 - 임베딩 차원(1024d)은 전 시스템에서 고정한다. HNSW 인덱스가 차원에 묶여 있어 변경하면 전량 재임베딩이 필요하다(§3, ingestion.md §5).
 - 청크는 `archive.document_chunks`에 멱등 upsert로 적재한다. `UNIQUE(document_id, chunk_index)` 충돌 시 갱신(`ON CONFLICT ... DO UPDATE`)하므로 워커를 재실행해도 중복 행이 생기지 않는다(documents-schema.md).
+
+### 2-6. 추출 본문 정제
+
+- 네 추출 경로(PDF, OCR, TXT, MD)가 합쳐지는 지점에서 본문을 한 번 정제한다. 구현은 `_extract` 반환 직전이다.
+- NUL(`\x00`)과 비허용 C0 제어 문자를 제거한다. 탭(`\x09`), LF(`\x0a`), CR(`\x0d`)은 정상 텍스트라 보존한다.
+- 이유는 PostgreSQL text 컬럼이 NUL을 저장하지 못해 청크 적재가 실패하기 때문이다(lessons/02).
+- 정제 규칙은 `re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", text)`이며 `ingestion/sanitize.py`의 `sanitize_text`가 담당한다.
 
 ## 3. 설계 결정
 
