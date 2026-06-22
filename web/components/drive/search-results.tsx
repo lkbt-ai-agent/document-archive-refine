@@ -148,7 +148,7 @@ const Highlighted = ({ text, query }: { text: string; query: string }) => {
 };
 
 // 문서 그룹 카드(화살표 토글 행 + 더보기) — 같은 문서의 매칭 청크를 한 카드에 모은다.
-// 키워드: 청크 본문 하이라이트 / 의미: 문서 keywords를 컨셉 해시태그로 표시(청크 단위 컨셉은 백엔드 미제공).
+// 키워드: 청크 본문 하이라이트 / 공통: 문서 keywords를 컨셉 해시태그로 표시(검색 응답 포함, 문서 단위).
 const ResultGroupCard = ({
   group,
   query,
@@ -183,11 +183,8 @@ const ResultGroupCard = ({
   };
   const rest = group.chunks.length - 1;
   const visible = showAll ? group.chunks : group.chunks.slice(0, 1);
-  // 의미 모드: 문서 keywords를 해시태그로(키워드 모드에선 조회 안 함)
-  const { data: doc } = useDocument(
-    mode === "semantic" ? group.documentId : null,
-  );
-  const concepts = mode === "semantic" ? (doc?.keywords ?? []) : [];
+  // 문서 keywords 해시태그 — 검색 응답에 포함되어 키워드·의미 모드 공통으로 표시
+  const concepts = group.keywords;
 
   return (
     <ContextMenu>
@@ -231,7 +228,7 @@ const ResultGroupCard = ({
             </div>
           </div>
 
-          {/* 의미 모드: 컨셉 해시태그(문서 단위) */}
+          {/* 컨셉 해시태그(문서 단위, 키워드·의미 모드 공통) */}
           {concepts.length > 0 && (
             <div className="flex flex-wrap gap-1 px-3 pb-2">
               {concepts.map((c) => (

@@ -13,6 +13,7 @@ export interface SearchGroup {
   title: string;
   documentName: string;
   folderId: string;
+  keywords: string[]; // 문서 keywords — 결과 카드 해시태그
   topScore: number; // 그룹 정렬·헤더 표시용 최고 score
   chunks: SearchGroupChunk[]; // score desc
 }
@@ -28,6 +29,7 @@ export const groupResults = (results: SearchResultItem[]): SearchGroup[] => {
         title: r.title,
         documentName: r.documentName,
         folderId: r.folderId,
+        keywords: r.keywords,
         topScore: r.score,
         chunks: [],
       };

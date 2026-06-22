@@ -56,6 +56,7 @@ export interface SearchResultItemDTO {
   content: string;
   original_filename: string;
   llm_title: string | null;
+  keywords: string[];
   folder_id: string | null;
   created_at: string;
 }

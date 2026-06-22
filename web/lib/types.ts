@@ -65,6 +65,7 @@ export interface SearchResultItem {
   snippet: string; // 매칭 청크 본문(content)
   score: number; // 키워드=pgroonga_score, 의미=유사도
   chunkId: string; // 매칭 청크 id — row 아래 "청크 정보" toggle 표시용(search-frontend §3a)
+  keywords: string[]; // 문서 keywords — 결과 카드 해시태그(키워드·의미 모드 공통)
   folderId: string; // "해당 폴더로 이동"용
 }
 

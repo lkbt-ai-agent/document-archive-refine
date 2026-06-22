@@ -75,6 +75,7 @@ class SearchService:
             content=row["content"],
             original_filename=row["original_filename"],
             llm_title=row["llm_title"],
+            keywords=row["keywords"] or [],
             folder_id=row["folder_id"],
             created_at=row["created_at"],
         )

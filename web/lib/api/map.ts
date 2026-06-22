@@ -62,6 +62,7 @@ export const mapSearchResult = (r: SearchResultItemDTO): SearchResultItem => ({
   snippet: r.content,
   documentName: r.original_filename,
   title: r.llm_title ?? r.original_filename,
+  keywords: r.keywords ?? [],
   folderId: r.folder_id ?? ROOT_FOLDER_ID,
 });
 

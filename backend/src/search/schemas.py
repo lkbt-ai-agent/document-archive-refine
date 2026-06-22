@@ -29,6 +29,7 @@ class SearchResultItem(BaseModel):
     content: str
     original_filename: str
     llm_title: str | None
+    keywords: list[str]
     folder_id: UUID | None
     created_at: datetime
 
