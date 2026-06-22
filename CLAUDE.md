@@ -1,1 +1,1 @@
-- Never trust cached `@architecture/...` docs; always reread them before use, even in the same session, as they change frequently.
+- Never trust cached `@docs/architecture/...` docs; always reread them before use, even in the same session, as they change frequently.

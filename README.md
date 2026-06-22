@@ -14,9 +14,10 @@
 
 ### 문서
 
-- [requirement.md](./requirement.md): 프로젝트 원본 요구사항
-- [research/](./research/): 주제별 리서치 문서로, 미확정된 내용이 있을 수 있다.
-- [architecture/](./architecture/): 확정된 설계 사양(source of truth)
-- [plan/](./plan/): 기능별 체크리스트 구현 계획(`active/` 진행 중, `done/` 완료).
-- [lessons/](./lessons/): 구현 중 겪은 실패 패턴과 재발 방지 교훈 기록.
-- [glossary.md](./glossary.md): AI, RAG, 인프라 등 일반 용어 정의 모음.
+- [docs/](./docs/): 요구사항·리서치·설계·계획·교훈 문서 묶음.
+- [docs/requirement.md](./docs/requirement.md): 프로젝트 원본 요구사항
+- [docs/research/](./docs/research/): 주제별 리서치 문서로, 미확정된 내용이 있을 수 있다.
+- [docs/architecture/](./docs/architecture/): 확정된 설계 사양(source of truth)
+- [docs/plan/](./docs/plan/): 기능별 체크리스트 구현 계획(`active/` 진행 중, `done/` 완료).
+- [docs/lessons/](./docs/lessons/): 구현 중 겪은 실패 패턴과 재발 방지 교훈 기록.
+- [docs/glossary.md](./docs/glossary.md): AI, RAG, 인프라 등 일반 용어 정의 모음.

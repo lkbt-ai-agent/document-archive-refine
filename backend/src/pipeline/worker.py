@@ -15,7 +15,7 @@ class WorkerSettings:
     redis_settings = redis_settings()
     max_tries = 5  # 단계 재시도(지수 백오프), ingestion-backend §1
     allow_abort_jobs = True  # 문서 삭제 시 진행 중 인제스트 선제 취소 (04-frontend D13)
-    # 동시 잡 수를 채팅 슬롯 수(--parallel 4)에 맞춰 KV 캐시 경합·500을 막는다. lessons/01 §0·Fix-A.
+    # 동시 잡 수를 채팅 슬롯 수(--parallel 4)에 맞춰 KV 캐시 경합·500을 막는다. docs/lessons/01 §0·Fix-A.
     max_jobs = 4
     # 잡 타임아웃을 올린다. 기본 300초가 과부하·대형 PDF에서 초과돼 좀비 processing을 냈다.
     job_timeout = 900

@@ -1,4 +1,4 @@
-// 도메인 타입 (프로토타입 목업용). 실 스키마는 architecture/03 참조.
+// 도메인 타입 (프로토타입 목업용). 실 스키마는 docs/architecture/03 참조.
 
 export type DocStatus = "uploaded" | "processing" | "ready" | "failed";
 export type DocStage =

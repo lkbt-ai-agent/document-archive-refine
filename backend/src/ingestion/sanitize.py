@@ -1,4 +1,4 @@
-"""추출 본문 정제 (lessons/02-pdf-nul-byte-chunk-insert.md).
+"""추출 본문 정제 (docs/lessons/02-pdf-nul-byte-chunk-insert.md).
 
 PDF 추출기가 흘리는 NUL(0x00)과 비허용 C0 제어 문자를 제거한다. PostgreSQL text
 컬럼은 NUL을 저장하지 못하므로 청크 적재 전에 반드시 걸러야 한다.

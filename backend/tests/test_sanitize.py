@@ -1,4 +1,4 @@
-"""추출 본문 정제 단위 시험 (lessons/02, plan 04 D3)."""
+"""추출 본문 정제 단위 시험 (docs/lessons/02, plan 04 D3)."""
 
 from src.ingestion.sanitize import sanitize_text
 

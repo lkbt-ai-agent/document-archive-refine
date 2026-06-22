@@ -20,7 +20,7 @@ def _project_root() -> Path:
 
 
 # 식별 가능한 User-Agent. 수집 대상에 출처를 밝힌다 (design §7.1).
-USER_AGENT = "doc-archive-testdata-crawler/0.1 (+research/02-test-data-crawler)"
+USER_AGENT = "doc-archive-testdata-crawler/0.1 (+docs/research/02-test-data-crawler)"
 
 
 @dataclass(slots=True)

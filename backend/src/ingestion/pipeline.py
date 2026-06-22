@@ -34,7 +34,7 @@ EMBED_BATCH = 32
 async def _extract(kind: str, data: bytes) -> tuple[str, dict]:
     """파일 타입별 4갈래 택일 추출 (ingestion.md §3-2). CPU 작업은 스레드로 오프로드.
 
-    네 경로가 합쳐지는 반환 직전에 NUL·비허용 C0 제어 문자를 제거한다(lessons/02).
+    네 경로가 합쳐지는 반환 직전에 NUL·비허용 C0 제어 문자를 제거한다(docs/lessons/02).
     """
     if kind == detect.PDF:
         result = await asyncio.to_thread(extract_pdf, data)
@@ -60,7 +60,7 @@ async def _embed_all(chunks: list[str]) -> list[list[float]]:
 
 
 async def _mark_failed(doc_uuid: UUID, message: str) -> None:
-    """별도 세션으로 문서를 failed로 종결한다(좀비 processing 방지, lessons/01 Fix-C3).
+    """별도 세션으로 문서를 failed로 종결한다(좀비 processing 방지, docs/lessons/01 Fix-C3).
 
     취소·타임아웃 시 기존 세션이 불안정할 수 있어 새 세션을 연다. 이미 삭제된 문서나
     완료(ready)된 문서는 건드리지 않는다.

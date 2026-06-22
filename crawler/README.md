@@ -3,8 +3,8 @@
 공개 게시판의 **청약공고 한글 PDF**를 사이트별 추상화로 크롤링해
 프로젝트 루트 `sample-datas/<source_id>/` 아래에 출처별로 적재하는 테스트 데이터 크롤러.
 
-- 설계: [`research/02-test-data-crawler/00-design.md`](../research/02-test-data-crawler/00-design.md)
-- 구현 계획: [`plan/active/02-test-data-crawler/01-crawler-mvp.md`](../plan/active/02-test-data-crawler/01-crawler-mvp.md)
+- 설계: [`docs/research/02-test-data-crawler/00-design.md`](../docs/research/02-test-data-crawler/00-design.md)
+- 구현 계획: [`docs/plan/done/02-test-data-crawler/01-crawler-mvp.md`](../docs/plan/done/02-test-data-crawler/01-crawler-mvp.md)
 
 ## 셋업 (최초 1회)
 

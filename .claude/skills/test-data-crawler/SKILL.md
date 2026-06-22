@@ -10,7 +10,7 @@ description: 이 앱의 테스트 데이터를 공개 게시판에서 크롤링�
 앱 인제스트(업로드·추출·임베딩)를 시험할 실데이터를 만드는 용도다.
 
 - 소스: `crawler/` (uv 프로젝트, Python 3.12)
-- 설계: `research/02-test-data-crawler/00-design.md`
+- 설계: `docs/research/02-test-data-crawler/00-design.md`
 - 출력: `sample-datas/<sh|lh>/` + `manifest.jsonl` (gitignore — 코퍼스는 커밋 안 함)
 - 대상: SH 임대게시판, LH 분양·임대 공고. **둘 다 httpx로 동작**(브라우저 불필요).
 
@@ -62,7 +62,7 @@ wc -l  /Users/xxx/Desktop/git-2026-document-archive-refine/sample-datas/sh/manif
 
 ## 새 출처 추가
 - `crawler/sources/`에 `BaseSource` 하위 클래스 하나를 만들고 `registry.py`에 등록한다(설계 §3·§4).
-- 후보(공정위 표준계약서·전자관보 등)는 `research/02-test-data-crawler/01-source-candidates.md` 참고.
+- 후보(공정위 표준계약서·전자관보 등)는 `docs/research/02-test-data-crawler/01-source-candidates.md` 참고.
 
 ## 트러블슈팅
 - `command not found: uv run crawler` → `crawler/`에서 `uv sync`를 먼저. 다른 디렉토리면 `cd`가 루트로 리셋된 것.
