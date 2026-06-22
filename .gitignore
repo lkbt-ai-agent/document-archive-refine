@@ -7,6 +7,9 @@
 # editor swap files
 *.swp
 
+# local dev logs (dev-stack tee target)
+logs/
+
 # python / uv (crawler tool; keep uv.lock tracked)
 __pycache__/
 *.pyc
