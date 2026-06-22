@@ -66,3 +66,9 @@ overview: Phase 1 프로토타입 승계 → 목업 제거·실 API 배선(Left 
 ## 검색 결과 화면 보정 (후속)
 - [x] D20 검색 결과 세로 스크롤 — 키워드/의미(및 RAG) 결과가 스크롤 안 됨. 원인: `SearchResults`의 `ScrollArea`가 `flex-1`만 있고 `min-h-0` 없어 flex 자식이 콘텐츠보다 못 줄어 `overflow-hidden` 부모에 잘림(스크롤 불가). 수정: `ScrollArea`에 `min-h-0`(필요 시 루트 `flex h-full flex-col` 체인 점검). 전 모드 공통.
 - [x] D21 RAG 결과 가로 오버플로우 — 답변 문장·인용 파일명이 화면 밖으로 잘림(스크린샷). 수정: `RagAnswer` 답변 `<p>`에 `min-w-0 break-words`, `CitationCard` 파일명 `truncate` 상위 flex span에 `min-w-0` 보강해 카드가 뷰포트 폭 내로 제한되게. (답변 컨테이너 flex도 `min-w-0` 확인.)
+
+## 메타데이터 토픽 제거 (후속)
+> 근거: research `01-mvp-research/06-keyword-vs-topic-metadata.md` §5 "토픽 제거·키워드 단일화" 채택. 백엔드 응답에서 `topics`가 사라지므로(03-backend T1~T5) 프론트도 함께 제거한다. 백엔드 변경과 동반 배포한다.
+- [x] D22 타입·DTO·맵 — `lib/types.ts`·`lib/api/dto.ts`·`lib/api/map.ts`에서 `topics` 필드와 매핑(`topics: d.topics ?? []`)을 제거한다.
+- [x] D23 메타뷰 — `components/drive/metadata-view.tsx`에서 토픽 표시 블록과 `hasMeta` 조건의 `doc.topics.length > 0`을 제거한다(요약·키워드만 남김).
+- [x] D24 아키텍처 반영 — document-frontend의 MetadataView 설명("제목/요약/토픽/키워드")에서 "토픽"을 제거한다.

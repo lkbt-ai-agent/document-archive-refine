@@ -88,7 +88,7 @@ async def run_ingest(document_id: str) -> None:
                 doc.language = detect_language(text)
                 dm = await generate_meta(text)
                 doc.llm_title, doc.llm_summary = dm.title, dm.summary
-                doc.topics, doc.keywords = dm.topics, dm.keywords
+                doc.keywords = dm.keywords
                 await session.commit()
 
             # 3) 청킹

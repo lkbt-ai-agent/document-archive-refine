@@ -53,8 +53,8 @@ refs: research/01-mvp-research/01, research/01-mvp-research/04 §4
 
 - 파일 자체에 들어 있는 속성(쪽수·작성자·작성일 등)은 `pypdf`나 Tika로 읽어낸다.
 - 본문은 자연어 처리로 언어를 감지하고 주요 키워드를 뽑는다.
-- 제목·요약·토픽·키워드는 LLM으로 생성한다.
-  - llama.cpp의 `--json-schema`(GBNF, backend.md §9)로 출력을 `{title, summary, topics[], keywords[]}` 형태로 강제해 받는다. MVP에서는 이 값을 읽기 전용으로 표시하고 사용자가 고치지 않는다.
+- 제목·요약·키워드는 LLM으로 생성한다.
+  - llama.cpp의 `--json-schema`(GBNF, backend.md §9)로 출력을 `{title, summary, keywords[]}` 형태로 강제해 받는다. MVP에서는 이 값을 읽기 전용으로 표시하고 사용자가 고치지 않는다.
 
 ### 2-4. 청킹
 

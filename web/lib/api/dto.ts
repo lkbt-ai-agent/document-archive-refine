@@ -27,7 +27,6 @@ export interface DocumentDTO {
   doc_modified_at: string | null;
   llm_title: string | null;
   llm_summary: string | null;
-  topics: string[] | null;
   keywords: string[] | null;
   ingest_ms: number | null;
   created_at: string;

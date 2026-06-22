@@ -48,7 +48,6 @@ export const mapDocument = (d: DocumentDTO): DocumentItem => ({
   error: d.error ?? undefined,
   llmTitle: d.llm_title ?? undefined,
   llmSummary: d.llm_summary ?? undefined,
-  topics: d.topics ?? [],
   keywords: d.keywords ?? [],
   pageCount: d.page_count ?? undefined,
   author: d.author ?? undefined,

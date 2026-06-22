@@ -70,7 +70,6 @@ class Document(Base):
     # AI 추출 메타 (읽기 전용, ingestion.md §3-3)
     llm_title: Mapped[str | None] = mapped_column(Text)
     llm_summary: Mapped[str | None] = mapped_column(Text)
-    topics: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     keywords: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
 
     ingest_ms: Mapped[int | None] = mapped_column(Integer)

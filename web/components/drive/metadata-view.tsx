@@ -29,8 +29,7 @@ export const MetadataView = () => {
 
   if (!doc) return null;
 
-  const hasMeta =
-    doc.llmSummary || doc.topics.length > 0 || doc.keywords.length > 0;
+  const hasMeta = doc.llmSummary || doc.keywords.length > 0;
 
   return (
     <div className="space-y-4 p-4">
@@ -58,18 +57,6 @@ export const MetadataView = () => {
               <p className="rounded-md bg-muted/50 p-3 text-sm leading-relaxed">
                 {doc.llmSummary}
               </p>
-            </Field>
-          )}
-
-          {doc.topics.length > 0 && (
-            <Field label="토픽">
-              <div className="flex flex-wrap gap-1">
-                {doc.topics.map((t) => (
-                  <Badge key={t} variant="secondary">
-                    {t}
-                  </Badge>
-                ))}
-              </div>
             </Field>
           )}
 

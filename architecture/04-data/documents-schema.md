@@ -35,7 +35,6 @@ CREATE TABLE archive.documents (                                        -- 문�
   doc_modified_at   TIMESTAMPTZ,                                        -- 원본 수정일
   llm_title         TEXT,                                               -- AI 추출 제목(읽기 전용)
   llm_summary       TEXT,                                               -- AI 추출 요약(읽기 전용)
-  topics            TEXT[],                                             -- AI 추출 토픽(읽기 전용)
   keywords          TEXT[],                                             -- AI 추출 키워드(읽기 전용)
   ingest_ms         INT,                                                -- 인제스트 소요(ms)
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),                 -- 등록 일시(화면 노출)

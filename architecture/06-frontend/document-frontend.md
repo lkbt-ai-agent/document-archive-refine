@@ -30,7 +30,7 @@ refs: research/01-mvp-research/04 §5
 - 인스펙터는 "문서 상세" 헤더만 고정하고 그 아래 전체를 단일 스크롤한다.
 - 본문은 상세(크기/형식/페이지/작성자/등록일/처리 시간)와 메타데이터/산출물 탭으로 구성한다.
 - DocumentDetail(Right): `status`/`stage` react-query 폴링(ready/failed 정지) + "원본 보기".
-- MetadataView: AI 메타(제목/요약/토픽/키워드) 읽기 전용 + 인제스트 소요(`documents.ingest_ms`).
+- MetadataView: AI 메타(제목/요약/키워드) 읽기 전용 + 인제스트 소요(`documents.ingest_ms`).
 - 소요 시간은 초 단위 표기.
 
 ## 4. 상태 관리

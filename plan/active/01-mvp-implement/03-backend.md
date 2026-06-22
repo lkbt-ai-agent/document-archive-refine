@@ -1,6 +1,6 @@
 ---
 created: 2026-06-11
-completed: 2026-06-18
+completed: 2026-06-22
 overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토리지·인제스트·검색/RAG·산출물 (arch data-overview·backend·domains 전반).
 ---
 
@@ -75,3 +75,11 @@ overview: 백엔드 구현 — 기반·데이터모델·Provider·폴더·스토
 - [x] R7 backend §11 — 앱은 `GET /health`로 의존성별 상태를 반환하므로, 이 런타임 점검 엔드포인트를 §11에 추가한다.
 - [x] R8 backend §3 — 백엔드는 uv·Python 3.12로 패키지 `src`를 실행하므로(워커 `arq src.pipeline.worker.WorkerSettings`), 런타임/툴체인을 §3에 추가한다.
 - [x] R9 backend §9 — 구조화 출력 래퍼는 llama-server에 `response_format:{type:"json_schema"}`로 GBNF를 강제하므로, 호출 방식을 §9에 명시한다.
+
+## 메타데이터 토픽 제거 (후속)
+> 근거: research `01-mvp-research/06-keyword-vs-topic-metadata.md` §5 "토픽 제거·키워드 단일화" 채택. 토픽은 키워드와 중복되고 표시 전용이라 검색 이득이 없으며, LlamaIndex·Azure 등 업계 표준도 키워드 1종만 둔다(06 §3·§4).
+- [x] T1 메타 생성 — `ingestion/meta.py` `DocMeta`에서 `topics` 필드 제거, `_META_SYSTEM` 프롬프트에서 "토픽" 문구 삭제(제목·요약·키워드만). GBNF 출력이 `{title, summary, keywords}`로 좁혀짐.
+- [x] T2 파이프라인 — `ingestion/pipeline.py` 메타 반영에서 `doc.topics` 대입 제거(`doc.keywords = dm.keywords`만 유지).
+- [x] T3 모델·스키마 — `documents/models.py`의 `topics` 컬럼과 `documents/schemas.py` 응답의 `topics` 필드 제거.
+- [x] T4 마이그레이션 — alembic 리비전 `b2c3d4e5f6a7`로 `documents.topics` 컬럼 DROP(downgrade는 `ADD COLUMN topics TEXT[]`), 원격 DB `upgrade head` 적용 완료. 기존 데이터는 폐기(읽기 전용·재생성 가능).
+- [x] T5 아키텍처 반영 — documents-schema(`topics` 컬럼 삭제)·ingestion.md(`generating_meta` 단계·메타 생성 설명에서 "토픽" 제거)·ingestion-backend §2(`{title, summary, topics[], keywords[]}` → `{title, summary, keywords[]}`)를 갱신한다.

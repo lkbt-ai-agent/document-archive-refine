@@ -50,7 +50,6 @@ class DocumentRead(BaseModel):
     doc_modified_at: datetime | None
     llm_title: str | None
     llm_summary: str | None
-    topics: list[str] | None
     keywords: list[str] | None
     ingest_ms: int | None
     created_at: datetime

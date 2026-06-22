@@ -26,7 +26,6 @@ export interface DocumentItem {
   error?: string;
   llmTitle?: string;
   llmSummary?: string;
-  topics: string[];
   keywords: string[];
   pageCount?: number;
   author?: string;

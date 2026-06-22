@@ -52,8 +52,10 @@ class Settings(BaseSettings):
 
     # CORS — web 오리진 (backend.md §7)
     cors_origins: list[str] = ["http://localhost:3000"]
-    # 추가 허용 오리진 정규식 — 로컬·Tailnet(*.ts.net) 등 호스트명으로 접속 시 사용.
-    cors_origin_regex: str = r"https?://(localhost|127\.0\.0\.1|.*\.ts\.net)(:\d+)?"
+    # 추가 허용 오리진 정규식 — 로컬·Tailnet(*.ts.net)·DDNS(*.iptime.org) 등 호스트명으로 접속 시 사용.
+    cors_origin_regex: str = (
+        r"https?://(localhost|127\.0\.0\.1|.*\.ts\.net|.*\.iptime\.org)(:\d+)?"
+    )
 
     @property
     def search_path(self) -> str:
