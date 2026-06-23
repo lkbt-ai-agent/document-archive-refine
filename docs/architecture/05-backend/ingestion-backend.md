@@ -14,14 +14,14 @@ refs: docs/research/01-mvp-research/01, docs/research/01-mvp-research/04 §4
 - `pipeline/{worker,tasks}`가 `documents.stage`를 `extracting`, `generating_meta`, `chunking`, `embedding` 순으로 전이하며 실행한다.
 - 완료 시 `documents.status`를 `ready`로 둔다.
 - 실패 시 `documents.status`를 `failed`로 두고 `documents.error`에 사유를 기록한다. (단계·상태 정의는 ingestion.md §2·§3·§4.)
-- 각 작업은 `(document_id, stage)`를 멱등 키로 삼는다.
-  - 지수 백오프: 실패한 단계는 재시도하되, 재시도 간격을 회차마다 점점 늘린다(1초, 2초, 4초처럼 제곱 형태로 증가).
-- 멱등과 재시도는 페이지·스테이지 단위로 동작한다. 따라서 한 페이지(예: OCR 실패)나 한 스테이지가 실패해도 그 단위만 재처리되고 문서 전체 인제스트는 중단되지 않는다.
+- 각 인제스트 작업의 멱등 키는 `ingest:{document_id}`다(arq `_job_id`).
+- 인제스트는 멱등이라 전체 재실행이 안전하다. 단계 체크포인트 재개는 없고 `run_ingest`는 항상 `extracting`부터 다시 시작한다(research 08 §4.1).
+- 자동 재시도는 현재 없다. arq는 일반 예외를 재시도하지 않고 즉시 `failed`로 종결한다. 실패 문서의 재처리는 명시적 재시도 기능이 담당한다(research 08 §4.3, retry plan).
 - 진행 상황은 워커가 `documents.status`와 `documents.stage`를 갱신해 보고하며, 프론트엔드는 이 값을 폴링해 현재 단계를 표시한다.
 - 파이프라인 전체 소요 시간은 완료 시 `documents.ingest_ms`에 기록한다.
 - 워커는 abort 허용(arq `allow_abort_jobs`): 문서 삭제 시 진행/대기 중 인제스트 job을 선제 취소한다(`CancelledError`로 중단). 삭제 흐름은 document-backend §2.
 - 동시성과 타임아웃: 워커 `max_jobs`는 생성 서버 슬롯 수에 맞춘다(현재 4). `job_timeout`은 900초로 둔다(대형 PDF·과부하 대비). 근거는 docs/lessons/01.
-- 취소·타임아웃 종결: `CancelledError`를 포함한 모든 종료 경로에서 문서를 종결 상태로 만든다. 취소 시 별도 세션으로 `failed`를 기록해 processing 좀비를 막는다(docs/lessons/01).
+- 취소·타임아웃 종결: `CancelledError`를 포함한 모든 종료 경로에서 문서를 종결 상태로 만든다. 취소 시 별도 세션으로 `failed`를 기록해 processing 좀비를 막는다. 워커는 `retry_jobs=False`라 종결된 작업을 다시 돌리지 않는다(docs/lessons/01, research 08 §4.3).
 
 ## 2. 인제스트 파이프라인
 

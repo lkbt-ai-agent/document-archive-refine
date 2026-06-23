@@ -60,6 +60,9 @@ class Document(Base):
     )
     stage: Mapped[str | None] = mapped_column(doc_stage_type)
     error: Mapped[str | None] = mapped_column(Text)
+    retry_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )  # 재시도 횟수(상한 가드용)
 
     # 원본 속성
     page_count: Mapped[int | None] = mapped_column(Integer)

@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Download, Eye, TriangleAlert, X } from "lucide-react";
+import { Download, Eye, RotateCcw, TriangleAlert, X } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
@@ -22,9 +23,10 @@ import { useDriveStore } from "@/lib/store";
 import {
   useDocument,
   useDeleteDocument,
+  useRetryDocument,
   triggerDownload,
 } from "@/lib/api/documents";
-import { errorMessage } from "@/lib/api/client";
+import { ApiError, errorMessage } from "@/lib/api/client";
 import { formatBytes, formatDate, formatDuration } from "@/lib/format";
 import { ingestProgress } from "@/lib/ingest";
 import { isPreviewable } from "@/lib/ui";
@@ -46,6 +48,7 @@ export const DocumentDetail = () => {
   const closeInspector = useDriveStore((s) => s.closeInspector);
   const clearUploadProgress = useDriveStore((s) => s.clearUploadProgress);
   const deleteDoc = useDeleteDocument();
+  const retryDoc = useRetryDocument(doc?.folderId ?? "");
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [cancelOpen, setCancelOpen] = React.useState(false);
 
@@ -62,6 +65,17 @@ export const DocumentDetail = () => {
     });
     clearUploadProgress(id);
     closeInspector();
+  };
+
+  // 실패 문서 재시도. 객체 없음(upload_not_completed)이면 재업로드를 안내한다.
+  const onRetry = () => {
+    retryDoc.mutate(doc.id, {
+      onSuccess: () => toast.success("다시 처리를 시작했습니다."),
+      onError: (e) =>
+        e instanceof ApiError && e.code === "upload_not_completed"
+          ? toast.error("원본 파일이 없어 다시 처리할 수 없습니다. 파일을 다시 업로드해 주세요.")
+          : toast.error(errorMessage(e)),
+    });
   };
 
   // "원본 보기" (document-frontend §2): 텍스트=마크다운 뷰어 / PDF·이미지=인앱 미리보기 / 그 외=다운로드
@@ -108,10 +122,24 @@ export const DocumentDetail = () => {
         </div>
       )}
 
-      {doc.status === "failed" && doc.error && (
-        <div className="flex items-start gap-2 rounded-md border border-status-failed/40 bg-status-failed/10 p-2.5 text-sm text-status-failed">
-          <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-          <span>{doc.error}</span>
+      {doc.status === "failed" && (
+        <div className="space-y-2">
+          {doc.error && (
+            <div className="flex items-start gap-2 rounded-md border border-status-failed/40 bg-status-failed/10 p-2.5 text-sm text-status-failed">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+              <span>{doc.error}</span>
+            </div>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full"
+            disabled={retryDoc.isPending}
+            onClick={onRetry}
+          >
+            <RotateCcw className={cn("size-4", retryDoc.isPending && "animate-spin")} />
+            재시도
+          </Button>
         </div>
       )}
 

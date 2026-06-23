@@ -127,6 +127,58 @@ export const useRenameDocument = (folderId: string) => {
   });
 };
 
+// 실패 문서 재시도 — POST /documents/{id}/retry. 상태를 낙관적으로 processing으로 돌려
+// 폴링(useDocument/useDocuments refetchInterval)이 재개되게 한다. 실패 시 롤백한다.
+export const useRetryDocument = (folderId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<DocumentDTO>(`/documents/${id}/retry`, { method: "POST" }),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.documents(folderId) });
+      await qc.cancelQueries({ queryKey: qk.document(id) });
+      const prevList = qc.getQueryData<InfiniteData<PageDTO<DocumentDTO>>>(
+        qk.documents(folderId),
+      );
+      const prevDoc = qc.getQueryData<DocumentItem>(qk.document(id));
+      // 목록(DTO 페이지) 낙관 갱신 — 처리 중으로, 오류·단계 비움
+      qc.setQueryData<InfiniteData<PageDTO<DocumentDTO>>>(
+        qk.documents(folderId),
+        (old) =>
+          old
+            ? {
+                ...old,
+                pages: old.pages.map((p) => ({
+                  ...p,
+                  items: p.items.map((d) =>
+                    d.id === id
+                      ? { ...d, status: "processing", stage: null, error: null }
+                      : d,
+                  ),
+                })),
+              }
+            : old,
+      );
+      // 단건(매핑된 DocumentItem) 낙관 갱신
+      qc.setQueryData<DocumentItem>(qk.document(id), (old) =>
+        old
+          ? { ...old, status: "processing", stage: undefined, error: undefined }
+          : old,
+      );
+      return { prevList, prevDoc, id };
+    },
+    onError: (_e, _id, ctx) => {
+      if (!ctx) return;
+      qc.setQueryData(qk.documents(folderId), ctx.prevList);
+      qc.setQueryData(qk.document(ctx.id), ctx.prevDoc);
+    },
+    onSettled: (_d, _e, id) => {
+      qc.invalidateQueries({ queryKey: qk.documents(folderId) });
+      qc.invalidateQueries({ queryKey: qk.document(id) });
+    },
+  });
+};
+
 // presigned PUT을 XHR로 전송해 업로드 진행률(%)을 추적한다.
 // fetch는 진행률을 못 준다 — 스트리밍 업로드는 HTTP/2가 필요한데 브라우저는 평문 h2c 미지원이라
 // http MinIO에선 HTTP/1.1로 고정된다(frontend.md §10). XHR.upload.onprogress 는 http·전 브라우저 OK.

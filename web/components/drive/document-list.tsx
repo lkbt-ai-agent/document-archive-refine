@@ -18,6 +18,7 @@ import {
   FolderPlus,
   Upload,
   Pencil,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -67,11 +68,12 @@ import {
   useDocuments,
   useDeleteDocument,
   useRenameDocument,
+  useRetryDocument,
   triggerDownload,
 } from "@/lib/api/documents";
 import { DocumentRenameDialog } from "./document-rename-dialog";
 import { mapDocument } from "@/lib/api/map";
-import { errorMessage } from "@/lib/api/client";
+import { ApiError, errorMessage } from "@/lib/api/client";
 import { folderHref } from "@/lib/routes";
 import { formatBytes, formatDate } from "@/lib/format";
 import type { DocumentItem, Folder } from "@/lib/types";
@@ -95,6 +97,7 @@ export const DocumentList = ({
   const docsQuery = useDocuments(folderId);
   const deleteDoc = useDeleteDocument();
   const renameDoc = useRenameDocument(folderId);
+  const retryDoc = useRetryDocument(folderId);
   // 우클릭 "이름 변경" 대상 문서(다이얼로그)
   const [renameTarget, setRenameTarget] = React.useState<DocumentItem | null>(
     null,
@@ -162,6 +165,15 @@ export const DocumentList = ({
         onError: (e) => toast.error(errorMessage(e)),
       },
     );
+  // 실패 문서 재시도(낙관·롤백). 객체 없음이면 재업로드를 안내한다.
+  const onRetryDoc = (id: string) =>
+    retryDoc.mutate(id, {
+      onSuccess: () => toast.success("다시 처리를 시작했습니다."),
+      onError: (e) =>
+        e instanceof ApiError && e.code === "upload_not_completed"
+          ? toast.error("원본 파일이 없어 다시 처리할 수 없습니다. 파일을 다시 업로드해 주세요.")
+          : toast.error(errorMessage(e)),
+    });
 
   // 단일 클릭=선택(하이라이트), 더블 클릭=문서 인스펙터 열기 / 폴더 진입.
   const onFolderDoubleClick = (id: string) => router.push(folderHref(id));
@@ -290,6 +302,11 @@ export const DocumentList = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {d.status === "failed" && (
+                    <DropdownMenuItem onClick={() => onRetryDoc(d.id)}>
+                      <RotateCcw className="size-4" /> 재시도
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => setRenameTarget(d)}>
                     <Pencil className="size-4" /> 이름 변경
                   </DropdownMenuItem>
@@ -502,6 +519,11 @@ export const DocumentList = ({
                               {tableRow}
                             </ContextMenuTrigger>
                             <ContextMenuContent>
+                              {d.status === "failed" && (
+                                <ContextMenuItem onClick={() => onRetryDoc(d.id)}>
+                                  <RotateCcw className="size-4" /> 재시도
+                                </ContextMenuItem>
+                              )}
                               <ContextMenuItem
                                 onClick={() => setRenameTarget(d)}
                               >

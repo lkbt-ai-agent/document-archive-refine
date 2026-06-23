@@ -49,6 +49,12 @@ async def complete_upload(
     return await DocumentService(session).upload_confirm(owner, document_id)
 
 
+@router.post("/{document_id}/retry", response_model=DocumentRead)
+async def retry_document(document_id: UUID, session: SessionDep, owner: OwnerDep) -> DocumentRead:
+    # 실패한 문서를 전체 재실행으로 다시 처리한다(retry plan).
+    return await DocumentService(session).retry(owner, document_id)
+
+
 @router.patch("/{document_id}", response_model=DocumentRead)
 async def update_document(
     document_id: UUID, data: DocumentUpdate, session: SessionDep, owner: OwnerDep
