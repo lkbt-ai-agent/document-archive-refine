@@ -144,7 +144,9 @@ async def run_ingest(document_id: str) -> None:
                 failed = await repo.get(doc_uuid)
                 if failed is not None:
                     failed.status, failed.stage = "failed", None
-                    failed.error = str(exc)[:2000]
+                    # 일부 예외(예: ConnectTimeout)는 메시지가 비어 화면에 원인이 안 보인다.
+                    # 비면 예외 타입 이름으로 대체한다.
+                    failed.error = (str(exc) or exc.__class__.__name__)[:2000]
                     await session.commit()
                 logger.exception("ingest 실패 %s: %s", document_id, exc)
                 raise

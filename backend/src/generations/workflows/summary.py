@@ -4,6 +4,7 @@
 청크 미니요약 + 최종요약을 거치며 인용 [n]을 단다.
 """
 
+import asyncio
 from uuid import UUID
 
 from src.ai.provider import get_llm_client
@@ -39,7 +40,9 @@ async def run(repo: GenerationRepository, document_ids: list[UUID], options) -> 
     if not chunks:
         return WorkflowResult(method="stuff", output_text="요약할 내용이 없습니다.")
 
-    total = await count_tokens("\n".join(c["content"] for c in chunks))
+    total = await asyncio.to_thread(
+        count_tokens, "\n".join(c["content"] for c in chunks)
+    )
 
     if len(chunks) > HIER_CHUNKS:
         return await _hierarchical(llm, params, chunks, usage)

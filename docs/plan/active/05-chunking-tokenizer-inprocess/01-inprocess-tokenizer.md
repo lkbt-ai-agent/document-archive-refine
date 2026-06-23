@@ -8,17 +8,17 @@ overview: 청킹의 줄 단위 토큰 세기를 임베딩 서버 HTTP 호출에�
 > 핵심: 토큰 세기는 가벼운 작업이니 워커 안에서 직접 처리해 `:8081/tokenize` 왕복을 없앤다. 청크 목표 512토큰 대 임베딩 컨텍스트 8192토큰(16배 여유)이라 서버와 토큰 수가 조금 달라도 안전하다.
 
 ## 준비 (의존성과 사전 파일)
-- [ ] A1 `backend/pyproject.toml`에 가벼운 `tokenizers` 의존성을 추가한다 (무거운 `transformers`는 쓰지 않는다).
-- [ ] A2 KURE-v1(bge-m3) 토크나이저 파일을 리포에 동봉해 오프라인에서 로드되게 한다 (첫 실행 시 허브 다운로드 방지).
+- [x] A1 `backend/pyproject.toml`에 가벼운 `tokenizers` 의존성을 추가한다 (무거운 `transformers`는 쓰지 않는다).
+- [x] A2 KURE-v1 토크나이저 파일을 `~/Desktop/models/kure-v1-tokenizer.json`(gguf와 같은 외부 디렉토리)에 두고 `KURE_TOKENIZER_PATH` 설정으로 로드하며, dev-stack 사전 조건에 1회 다운로드를 적는다.
 
 ## 구현 (토크나이저 인프로세스화)
-- [ ] B1 `backend/src/ingestion/tokenizer.py`의 `count_tokens`를 동봉 토크나이저로 토큰 수를 세도록 바꾼다 (httpx 호출 제거).
-- [ ] B2 토크나이저는 모듈에서 한 번만 로드해 재사용하고, 토큰 수를 셀 때 자동 특수 토큰을 끈다 (`add_special_tokens=False`).
-- [ ] B3 `backend/src/ingestion/chunking.py`가 줄마다 부르는 대신 가능하면 한 번에 토큰화하도록 호출 패턴을 정리한다 (동기 CPU 호출이 이벤트 루프를 길게 막지 않게 한다).
-- [ ] B4 토크나이저 로드 실패 시 동작을 정한다 (인제스트를 명확한 오류로 실패시키고 원인을 `error`에 남긴다).
+- [x] B1 `backend/src/ingestion/tokenizer.py`의 `count_tokens`를 동봉 토크나이저로 토큰 수를 세도록 바꾼다 (httpx 호출 제거).
+- [x] B2 토크나이저는 모듈에서 한 번만 로드해 재사용하고, 토큰 수를 셀 때 자동 특수 토큰과 패딩, 트렁케이션을 끈다 (배치 토큰 수 부풀림 방지).
+- [x] B3 `backend/src/ingestion/chunking.py`가 라인을 한 번에 토큰화하도록 `count_tokens_batch`로 바꾸고 CPU 작업을 `asyncio.to_thread`로 오프로드한다 (summary 워크플로우 호출부도 동기화에 맞춰 수정).
+- [x] B4 토크나이저 로드 실패 시 인제스트가 명확한 오류로 실패하고 원인이 `error`에 남게 한다 (`Tokenizer.from_file` 예외가 그대로 전파, C1과 함께).
 
 ## 부수 개선 (관측성)
-- [ ] C1 `backend/src/ingestion/pipeline.py`에서 예외 메시지가 비면 예외 타입 이름을 `error`에 기록해, 화면 카드에 원인이 사라지지 않게 한다 (lesson 03 Fix 5번).
+- [x] C1 `backend/src/ingestion/pipeline.py`에서 예외 메시지가 비면 예외 타입 이름을 `error`에 기록해, 화면 카드에 원인이 사라지지 않게 한다 (lesson 03 Fix 5번).
 
 ## 검증
 - [ ] D1 표본 한국어 문장으로 인프로세스 토큰 수가 서버 `/tokenize` 결과와 근접함을 확인한다 (정확 일치는 불필요, 16배 여유).

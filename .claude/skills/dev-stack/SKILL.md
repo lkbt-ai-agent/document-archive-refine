@@ -12,6 +12,7 @@ PostgreSQL·MinIO는 **원격**이라 여기서 띄우지 않는다(연결만 �
 ## 사전 조건
 - 루트 `.env` 존재(원격 PG/MinIO 자격증명). `web/.env.local`에 `NEXT_PUBLIC_API_URL=http://localhost:8000`.
 - 모델 파일: `~/Desktop/models/a.x-4.0-light-q4_k_m.gguf`(생성), `~/Desktop/models/kure-v1-q8_0.gguf`(임베딩).
+- 토크나이저 파일: `~/Desktop/models/kure-v1-tokenizer.json`(청킹이 워커 안에서 토큰 수를 셀 때 쓴다). 없으면 1회 받는다: `curl -fsSL -o ~/Desktop/models/kure-v1-tokenizer.json https://huggingface.co/nlpai-lab/KURE-v1/resolve/main/tokenizer.json`. 경로 변경은 `KURE_TOKENIZER_PATH`.
 - 도구: `docker`, `uv`, `node`/`npm`, `llama-server`(homebrew).
 - 모든 명령은 **리포 루트**(`/Users/xxx/Desktop/git-2026-document-archive-refine`) 기준. 백엔드 명령은 `backend/`에서, 프론트는 `web/`에서 실행.
 

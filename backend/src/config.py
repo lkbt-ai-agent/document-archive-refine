@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     llama_chat_url: str = "http://localhost:8080"
     llama_embed_url: str = "http://localhost:8081"
 
+    # 임베딩 토크나이저 파일 (KURE-v1). 청킹이 인제스트 워커 안에서 직접 토큰 수를 센다.
+    # gguf 모델과 같은 외부 디렉토리에 둔다(리포 밖). 부재 시 청킹이 명확히 실패한다.
+    kure_tokenizer_path: Path = Path.home() / "Desktop" / "models" / "kure-v1-tokenizer.json"
+
     # Provider 선택 (backend.md §8)
     llm_provider: Literal["llama", "bedrock"] = "llama"
     embedding_provider: Literal["llama"] = "llama"  # 차원 lock-in, 로컬 고정
