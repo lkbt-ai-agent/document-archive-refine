@@ -17,6 +17,7 @@ refs: docs/research/01-mvp-research/01, docs/research/01-mvp-research/04 §4
 - 각 인제스트 작업의 멱등 키는 `ingest:{document_id}`다(arq `_job_id`).
 - 인제스트는 멱등이라 전체 재실행이 안전하다. 단계 체크포인트 재개는 없고 `run_ingest`는 항상 `extracting`부터 다시 시작한다(research 08 §4.1).
 - 자동 재시도는 현재 없다. arq는 일반 예외를 재시도하지 않고 즉시 `failed`로 종결한다. 실패 문서의 재처리는 명시적 재시도 기능이 담당한다(research 08 §4.3, retry plan).
+- 명시적 재시도(`POST /documents/{id}/retry`)는 같은 멱등 키 `ingest:{document_id}`의 arq 결과 키를 먼저 지워 1시간 재enqueue 차단을 푼 뒤 다시 enqueue한다. 가드와 실패 분류는 document-backend §8.
 - 진행 상황은 워커가 `documents.status`와 `documents.stage`를 갱신해 보고하며, 프론트엔드는 이 값을 폴링해 현재 단계를 표시한다.
 - 파이프라인 전체 소요 시간은 완료 시 `documents.ingest_ms`에 기록한다.
 - 워커는 abort 허용(arq `allow_abort_jobs`): 문서 삭제 시 진행/대기 중 인제스트 job을 선제 취소한다(`CancelledError`로 중단). 삭제 흐름은 document-backend §2.

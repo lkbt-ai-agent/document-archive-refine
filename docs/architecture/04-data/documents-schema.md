@@ -29,6 +29,7 @@ CREATE TABLE archive.documents (                                        -- 문�
   status            archive.doc_status NOT NULL DEFAULT 'uploaded',     -- 처리 상태
   stage             archive.doc_stage,                                  -- 인제스트 단계
   error             TEXT,                                               -- 오류 메시지
+  retry_count       INTEGER NOT NULL DEFAULT 0,                          -- 재시도 횟수(상한 가드용, document-backend §8)
   page_count        INT,                                                -- 쪽수
   author            TEXT,                                               -- 작성자
   language          TEXT,                                               -- 언어

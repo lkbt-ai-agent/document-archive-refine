@@ -19,6 +19,7 @@ refs: docs/research/01-mvp-research/04 §2
 | PATCH  | `/documents/{id}`                      | 부분 갱신: 폴더 이동(`{folder_id}`)·현재 파일명 변경(`{display_filename}`).    |
 | DELETE | `/documents/{id}`                      | 삭제 수명주기를 실행한다.                                                      |
 | GET    | `/documents/{id}/download`             | presigned GET을 발급한다(발급 전 `owner_id` 검사, 파일명=현재 파일명).         |
+| POST   | `/documents/{id}/retry`                | 실패 문서 재시도: `failed`만 `processing`으로 되돌려 인제스트를 다시 enqueue한다(§8). |
 
 - 에러: 권한 외 404, 이동 충돌은 폴더 정책 준수, upload confirm 검증 실패 4xx. 모든 쿼리 `owner_id` 강제.
 - PATCH는 보낸 필드만 반영한다(`model_fields_set`). `folder_id=null`은 루트 이동이고, `display_filename`은 현재 파일명만 바꾼다(원본 파일명·AI 메타 보존, document.md §5).
@@ -71,3 +72,16 @@ refs: docs/research/01-mvp-research/04 §2
 - 자격증명 노출 — `.env` 유출 시 버킷 전체 접근
   - 해결: [ ]
   - 비고: 강한 키 교체, `.env`는 `.gitignore`, 앱 전용 액세스키 분리.
+
+## 8. 실패 문서 재시도
+
+- `POST /documents/{id}/retry`는 인제스트가 실패한 문서를 사용자 요청으로 다시 처리한다.
+- 서비스는 재시도 전 네 가지 가드를 순서대로 검사하고, 막히면 `{error:{code}}` 봉투로 거부한다.
+  - 상태가 `failed`가 아니면 `retry_not_failed`로 거부한다.
+  - `retry_count`가 상한(`MAX_RETRIES=5`)에 도달하면 `retry_limit_exceeded`로 거부한다(독성 문서 무한 재시도 차단).
+  - `error`에 영구 오류 표지("지원하지 않는 파일 형식")가 있으면 `retry_permanent_error`로 거부한다.
+  - `stat_object`로 원본 객체가 없으면 `upload_not_completed`로 응답해 재업로드를 안내한다.
+- 가드를 모두 통과하면 서비스는 `status=processing`, `stage=null`, `error=null`로 되돌리고 `retry_count`를 1 늘린 뒤 인제스트를 다시 enqueue한다.
+- 전체 재실행은 멱등이라 처음부터(extracting) 다시 시작해도 안전하다(ingestion-backend §1).
+- 같은 작업 키(`ingest:{id}`)의 arq 결과 키를 먼저 지워 1시간 재enqueue 차단을 해제한다(ingestion-backend §1).
+- 실패 분류는 두 갈래이다. 일시 오류는 재시도로 복구하고, 영구 오류와 객체 없음은 재시도 대신 거부 또는 재업로드로 처리한다.
