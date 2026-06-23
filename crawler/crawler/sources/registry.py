@@ -8,12 +8,14 @@ from __future__ import annotations
 
 from crawler.sources.base import BaseSource
 from crawler.sources.lh import LhSource
+from crawler.sources.mss import MssSource
 from crawler.sources.sh import ShSource
 
 # source_id 문자열 → BaseSource 하위 클래스
 REGISTRY: dict[str, type[BaseSource]] = {
     ShSource.source_id: ShSource,
     LhSource.source_id: LhSource,
+    MssSource.source_id: MssSource,
 }
 
 

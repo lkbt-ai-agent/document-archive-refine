@@ -1,7 +1,7 @@
 ---
 created: 2026-06-23
 updated: 2026-06-23
-status: draft
+status: implemented
 overview: 중소벤처기업부 사업공고 게시판을 크롤링 관점에서 실측 분석하고, 기존 crawler/에 새 소스(mss)로 통합하는 설계를 정한다.
 refs: docs/research/02-test-data-crawler/00-design.md, docs/research/02-test-data-crawler/01-source-candidates.md
 ---
@@ -40,9 +40,10 @@ refs: docs/research/02-test-data-crawler/00-design.md, docs/research/02-test-dat
 ### 3.1 목록
 
 - 목록은 서버 렌더 HTML로 한 페이지 10행이 그대로 온다(`recordCountPerPage=10`).
-- 행의 제목 링크는 `href`가 아니라 `onclick="doBbsFView('310','<bcIdx>','<Gbn>','<parentSeq>')"` 핸들러이다.
+- 목록은 `<table>`이고 행은 `<tr onclick="doBbsFView('310','<bcIdx>','<Gbn>','<parentSeq>')" title="<제목>">`이다(구현 확인). 핸들러와 제목이 행(`tr`) 자체에 붙는다.
 - `doBbsFView`는 내부에서 `location.href="View.do?cbIdx=&bcIdx=&parentSeq="`로 이동한다(JS 본문 확인). 즉 상세 진입은 GET이다.
-- 제목 텍스트는 같은 앵커의 `title` 속성에 전체가 들어 있다(예: `2026년 창업도시 조성 프로젝트 창업기업 모집 통합공고`).
+- 제목은 행 `tr`의 `title` 속성에 전체가 들어 있다(예: `2026년 창업도시 조성 프로젝트 창업기업 모집 통합공고`).
+- 등록일은 행의 한 칸에 `YYYY-MM-DD` 형식으로 있다. 칸들을 훑어 날짜 형식인 칸을 등록일로 쓴다(구현 확인).
 - 페이지 이동(`doBbsFPag`)은 `bbsFVo` 폼을 POST 하지만, GET 쿼리 `?cbIdx=310&pageIndex=<N>`로도 페이지가 바뀐다(실측 확인). 따라서 페이징은 GET으로 처리한다.
 
 ### 3.2 상세
@@ -68,7 +69,7 @@ refs: docs/research/02-test-data-crawler/00-design.md, docs/research/02-test-dat
 - 페이징 JS(`doBbsFPag`)는 폼을 POST 하기 전에 연/월을 `searchPublicDate` 한 필드로 합친다(JS 본문 확인).
 - 기간 필터는 GET으로 동작한다. `?cbIdx=310&searchPublicDate=YYYY-MM`을 붙이면 목록이 그 달 기준으로 바뀐다(실측 확인). 월을 `00`으로 주면 해당 연도 전체이다(예: `2025-00`).
 - 화면 입력값인 `year`와 `month`를 GET으로 단독 전송하면 무시된다. 작동하는 파라미터는 `searchPublicDate` 하나이다(실측 확인).
-- 관찰된 의미는 "선택 시점부터 이후를 오래된 순으로 보여 준다"이다. 기본 목록은 최신순이지만 `searchPublicDate=2025-01`은 2025년 1월부터 오름차로, `2024-07`은 2024년 7월부터 오름차로 채워졌다. 정확한 경계(시작월 포함 여부, 종료 경계)는 구현 시 확정한다(§6).
+- 의미는 "선택 시점부터 이후를 오래된 순으로 보여 준다"이다. 기본 목록은 최신순이지만 `searchPublicDate=2025-01`은 2025년 1월부터 오름차로, `2024-07`은 2024년 7월부터 오름차로 채워졌다. 시작월을 포함하며 종료 경계는 없다(§6 확정).
 - 키워드 검색은 GET이 막혀 있다. `?cbIdx=310&searchKey=<키워드>`를 붙이면 필터가 적용되지 않고 전체 목록이 온다(실측 확인).
 - 따라서 키워드만 LH와 같은 절충을 택한다. 키워드는 목록 행의 제목(`title` 속성)에서 클라이언트 측으로 대조해 거른다. 연/월은 서버 GET 필터를 그대로 쓴다.
 
@@ -137,13 +138,14 @@ class MssSource(BaseSource):
 
 ---
 
-## 6. 미해결, 구현 시 확정
+## 6. 구현으로 확정(2026-06-23)
 
-- 기간 필터 `searchPublicDate=YYYY-MM`의 정확한 경계 의미(시작월 포함 여부, 종료 경계, 정렬 방향)를 구현 시 확정한다(§3.4).
-- 키워드 서버 검색을 GET 대신 폼 POST로 살릴지, 클라이언트 측 제목 대조로 둘지 구현 시 정한다. MVP 권장은 클라이언트 측 대조이다(§3.4).
-- `doBbsFView`의 세 번째 인자(`Gbn`, 관찰값 `16010100`)가 상세 진입에 필요한지 확인한다. 관찰상 `bcIdx`와 `parentSeq`만으로 충분했다(§3.1).
-- 한 게시글에 PDF가 여러 개일 때 모두 받을지 대표 1개만 받을지 정책을 정한다. 기존 소스는 모두 받는다.
-- 원본 파일명의 `[크기]` 꼬리(`<em>`)와 공백 정리 규칙을 `storage`의 안전 파일명 처리와 맞춘다([00 §7.4]).
+- `MssSource`를 `crawler/crawler/sources/mss.py`에 추가하고 `registry.py`에 등록했다. CLI는 `crawler mss --year --month --keyword --cb-idx --max-pages`이다.
+- 기간 필터 `searchPublicDate=YYYY-MM`은 선택 시점부터 이후를 보여 준다(실측). 시작월을 포함하며, 페이지가 넘치면 이후 달이 이어진다. 시작점만 지정하므로 종료 경계는 따로 없다(§3.4).
+- 키워드 서버 검색은 채택하지 않았다. 키워드는 행의 `title`로 클라이언트 측에서 대조한다. 실측에서 `창업` 입력 시 목록 10건이 3건으로 줄었다(§3.4).
+- `doBbsFView`의 세 번째 인자(`Gbn`, 관찰값 `16010100`)는 상세 진입에 쓰지 않는다. `bcIdx`와 `parentSeq`만으로 `View.do`가 열렸다(실측).
+- 한 게시글의 PDF는 모두 받는다(기존 소스와 동일). HWPX는 `allowed_suffixes`로 걸러진다. 실측 1페이지에서 PDF 11건을 받고 HWPX 등 15건을 필터했다.
+- 원본 파일명의 `[크기]` 꼬리는 정규식으로 떼어 내고, `storage`의 안전 파일명 처리가 한글명에 등록일 접두를 붙인다([00 §7.4]).
 
 ---
 

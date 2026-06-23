@@ -38,6 +38,12 @@ def _build_parser() -> argparse.ArgumentParser:
     lh.add_argument("--region", help="지역명(예: 서울) 또는 cnpCd 코드")
     lh.add_argument("--status", choices=["공고중", "접수중", "접수마감", "정정공고중"], help="공고상태")
     lh.add_argument("--keyword", help="공고명 검색어")
+
+    mss = sub.add_parser("mss", parents=[common], help="중소벤처기업부 사업공고")
+    mss.add_argument("--cb-idx", dest="cb_idx", type=int, default=310, help="보드 식별자(기본 310 사업공고)")
+    mss.add_argument("--year", type=int, help="기간 필터 연도(예: 2026)")
+    mss.add_argument("--month", type=int, help="기간 필터 월(생략 시 연도 전체)")
+    mss.add_argument("--keyword", help="제목 검색어(클라이언트 측 대조)")
     return parser
 
 
