@@ -183,8 +183,8 @@ const ResultGroupCard = ({
   };
   const rest = group.chunks.length - 1;
   const visible = showAll ? group.chunks : group.chunks.slice(0, 1);
-  // 문서 keywords 해시태그 — 검색 응답에 포함되어 키워드·의미 모드 공통으로 표시
-  const concepts = group.keywords;
+  // 문서 keywords 해시태그 — 검색 응답에 포함되어 키워드·의미 모드 공통으로 표시 (임시 주석 처리)
+  // const concepts = group.keywords;
 
   return (
     <ContextMenu>
@@ -233,8 +233,8 @@ const ResultGroupCard = ({
             </div>
           </div>
 
-          {/* 컨셉 해시태그(문서 단위, 키워드·의미 모드 공통) */}
-          {concepts.length > 0 && (
+          {/* 컨셉 해시태그(문서 단위, 키워드·의미 모드 공통) — 임시 주석 처리 */}
+          {/* {concepts.length > 0 && (
             <div className="flex flex-wrap gap-1 px-3 pb-2">
               {concepts.map((c) => (
                 <span
@@ -245,7 +245,7 @@ const ResultGroupCard = ({
                 </span>
               ))}
             </div>
-          )}
+          )} */}
 
           {/* 청크 본문 — 화살표 토글 행 + 더보기(첫 청크만 노출, 행 클릭 시 본문 펼침) */}
           <div className="px-3 pb-3">

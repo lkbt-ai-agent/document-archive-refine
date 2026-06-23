@@ -21,3 +21,4 @@
 - [docs/plan/](./docs/plan/): 기능별 체크리스트 구현 계획(`active/` 진행 중, `done/` 완료).
 - [docs/lessons/](./docs/lessons/): 구현 중 겪은 실패 패턴과 재발 방지 교훈 기록.
 - [docs/glossary.md](./docs/glossary.md): AI, RAG, 인프라 등 일반 용어 정의 모음.
+- [docs/todo.md](./docs/todo.md): 기록 추적 없이 로컬에서 쓰는 비공식 아이디어·todo 메모.
