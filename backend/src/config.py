@@ -46,6 +46,13 @@ class Settings(BaseSettings):
     llama_chat_url: str = "http://localhost:8080"
     llama_embed_url: str = "http://localhost:8081"
 
+    # RAG 컨텍스트 예산 (lesson 05). 슬롯당 컨텍스트 = 생성 서버 `-c` 나누기 `--parallel`.
+    # 입력(프롬프트)과 출력(rag_max_tokens)의 합이 llama_chat_ctx_per_slot을 넘으면 생성 서버가
+    # 400을 내고 500으로 새므로, 컨텍스트를 이 예산에 맞춰 잘라 담는다.
+    llama_chat_ctx_per_slot: int = 4096
+    rag_max_tokens: int = 1024
+    rag_ctx_margin: int = 256  # 채팅 템플릿·래퍼·근사 오차용 안전 여유
+
     # 임베딩 토크나이저 파일 (KURE-v1). 청킹이 인제스트 워커 안에서 직접 토큰 수를 센다.
     # gguf 모델과 같은 외부 디렉토리에 둔다(리포 밖). 부재 시 청킹이 명확히 실패한다.
     kure_tokenizer_path: Path = Path.home() / "Desktop" / "models" / "kure-v1-tokenizer.json"

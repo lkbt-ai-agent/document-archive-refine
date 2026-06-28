@@ -3,7 +3,7 @@ type: failure-pattern
 area: backend
 tags: [rag, search, llama-cpp, context-size, cors, http-500]
 severity: high
-status: open
+status: mitigated
 ---
 
 # Problem
@@ -54,9 +54,9 @@ status: open
 
 # Fix
 
-아직 고치지 않았다. 아래는 후보이며 효과가 큰 순서다. 어느 것도 적용하지 않았다.
+1안(컨텍스트 토큰 예산)을 적용해 정상 케이스의 overflow 기인 500을 없앴다. CORS 마스킹(4안)과 방어 재시도(3안)는 아직 남아 있어 상태는 mitigated다.
 
-- (제안, 권장) 프롬프트 토큰 예산을 슬롯 컨텍스트에 맞춘다. `k`를 8에서 4로 낮추거나, `_build_context`에서 청크별 토큰을 잘라 "프롬프트 + max_tokens"가 4096 이하가 되게 한다.
+- (적용) 프롬프트 토큰 예산을 슬롯 컨텍스트에 맞춘다. 검색 개수 `k`는 두고 `_build_context`가 청크를 예산만큼만 담으며, 단독으로 넘는 청크는 잘라 담아 최소 한 청크를 보장한다. 예산은 `슬롯 컨텍스트 - rag_max_tokens - 시스템 - 질문 - 여유`이며, 생성 모델 토큰 수는 `:8080/tokenize`로 센다. 구현은 `src/ai/tokenize.py`와 `src/search/service.py`의 `_build_context`이고 설정은 `config.py`의 `llama_chat_ctx_per_slot`/`rag_max_tokens`/`rag_ctx_margin`이다(plan 11-rag-context-budget, search-backend §5).
 - (제안) 슬롯 컨텍스트를 늘린다. `-c 32768 --parallel 4`로 슬롯당 8192를 주거나 `--parallel`을 줄인다. GPU 메모리를 더 쓴다.
 - (제안) 생성 호출을 방어한다. `_generate`에서 llama 400을 잡아 컨텍스트를 줄여 재시도하거나, 실패 시 사용자 친화 메시지를 반환해 500을 막는다.
 - (제안) 에러 응답에도 CORS 헤더가 실리게 한다. 그래야 브라우저에서 실제 원인이 CORS로 가려지지 않는다.
