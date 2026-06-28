@@ -6,6 +6,7 @@ import { useDriveStore } from "@/lib/store";
 import { useFolders } from "@/lib/api/folders";
 import { useDocuments } from "@/lib/api/documents";
 import { formatDate } from "@/lib/format";
+import { DEFAULT_LIST_SORT } from "@/lib/types";
 
 // 폴더 인스펙터(읽기 전용) — 폴더 단일/눈 클릭 시 우측에 표시 (folders-frontend §1).
 const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
@@ -21,7 +22,7 @@ export const FolderDetail = () => {
   const folder = folders.find((f) => f.id === folderId);
   const subfolderCount = folders.filter((f) => f.parentId === folderId).length;
 
-  const docsQuery = useDocuments(folderId ?? "none", !!folderId);
+  const docsQuery = useDocuments(folderId ?? "none", DEFAULT_LIST_SORT, !!folderId);
   const loadedDocs =
     (docsQuery.data?.pages ?? []).reduce((n, p) => n + p.items.length, 0) ?? 0;
   // 정확한 총계 API가 없어 로드된 건수 기준(다음 페이지 있으면 "+").

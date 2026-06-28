@@ -7,6 +7,10 @@ export type DocStage =
   | "chunking"
   | "embedding";
 
+// 목록 정렬(document-backend §1). 백엔드 `sort` 쿼리 값과 1:1 대응.
+export type ListSort = "newest" | "oldest" | "name_asc" | "name_desc";
+export const DEFAULT_LIST_SORT: ListSort = "name_asc";
+
 export interface Folder {
   id: string;
   parentId: string | null; // root = null

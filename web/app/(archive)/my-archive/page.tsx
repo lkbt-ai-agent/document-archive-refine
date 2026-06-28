@@ -4,14 +4,16 @@ import { makeServerQueryClient } from "@/lib/api/server";
 import { fetchDocumentsPage } from "@/lib/api/documents";
 import { qk } from "@/lib/api/keys";
 import { ROOT_FOLDER_ID } from "@/lib/routes";
+import { DEFAULT_LIST_SORT } from "@/lib/types";
 
 // "/my-archive" → 루트 폴더(내 아카이브). 첫 페이지를 서버에서 시드.
 const MyArchivePage = async () => {
   const qc = makeServerQueryClient();
   try {
     await qc.prefetchInfiniteQuery({
-      queryKey: qk.documents(ROOT_FOLDER_ID),
-      queryFn: ({ pageParam }) => fetchDocumentsPage(ROOT_FOLDER_ID, pageParam),
+      queryKey: qk.documents(ROOT_FOLDER_ID, DEFAULT_LIST_SORT),
+      queryFn: ({ pageParam }) =>
+        fetchDocumentsPage(ROOT_FOLDER_ID, pageParam, DEFAULT_LIST_SORT),
       initialPageParam: null as string | null,
     });
   } catch {

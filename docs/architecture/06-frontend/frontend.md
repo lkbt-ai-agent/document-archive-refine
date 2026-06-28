@@ -120,6 +120,7 @@ ThemeProvider (next-themes, attribute="class" defaultTheme="system" enableSystem
   - 업로드 로직은 `UploadDropzone`와 공용 훅으로 공유한다(드롭존은 보존, §2).
 - 폴더 추가: 현재 폴더를 부모로 `FolderNameDialog` + 낙관 생성(folders-frontend.md)을 재사용한다.
 - 빈 목록(DocumentList) 우클릭 컨텍스트 메뉴도 같은 [폴더 추가]·[파일 추가]를 제공한다(동일 공용 훅).
+- 목록(DocumentList)에 파일을 끌어다 놓으면 같은 공용 훅으로 현재 폴더에 업로드한다. 빈 목록과 채워진 목록을 모두 감싸는 컨테이너 한 곳에 드롭 핸들러를 달며 별도 드롭 오버레이 UI는 두지 않는다.
 - 진행률: presigned PUT은 `XMLHttpRequest`(`upload.onprogress`)로 추적한다. 브라우저는 평문 HTTP/2(h2c)를 지원하지 않아 `http` MinIO는 HTTP/1.1로 고정되고, fetch 스트리밍 업로드로는 진행률을 얻을 수 없다(infrastructure §8 TLS 적용 전 한정). 완료/실패는 Toaster로 알린다.
 
 ## 11. 인제스트/업로드 진행 표시

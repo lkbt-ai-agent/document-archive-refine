@@ -31,8 +31,8 @@ export const useUploadFiles = () => {
           onInit: (id) => {
             docId = id;
             setUploadProgress(id, 0);
-            // 업로드 중 문서를 목록에 즉시 노출(status uploaded)
-            qc.invalidateQueries({ queryKey: qk.documents(folderId) });
+            // 업로드 중 문서를 목록에 즉시 노출(status uploaded) — 정렬별 캐시 모두
+            qc.invalidateQueries({ queryKey: qk.documentsByFolder(folderId) });
             if (autoSelect) {
               selectDocument(id);
               setMobileRight(true);

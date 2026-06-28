@@ -20,6 +20,7 @@ from src.documents.models import Document
 from src.documents.repository import DocumentRepository
 from src.documents.schemas import (
     DocumentRead,
+    DocumentSort,
     DocumentUpdate,
     DownloadResponse,
     UploadInitRequest,
@@ -36,6 +37,13 @@ MAX_RETRIES = 5
 
 # 영구 오류 표식. 코드나 형식 문제라 재시도로 복구되지 않는다(research 08 §6.2).
 _PERMANENT_ERROR_MARKERS = ("지원하지 않는 파일 형식",)
+
+
+def _sort_value(doc: Document, sort: DocumentSort) -> str:
+    """next_cursor에 넣을 정렬 키 값 문자열. 시간순은 created_at ISO, 파일명순은 display_filename."""
+    if sort in (DocumentSort.newest, DocumentSort.oldest):
+        return doc.created_at.isoformat()
+    return doc.display_filename
 
 
 class DocumentService:
@@ -136,15 +144,25 @@ class DocumentService:
         return DocumentRead.model_validate(await self._require(owner_id, document_id))
 
     async def list(
-        self, owner_id: UUID, folder_id: UUID | None, limit: int | None, cursor: str | None
+        self,
+        owner_id: UUID,
+        folder_id: UUID | None,
+        limit: int | None,
+        cursor: str | None,
+        sort: DocumentSort,
     ) -> Page[DocumentRead]:
         n = clamp_limit(limit)
-        decoded = decode_cursor(cursor) if cursor else None
-        rows = await self.repo.list_by_folder(owner_id, folder_id, n, decoded)
+        # 커서에 박힌 정렬 모드가 요청 sort와 다르면(정렬을 바꾼 직후) 커서를 버리고 처음부터 본다.
+        cursor_tuple = None
+        if cursor:
+            c_sort, c_value, c_id = decode_cursor(cursor)
+            if c_sort == sort.value:
+                cursor_tuple = (c_value, c_id)
+        rows = await self.repo.list_by_folder(owner_id, folder_id, n, sort, cursor_tuple)
         next_cursor = None
         if len(rows) > n:
             last = rows[n - 1]
-            next_cursor = encode_cursor(last.created_at, last.id)
+            next_cursor = encode_cursor(sort.value, _sort_value(last, sort), last.id)
             rows = rows[:n]
         return Page(items=[DocumentRead.model_validate(r) for r in rows], next_cursor=next_cursor)
 

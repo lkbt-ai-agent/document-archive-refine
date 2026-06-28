@@ -20,7 +20,7 @@ import type {
 } from "./dto";
 import { qk } from "./keys";
 import { mapDocument } from "./map";
-import type { DocumentItem } from "@/lib/types";
+import type { DocumentItem, ListSort } from "@/lib/types";
 
 const POLL_MS = 1500;
 
@@ -30,21 +30,26 @@ const hasInflight = (pages?: PageDTO<DocumentDTO>[]) =>
     p.items.some((d) => d.status === "processing" || d.status === "uploaded"),
   ) ?? false;
 
-// 클라이언트 훅·서버 프리패치 공용 — 폴더별 문서 한 페이지(keyset cursor).
-export const fetchDocumentsPage = (folderId: string, cursor: string | null) =>
+// 클라이언트 훅·서버 프리패치 공용 — 폴더별 문서 한 페이지(keyset cursor, sort).
+export const fetchDocumentsPage = (
+  folderId: string,
+  cursor: string | null,
+  sort: ListSort,
+) =>
   apiFetch<PageDTO<DocumentDTO>>("/documents", {
     query: {
       folder_id: folderId === ROOT_FOLDER_ID ? undefined : folderId,
       cursor: cursor ?? undefined,
+      sort,
       limit: 50,
     },
   });
 
-export const useDocuments = (folderId: string, enabled = true) =>
+export const useDocuments = (folderId: string, sort: ListSort, enabled = true) =>
   useInfiniteQuery({
-    queryKey: qk.documents(folderId),
+    queryKey: qk.documents(folderId, sort),
     enabled,
-    queryFn: ({ pageParam }) => fetchDocumentsPage(folderId, pageParam),
+    queryFn: ({ pageParam }) => fetchDocumentsPage(folderId, pageParam, sort),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.next_cursor,
     refetchInterval: (query) =>
@@ -87,15 +92,16 @@ export const useRenameDocument = (folderId: string) => {
         body: { display_filename: v.name },
       }),
     onMutate: async (v) => {
-      await qc.cancelQueries({ queryKey: qk.documents(folderId) });
+      // 폴더의 모든 정렬 변형을 한꺼번에 다룬다(키에 sort 포함, documents-frontend).
+      await qc.cancelQueries({ queryKey: qk.documentsByFolder(folderId) });
       await qc.cancelQueries({ queryKey: qk.document(v.id) });
-      const prevList = qc.getQueryData<InfiniteData<PageDTO<DocumentDTO>>>(
-        qk.documents(folderId),
-      );
+      const prevLists = qc.getQueriesData<InfiniteData<PageDTO<DocumentDTO>>>({
+        queryKey: qk.documentsByFolder(folderId),
+      });
       const prevDoc = qc.getQueryData<DocumentItem>(qk.document(v.id));
-      // 목록(DTO 페이지) 낙관 갱신
-      qc.setQueryData<InfiniteData<PageDTO<DocumentDTO>>>(
-        qk.documents(folderId),
+      // 목록(DTO 페이지) 낙관 갱신 — 정렬별 캐시 모두
+      qc.setQueriesData<InfiniteData<PageDTO<DocumentDTO>>>(
+        { queryKey: qk.documentsByFolder(folderId) },
         (old) =>
           old
             ? {
@@ -113,15 +119,15 @@ export const useRenameDocument = (folderId: string) => {
       qc.setQueryData<DocumentItem>(qk.document(v.id), (old) =>
         old ? { ...old, name: v.name } : old,
       );
-      return { prevList, prevDoc, id: v.id };
+      return { prevLists, prevDoc, id: v.id };
     },
     onError: (_e, _v, ctx) => {
       if (!ctx) return;
-      qc.setQueryData(qk.documents(folderId), ctx.prevList);
+      ctx.prevLists.forEach(([key, data]) => qc.setQueryData(key, data));
       qc.setQueryData(qk.document(ctx.id), ctx.prevDoc);
     },
     onSettled: (_d, _e, v) => {
-      qc.invalidateQueries({ queryKey: qk.documents(folderId) });
+      qc.invalidateQueries({ queryKey: qk.documentsByFolder(folderId) });
       qc.invalidateQueries({ queryKey: qk.document(v.id) });
     },
   });
@@ -135,15 +141,15 @@ export const useRetryDocument = (folderId: string) => {
     mutationFn: (id: string) =>
       apiFetch<DocumentDTO>(`/documents/${id}/retry`, { method: "POST" }),
     onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.documents(folderId) });
+      await qc.cancelQueries({ queryKey: qk.documentsByFolder(folderId) });
       await qc.cancelQueries({ queryKey: qk.document(id) });
-      const prevList = qc.getQueryData<InfiniteData<PageDTO<DocumentDTO>>>(
-        qk.documents(folderId),
-      );
+      const prevLists = qc.getQueriesData<InfiniteData<PageDTO<DocumentDTO>>>({
+        queryKey: qk.documentsByFolder(folderId),
+      });
       const prevDoc = qc.getQueryData<DocumentItem>(qk.document(id));
-      // 목록(DTO 페이지) 낙관 갱신 — 처리 중으로, 오류·단계 비움
-      qc.setQueryData<InfiniteData<PageDTO<DocumentDTO>>>(
-        qk.documents(folderId),
+      // 목록(DTO 페이지) 낙관 갱신 — 처리 중으로, 오류·단계 비움(정렬별 캐시 모두)
+      qc.setQueriesData<InfiniteData<PageDTO<DocumentDTO>>>(
+        { queryKey: qk.documentsByFolder(folderId) },
         (old) =>
           old
             ? {
@@ -165,15 +171,15 @@ export const useRetryDocument = (folderId: string) => {
           ? { ...old, status: "processing", stage: undefined, error: undefined }
           : old,
       );
-      return { prevList, prevDoc, id };
+      return { prevLists, prevDoc, id };
     },
     onError: (_e, _id, ctx) => {
       if (!ctx) return;
-      qc.setQueryData(qk.documents(folderId), ctx.prevList);
+      ctx.prevLists.forEach(([key, data]) => qc.setQueryData(key, data));
       qc.setQueryData(qk.document(ctx.id), ctx.prevDoc);
     },
     onSettled: (_d, _e, id) => {
-      qc.invalidateQueries({ queryKey: qk.documents(folderId) });
+      qc.invalidateQueries({ queryKey: qk.documentsByFolder(folderId) });
       qc.invalidateQueries({ queryKey: qk.document(id) });
     },
   });
@@ -255,7 +261,7 @@ export const useUpload = () => {
       return init.document_id;
     },
     onSuccess: (_id, v) =>
-      qc.invalidateQueries({ queryKey: qk.documents(v.folderId) }),
+      qc.invalidateQueries({ queryKey: qk.documentsByFolder(v.folderId) }),
   });
 };
 

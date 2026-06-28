@@ -9,6 +9,7 @@ from src.common.deps import OwnerDep, SessionDep
 from src.common.pagination import Page
 from src.documents.schemas import (
     DocumentRead,
+    DocumentSort,
     DocumentUpdate,
     DownloadResponse,
     UploadInitRequest,
@@ -26,8 +27,10 @@ async def list_documents(
     folder_id: UUID | None = Query(default=None),
     limit: int | None = Query(default=None),
     cursor: str | None = Query(default=None),
+    sort: DocumentSort = Query(default=DocumentSort.name_asc),
 ) -> Page[DocumentRead]:
-    return await DocumentService(session).list(owner, folder_id, limit, cursor)
+    # sort 잘못된 값은 FastAPI enum 검증이 422로 거른다(document-backend §1).
+    return await DocumentService(session).list(owner, folder_id, limit, cursor, sort)
 
 
 @router.get("/{document_id}", response_model=DocumentRead)

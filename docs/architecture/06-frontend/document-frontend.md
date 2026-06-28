@@ -12,7 +12,8 @@ refs: docs/research/01-mvp-research/04 §5
 
 ## 1. 목록 (Google Drive식)
 - DocumentList: shadcn `Table` + TanStack Table v8 헤드리스(`useReactTable`/`getCoreRowModel`, `manualPagination: true`) — 서버 페이지네이션.
-- 목록 계약 `GET /documents?folder_id=&limit=&cursor=`(document-backend.md) + react-query 바인딩. API·옵션은 context7로 v8 확인 후 작성.
+- 목록 계약 `GET /documents?folder_id=&limit=&cursor=&sort=`(document-backend.md) + react-query 바인딩. API·옵션은 context7로 v8 확인 후 작성.
+- 정렬 필터: 헤더("N개 문서" 옆) 드롭다운으로 이름 오름차순(기본)/이름 내림차순/최신순/오래된순을 고른다. 문서는 서버 정렬(keyset cursor, document-backend §1)이고 폴더 그룹은 같은 기준으로 클라이언트가 정렬한다(이름순은 한국어 로케일, 시간순은 `createdAt`, 누락은 마지막). "폴더 먼저, 문서 다음" 그룹을 유지하고 각 그룹 내부만 정렬한다. 정렬 상태는 Zustand `listSort`로 클라 세션에만 두고 새로고침 시 기본값으로 초기화한다(persist 없음). `sort`는 react-query 키에 들어가 정렬별로 캐시·커서가 분리되므로 낙관 갱신·무효화는 폴더 프리픽스로 모든 정렬 변형을 함께 다룬다. 검색(search) 결과 정렬은 바꾸지 않는다.
 - 컬럼: 이름, 상태, 크기, 등록일. 폴더 행은 상태/크기에 대시 자리표시(`-`)를 둔다.
 - "이름" 컬럼은 사용자 리사이즈를 지원한다(TanStack `enableColumnResizing`+`columnResizeMode:"onChange"`, 헤더 우측 드래그 핸들·더블클릭 초기화). 모바일(<md)에서는 비활성화하고 축소(truncate)로 제목·행 버튼이 한 화면에 들어오게 한다.
 - 목록 "이름"은 현재 파일명(`display_filename`)을 표시한다.

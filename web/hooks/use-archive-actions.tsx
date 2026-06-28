@@ -25,6 +25,17 @@ export const useArchiveActions = (folderId: string) => {
   const openFilePicker = () => setTimeout(() => inputRef.current?.click(), 0);
   const openNewFolder = () => setNewOpen(true);
 
+  // 목록 영역에 파일을 끌어다 놓아 현재 폴더로 업로드한다(파일 선택창과 동일 공용 훅).
+  // 파일 드래그일 때만 기본 동작(브라우저가 파일을 새 탭으로 여는 것)을 막아 드롭을 허용한다.
+  const onDragOver = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+  };
+  const onDrop = (e: React.DragEvent) => {
+    if (e.dataTransfer.files.length === 0) return; // 디렉터리·비파일 드롭은 무시
+    e.preventDefault();
+    uploadFiles(folderId, e.dataTransfer.files);
+  };
+
   // 호출부에서 트리(또는 인스펙터) 어딘가에 렌더해야 하는 숨은 input + 새 폴더 다이얼로그
   const elements = (
     <>
@@ -65,5 +76,5 @@ export const useArchiveActions = (folderId: string) => {
     </>
   );
 
-  return { openFilePicker, openNewFolder, elements };
+  return { openFilePicker, openNewFolder, onDragOver, onDrop, elements };
 };

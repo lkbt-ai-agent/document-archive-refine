@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { DEFAULT_LIST_SORT, type ListSort } from "@/lib/types";
 
 // ── 상태 소유 경계 (frontend.md §4) ──────────────────────────────
 // Zustand = 클라이언트 UI 상태(인스펙터 선택/하이라이트, 트리 확장, 패널 토글, 검색 입력)만 보관.
@@ -15,6 +16,7 @@ interface DriveState {
   mobileLeftOpen: boolean;
   mobileRightOpen: boolean;
   searchQuery: string; // SearchBar 입력값(실행/결과 화면은 URL이 소스)
+  listSort: ListSort; // 목록 정렬(클라 세션 한정, 새로고침 시 기본값으로 초기화)
   uploadProgress: Record<string, number>; // 문서별 업로드 진행률(%) — 클라 세션 한정(frontend.md §10)
 
   selectDocument: (id: string | null) => void;
@@ -30,6 +32,7 @@ interface DriveState {
   setMobileLeft: (open: boolean) => void;
   setMobileRight: (open: boolean) => void;
   setSearchQuery: (q: string) => void;
+  setListSort: (sort: ListSort) => void;
   setUploadProgress: (id: string, pct: number) => void;
   clearUploadProgress: (id: string) => void;
 }
@@ -44,6 +47,7 @@ export const useDriveStore = create<DriveState>((set) => ({
   mobileLeftOpen: false,
   mobileRightOpen: false,
   searchQuery: "",
+  listSort: DEFAULT_LIST_SORT,
   uploadProgress: {},
 
   // 문서 인스펙터 열기(더블클릭/눈) — 다른 인스펙터·하이라이트 해제
@@ -135,6 +139,7 @@ export const useDriveStore = create<DriveState>((set) => ({
   setMobileLeft: (open) => set({ mobileLeftOpen: open }),
   setMobileRight: (open) => set({ mobileRightOpen: open }),
   setSearchQuery: (q) => set({ searchQuery: q }),
+  setListSort: (sort) => set({ listSort: sort }),
   setUploadProgress: (id, pct) =>
     set((s) => ({ uploadProgress: { ...s.uploadProgress, [id]: pct } })),
   clearUploadProgress: (id) =>

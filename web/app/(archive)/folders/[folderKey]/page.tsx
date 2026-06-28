@@ -3,6 +3,7 @@ import { DocumentList } from "@/components/drive/document-list";
 import { makeServerQueryClient } from "@/lib/api/server";
 import { fetchDocumentsPage } from "@/lib/api/documents";
 import { qk } from "@/lib/api/keys";
+import { DEFAULT_LIST_SORT } from "@/lib/types";
 
 // "/folders/{folderKey}" → 해당 폴더. ?doc={id} 딥링크 시 문서 인스펙터 동반. 첫 페이지를 서버에서 시드.
 const FolderPage = async ({
@@ -18,8 +19,9 @@ const FolderPage = async ({
   const qc = makeServerQueryClient();
   try {
     await qc.prefetchInfiniteQuery({
-      queryKey: qk.documents(folderKey),
-      queryFn: ({ pageParam }) => fetchDocumentsPage(folderKey, pageParam),
+      queryKey: qk.documents(folderKey, DEFAULT_LIST_SORT),
+      queryFn: ({ pageParam }) =>
+        fetchDocumentsPage(folderKey, pageParam, DEFAULT_LIST_SORT),
       initialPageParam: null as string | null,
     });
   } catch {

@@ -64,7 +64,7 @@ async def get_session():
 ## 7. API 공통 규약
 
 - 라우트: 복수 명사(`/folders`,`/documents`,`/search`,`/generations`).
-- 페이지네이션: `limit`/`offset` 또는 cursor. 문서 목록은 keyset cursor(불투명 base64 `(created_at, id)`).
+- 페이지네이션: `limit`/`offset` 또는 cursor. 문서 목록은 keyset cursor(불투명 base64). cursor는 정렬 모드(`sort`)와 정렬 키 값(created_at ISO 또는 display_filename)과 `id`를 담아 4종 정렬을 한 토큰 형식으로 처리한다(document-backend §1).
 - 에러: 공통 에러 모델 + 도메인 예외 → 예외 핸들러가 HTTP 매핑. 응답 형태는 `{"error": {code, message, details}}`.
 - 보안: 모든 조회/변경에 `owner_id` 스코프 강제(`WHERE owner_id=:user`).
 - CORS: web 오리진 허용.

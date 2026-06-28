@@ -12,7 +12,7 @@ refs: docs/research/01-mvp-research/04 §2
 
 | 메서드 | 경로                                   | 설명                                                                           |
 | ------ | -------------------------------------- | ------------------------------------------------------------------------------ |
-| GET    | `/documents?folder_id=&limit=&cursor=` | 폴더 내 문서 목록을 페이지네이션으로 조회한다.                                 |
+| GET    | `/documents?folder_id=&limit=&cursor=&sort=` | 폴더 내 문서 목록을 정렬·페이지네이션으로 조회한다.                          |
 | GET    | `/documents/{id}`                      | 문서 상세(`documents` 메타 + `status`/`stage`/`error`)를 조회한다.             |
 | POST   | `/documents`                           | upload init: `uploaded` 행을 생성하고 presigned PUT을 발급한다.                |
 | POST   | `/documents/{id}/complete`             | upload confirm: `stat_object`로 검증하고 `processing` 전이 + 인제스트 enqueue. |
@@ -23,6 +23,7 @@ refs: docs/research/01-mvp-research/04 §2
 
 - 에러: 권한 외 404, 이동 충돌은 폴더 정책 준수, upload confirm 검증 실패 4xx. 모든 쿼리 `owner_id` 강제.
 - PATCH는 보낸 필드만 반영한다(`model_fields_set`). `folder_id=null`은 루트 이동이고, `display_filename`은 현재 파일명만 바꾼다(원본 파일명·AI 메타 보존, document.md §5).
+- 목록 정렬: `sort`는 `newest`/`oldest`/`name_asc`/`name_desc`(기본 `name_asc`)다. enum 밖 값은 422다. `newest`/`oldest`는 `created_at`, `name_*`는 `display_filename`을 정렬 키로 쓰고 `id`를 동점 결정 키로 덧붙인다. keyset cursor는 정렬 키 값을 담아 정렬을 바꿔도 페이지 경계가 정확하다(backend §7). 이 정렬은 문서 목록에만 적용하고 검색(search) 정렬은 바꾸지 않는다.
 
 ## 2. 모듈 흐름
 

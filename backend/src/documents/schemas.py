@@ -1,11 +1,21 @@
 """문서 API 스키마 (document-backend §1·§2)."""
 
 from datetime import datetime
+from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.documents.enums import DocStage, DocStatus
+
+
+class DocumentSort(str, Enum):
+    """문서 목록 정렬(document-backend §1). 폴더 그룹 정렬은 프론트가 같은 기준으로 맞춘다."""
+
+    newest = "newest"  # created_at 내림차순
+    oldest = "oldest"  # created_at 오름차순
+    name_asc = "name_asc"  # display_filename 오름차순(기본)
+    name_desc = "name_desc"  # display_filename 내림차순
 
 
 class UploadInitRequest(BaseModel):

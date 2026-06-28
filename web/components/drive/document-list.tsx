@@ -19,6 +19,7 @@ import {
   Upload,
   Pencil,
   RotateCcw,
+  ArrowDownUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -76,12 +79,31 @@ import { mapDocument } from "@/lib/api/map";
 import { ApiError, errorMessage } from "@/lib/api/client";
 import { folderHref } from "@/lib/routes";
 import { formatBytes, formatDate } from "@/lib/format";
-import type { DocumentItem, Folder } from "@/lib/types";
+import type { DocumentItem, Folder, ListSort } from "@/lib/types";
 
 // Google Drive 식 목록 — 하위 폴더 row + 문서 row 를 한 테이블에 (document-frontend §1).
 type ListRow =
   | { kind: "folder"; id: string; folder: Folder }
   | { kind: "doc"; id: string; doc: DocumentItem };
+
+// 정렬 드롭다운 라벨/순서 — 기본(name_asc)을 맨 위에. 문서는 서버가, 폴더는 아래 compareFolders가 정렬.
+const SORT_LABEL: Record<ListSort, string> = {
+  name_asc: "이름 오름차순",
+  name_desc: "이름 내림차순",
+  newest: "최신순",
+  oldest: "오래된순",
+};
+const SORT_ORDER: ListSort[] = ["name_asc", "name_desc", "newest", "oldest"];
+
+// 폴더 그룹 클라 정렬. 이름순은 한국어 로케일, 시간순은 createdAt(없으면 항상 뒤로).
+const compareFolders = (a: Folder, b: Folder, sort: ListSort) => {
+  if (sort === "name_asc") return a.name.localeCompare(b.name, "ko");
+  if (sort === "name_desc") return b.name.localeCompare(a.name, "ko");
+  const av = a.createdAt ?? "";
+  const bv = b.createdAt ?? "";
+  if (!av || !bv) return av === bv ? 0 : av ? -1 : 1;
+  return sort === "oldest" ? av.localeCompare(bv) : bv.localeCompare(av);
+};
 
 export const DocumentList = ({
   folderId,
@@ -94,7 +116,9 @@ export const DocumentList = ({
   // 모바일(<md)에선 제목 리사이즈 비활성 — 제목·행 버튼이 한 화면에 들어오도록 축소(shrink) 유지.
   const isMobile = useIsMobile();
   const { data: folders = [] } = useFolders();
-  const docsQuery = useDocuments(folderId);
+  const listSort = useDriveStore((s) => s.listSort);
+  const setListSort = useDriveStore((s) => s.setListSort);
+  const docsQuery = useDocuments(folderId, listSort);
   const deleteDoc = useDeleteDocument();
   const renameDoc = useRenameDocument(folderId);
   const retryDoc = useRetryDocument(folderId);
@@ -126,7 +150,8 @@ export const DocumentList = ({
 
   const { onAction, dialogs } = useFolderActions();
   // 빈 목록 우클릭 → 폴더 추가/파일 추가 (헤더 메뉴와 동일 로직, frontend.md §10)
-  const { openFilePicker, openNewFolder, elements } =
+  // onDragOver/onDrop → 목록에 파일을 끌어다 놓아 현재 폴더로 업로드(별도 드롭 UI 없음).
+  const { openFilePicker, openNewFolder, onDragOver, onDrop, elements } =
     useArchiveActions(folderId);
 
   const folderName = folders.find((f) => f.id === folderId)?.name ?? "폴더";
@@ -137,16 +162,17 @@ export const DocumentList = ({
     [docsQuery.data],
   );
 
-  // 폴더 먼저, 문서 다음 (Drive 정렬)
+  // 폴더 먼저, 문서 다음 (Drive 정렬). 그룹 내부만 정렬: 폴더는 클라, 문서는 서버 keyset 순서 유지.
   const rows = React.useMemo<ListRow[]>(() => {
     const sub = folders
       .filter((f) => f.parentId === folderId)
+      .sort((a, b) => compareFolders(a, b, listSort))
       .map((f) => ({ kind: "folder", id: f.id, folder: f }) as const);
     const docRows = docs.map(
       (d) => ({ kind: "doc", id: d.id, doc: d }) as const,
     );
     return [...sub, ...docRows];
-  }, [folders, docs, folderId]);
+  }, [folders, docs, folderId, listSort]);
 
   // 문서 작업 핸들러 — 다운로드(presigned GET)·삭제.
   const onDownload = (id: string) =>
@@ -354,16 +380,47 @@ export const DocumentList = ({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-4 py-2.5 sm:px-6">
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
         <h2 className="truncate text-sm font-semibold">{folderName}</h2>
-        <span className="text-xs text-muted-foreground">{docCount}개 문서</span>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="text-xs text-muted-foreground">{docCount}개 문서</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                aria-label="정렬"
+              >
+                <ArrowDownUp className="size-3.5" />
+                <span className="hidden sm:inline">{SORT_LABEL[listSort]}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup
+                value={listSort}
+                onValueChange={(v) => setListSort(v as ListSort)}
+              >
+                {SORT_ORDER.map((s) => (
+                  <DropdownMenuRadioItem key={s} value={s}>
+                    {SORT_LABEL[s]}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* 배경(행 밖·빈 영역) 우클릭/롱프레스 → 폴더/파일 추가. ScrollArea 전체를
           트리거로 감싸 행 아래 빈 공간까지 포함(행 메뉴는 Radix 중첩으로 격리). */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div
+            className="flex min-h-0 flex-1 flex-col"
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+          >
             <ScrollArea className="min-h-0 flex-1">
               {docsQuery.isLoading ? (
                 <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
