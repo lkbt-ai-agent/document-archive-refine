@@ -78,11 +78,6 @@ const CITES: Cite[] = [
   },
 ];
 
-// 깜빡이는 텍스트 커서(첫 토큰 후 생성 중 신호).
-const Caret = () => (
-  <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-foreground align-middle" />
-);
-
 const WaitingCard = () => (
   <div className="rounded-lg border bg-muted/30 p-4" role="status" aria-live="polite">
     <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
@@ -118,10 +113,9 @@ const StreamingCard = () => (
   <div className="rounded-lg border bg-muted/30 p-4" role="status" aria-live="polite">
     <div className="flex items-start gap-2">
       <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
-      {/* 스트리밍 중에도 같은 마크다운 뷰어로 부분 마크다운을 렌더 + 끝에 커서 */}
+      {/* 스트리밍 중에도 같은 마크다운 뷰어로 부분 마크다운을 렌더, 커서는 마지막 토큰 뒤 인라인 */}
       <div className="min-w-0 flex-1">
-        <MarkdownView>{PARTIAL}</MarkdownView>
-        <Caret />
+        <MarkdownView streaming>{PARTIAL}</MarkdownView>
       </div>
     </div>
   </div>

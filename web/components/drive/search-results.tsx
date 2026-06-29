@@ -523,11 +523,6 @@ const RagAnswer = ({
   );
 };
 
-// 생성 중 신호용 깜빡이는 텍스트 커서.
-const Caret = () => (
-  <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-foreground align-middle" />
-);
-
 // 대기(TTFT, 첫 토큰 전) — 빈 화면 대신 답변 형태 스켈레톤 + 진행 단계 표시.
 const RagWaiting = () => (
   <div
@@ -600,10 +595,10 @@ const RagStream = ({
           aria-live="polite"
         >
           <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
-          {/* 스트리밍 중에도 완료와 같은 마크다운 뷰어로 부분 마크다운을 렌더 + 끝에 커서 */}
+          {/* 스트리밍 중에도 완료와 같은 마크다운 뷰어로 부분 마크다운을 렌더하고,
+              커서는 마지막 토큰 바로 뒤(인라인)에 오도록 뷰어 내부에서 그린다(streaming). */}
           <div className="min-w-0 flex-1">
-            <MarkdownView>{ask.text}</MarkdownView>
-            <Caret />
+            <MarkdownView streaming>{ask.text}</MarkdownView>
           </div>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={ask.stop}>

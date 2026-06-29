@@ -8,14 +8,26 @@ import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 
-// 인용 표식은 `[n]`을 `[n](#cite-n)` 링크로 전처리해 넘긴다(linkifyCitations). 그 링크를 가로채
-// 클릭 가능한 배지로 렌더한다. onCitationClick이 없으면 일반 마크다운으로 렌더한다.
-const citationComponents = (
-  onCitationClick: (n: number) => void,
+// 스트리밍 커서를 마지막 토큰 바로 뒤(인라인)에 두려고, 텍스트 끝에 이 링크 마커를 붙여
+// 마지막 인라인 위치에 렌더한 뒤 a 렌더에서 깜빡이는 커서로 바꾼다(블록 밖 형제로 두면 새 줄로 떨어진다).
+const CARET_HREF = "#__caret__";
+
+// a 렌더 오버라이드: #__caret__ 은 깜빡이는 커서, #cite-n 은 클릭 인용 배지, 그 외는 일반 링크.
+// 인용 표식은 `[n]`을 `[n](#cite-n)` 링크로 전처리해 넘긴다(linkifyCitations).
+const buildComponents = (
+  onCitationClick?: (n: number) => void,
 ): Components => ({
   a({ href, children }) {
+    if (href === CARET_HREF) {
+      return (
+        <span
+          aria-hidden
+          className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-foreground align-middle"
+        />
+      );
+    }
     const m = /^#cite-(\d+)$/.exec(href ?? "");
-    if (m) {
+    if (m && onCitationClick) {
       const n = Number(m[1]);
       return (
         <button
@@ -39,10 +51,12 @@ export const MarkdownView = ({
   children,
   className,
   onCitationClick,
+  streaming,
 }: {
   children: string;
   className?: string;
   onCitationClick?: (n: number) => void;
+  streaming?: boolean;
 }) => (
   <div
     className={cn(
@@ -62,9 +76,9 @@ export const MarkdownView = ({
   >
     <Markdown
       remarkPlugins={[remarkGfm]}
-      components={onCitationClick ? citationComponents(onCitationClick) : undefined}
+      components={onCitationClick || streaming ? buildComponents(onCitationClick) : undefined}
     >
-      {children}
+      {streaming ? `${children}[c](${CARET_HREF})` : children}
     </Markdown>
   </div>
 );

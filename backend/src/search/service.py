@@ -44,6 +44,8 @@ _RAG_SYSTEM = (
     "모든 문장 끝에 근거가 된 컨텍스트 번호를 [n] 형식으로 표기한다."
 )
 _CITATION_RE = re.compile(r"\[(\d+)\]")
+# 델타 끝의 미완성 인용 조각(`[`, `[1`, `[12` 등). 다음 델타와 합쳐 처리하려 보류한다.
+_PARTIAL_CITATION_RE = re.compile(r"\[\d*$")
 # 남은 예산이 이보다 적으면 청크를 잘라 담지 않는다(의미 없는 조각 방지).
 _MIN_TRUNCATED_TOKENS = 64
 # 잘린 청크 끝에 붙이는 생략 표시(" …")가 차지하는 토큰을 예산에서 미리 뺀다.
@@ -58,6 +60,46 @@ def _elapsed_ms(start: float) -> int:
 def _sse(obj: dict) -> str:
     """SSE 한 이벤트로 직렬화. 한국어 보존 위해 ensure_ascii=False."""
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+
+
+class _StreamingCitationRemapper:
+    """스트리밍 델타의 `[n]`을 첫 등장 순서로 1..N 증분 재번호한다.
+
+    재번호 규칙이 `_finalize_citations`와 같은 '첫 등장 순서'라, 도착하는 대로 번호를 매기면
+    최종 답변과 동일한 번호가 나와 완료 시 번호가 튀지 않는다. `[n]`이 델타 경계로 쪼개질 수
+    있어 끝의 미완성 `[...` 조각은 버퍼에 보류했다가 다음 델타와 합쳐 처리하고, 스트림 종료 시
+    `flush`로 남은 버퍼를 비운다. 매핑에 없는 번호(환각)는 그대로 두어 `_finalize_citations`와
+    동작을 맞춘다.
+    """
+
+    def __init__(self, mapping: dict[int, dict]) -> None:
+        self._mapping = mapping
+        self._remap: dict[int, int] = {}
+        self._buf = ""
+
+    def push(self, delta: str) -> str:
+        self._buf += delta
+        m = _PARTIAL_CITATION_RE.search(self._buf)
+        if m:
+            ready, self._buf = self._buf[: m.start()], self._buf[m.start() :]
+        else:
+            ready, self._buf = self._buf, ""
+        return self._remap_text(ready)
+
+    def flush(self) -> str:
+        ready, self._buf = self._buf, ""
+        return self._remap_text(ready)
+
+    def _remap_text(self, text: str) -> str:
+        def repl(m: re.Match[str]) -> str:
+            n = int(m.group(1))
+            if n not in self._mapping:
+                return m.group(0)
+            if n not in self._remap:
+                self._remap[n] = len(self._remap) + 1
+            return f"[{self._remap[n]}]"
+
+        return _CITATION_RE.sub(repl, text)
 
 
 class SearchService:
@@ -148,9 +190,10 @@ class SearchService:
     async def ask_stream(self, owner_id: UUID, req: AskRequest) -> AsyncIterator[str]:
         """RAG 답변을 SSE로 스트리밍한다(search-backend §5).
 
-        파싱·임베딩·검색을 먼저 끝낸 뒤 생성 토큰을 `delta` 이벤트로 흘려보낸다. 생성 완료 후
-        전체 답변으로 인용을 재번호·근거 본문과 함께 만들어 `done` 이벤트로 확정한다. 진행 중에는
-        원 번호가 보이고 done에서 재번호된 최종 답변으로 교체한다(번호 흔들림 최소화).
+        파싱·임베딩·검색을 먼저 끝낸 뒤 생성 토큰을 `delta` 이벤트로 흘려보낸다. 델타의 `[n]`은
+        도착 순서대로 1..N로 증분 재번호해 흘려보내, done에서 확정되는 최종 번호와 같아 번호가
+        튀지 않는다(`_StreamingCitationRemapper`). 생성 완료 후 전체 답변으로 인용을 재번호·근거
+        본문과 함께 만들어 `done` 이벤트로 확정한다.
         """
         start = time.monotonic()
         query, rows = await self._retrieve(owner_id, req)
@@ -162,13 +205,19 @@ class SearchService:
         context, mapping = await self._assemble_context(query, rows)
         prompt = f"컨텍스트:\n{context}\n\n질문: {query}"
         parts: list[str] = []
+        remapper = _StreamingCitationRemapper(mapping)
         async for delta in get_llm_client().generate_stream(
             system=_RAG_SYSTEM,
             prompt=prompt,
             params=DecodeParams(temperature=0.2, max_tokens=settings.rag_max_tokens),
         ):
             parts.append(delta)
-            yield _sse({"type": "delta", "text": delta})
+            ready = remapper.push(delta)
+            if ready:
+                yield _sse({"type": "delta", "text": ready})
+        tail = remapper.flush()
+        if tail:
+            yield _sse({"type": "delta", "text": tail})
         answer, citations = self._finalize_citations("".join(parts).strip(), mapping)
         yield _sse(
             {
