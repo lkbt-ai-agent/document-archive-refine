@@ -5,9 +5,11 @@
 컨텍스트를 조립하고 인용을 강제 생성한다.
 """
 
+import json
 import logging
 import re
 import time
+from collections.abc import AsyncIterator
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,6 +53,11 @@ _TRUNCATE_SUFFIX_TOKENS = 4
 
 def _elapsed_ms(start: float) -> int:
     return int((time.monotonic() - start) * 1000)
+
+
+def _sse(obj: dict) -> str:
+    """SSE 한 이벤트로 직렬화. 한국어 보존 위해 ensure_ascii=False."""
+    return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
 
 
 class SearchService:
@@ -101,24 +108,24 @@ class SearchService:
             logger.warning("질의 파싱 실패, 원문 사용: %s", exc)
             return None
 
-    async def ask(self, owner_id: UUID, req: AskRequest) -> AskResponse:
-        start = time.monotonic()
+    async def _retrieve(self, owner_id: UUID, req: AskRequest) -> tuple[str, list[dict]]:
+        """질의 파싱·임베딩·의미 검색까지 수행해 (검색용 질의, 청크 행)을 돌려준다."""
         parsed = await self._parse_query(req.q)
         query = parsed.rewritten_query if parsed and parsed.rewritten_query else req.q
-
         date_from, date_to = req.filters.date_from, req.filters.date_to
         if parsed and parsed.time_ref:
             rf, rt = resolve_time(parsed.time_ref)
             date_from, date_to = rf or date_from, rt or date_to
-
         qv = (await get_embedding_client().embed([query]))[0]
         rows = await self.repo.semantic(
             owner_id, qv, req.k, req.filters.folder_id, date_from, date_to
         )
-        if not rows:
-            return AskResponse(answer="찾을 수 없습니다.", citations=[], elapsed_ms=_elapsed_ms(start))
+        return query, rows
 
-        # 컨텍스트 토큰 예산 = 슬롯 컨텍스트 - 출력 상한 - 시스템 - 질문 - 안전 여유 (lesson 05).
+    async def _assemble_context(
+        self, query: str, rows: list[dict]
+    ) -> tuple[str, dict[int, dict]]:
+        """컨텍스트 토큰 예산을 계산해 청크를 예산만큼만 담는다 (lesson 05)."""
         reserved = await count_chat_tokens(_RAG_SYSTEM) + await count_chat_tokens(query)
         budget = (
             settings.llama_chat_ctx_per_slot
@@ -126,22 +133,64 @@ class SearchService:
             - settings.rag_ctx_margin
             - reserved
         )
-        context, mapping = await self._build_context(rows, budget)
+        return await self._build_context(rows, budget)
+
+    async def ask(self, owner_id: UUID, req: AskRequest) -> AskResponse:
+        start = time.monotonic()
+        query, rows = await self._retrieve(owner_id, req)
+        if not rows:
+            return AskResponse(answer="찾을 수 없습니다.", citations=[], elapsed_ms=_elapsed_ms(start))
+        context, mapping = await self._assemble_context(query, rows)
         answer = await self._generate(query, context)
-        citations = self._citations(answer, mapping)
+        answer, citations = self._finalize_citations(answer, mapping)
         return AskResponse(answer=answer, citations=citations, elapsed_ms=_elapsed_ms(start))
+
+    async def ask_stream(self, owner_id: UUID, req: AskRequest) -> AsyncIterator[str]:
+        """RAG 답변을 SSE로 스트리밍한다(search-backend §5).
+
+        파싱·임베딩·검색을 먼저 끝낸 뒤 생성 토큰을 `delta` 이벤트로 흘려보낸다. 생성 완료 후
+        전체 답변으로 인용을 재번호·근거 본문과 함께 만들어 `done` 이벤트로 확정한다. 진행 중에는
+        원 번호가 보이고 done에서 재번호된 최종 답변으로 교체한다(번호 흔들림 최소화).
+        """
+        start = time.monotonic()
+        query, rows = await self._retrieve(owner_id, req)
+        if not rows:
+            yield _sse(
+                {"type": "done", "answer": "찾을 수 없습니다.", "citations": [], "elapsed_ms": _elapsed_ms(start)}
+            )
+            return
+        context, mapping = await self._assemble_context(query, rows)
+        prompt = f"컨텍스트:\n{context}\n\n질문: {query}"
+        parts: list[str] = []
+        async for delta in get_llm_client().generate_stream(
+            system=_RAG_SYSTEM,
+            prompt=prompt,
+            params=DecodeParams(temperature=0.2, max_tokens=settings.rag_max_tokens),
+        ):
+            parts.append(delta)
+            yield _sse({"type": "delta", "text": delta})
+        answer, citations = self._finalize_citations("".join(parts).strip(), mapping)
+        yield _sse(
+            {
+                "type": "done",
+                "answer": answer,
+                "citations": [c.model_dump(mode="json") for c in citations],
+                "elapsed_ms": _elapsed_ms(start),
+            }
+        )
 
     async def _build_context(
         self, rows: list[dict], budget: int
-    ) -> tuple[str, dict[int, tuple[UUID, UUID]]]:
-        """컨텍스트 조립 + [n]↔chunk 매핑 저장 (search-and-rag §4-4).
+    ) -> tuple[str, dict[int, dict]]:
+        """컨텍스트 조립 + [n]↔청크 매핑 저장 (search-and-rag §4-4).
 
         토큰 예산 안에서 청크를 순서대로 담는다. 누적이 예산을 넘으면 멈추고, 단독으로 예산을
         넘는 청크는 남은 예산만큼 잘라 담아 최소 한 청크를 보장한다(lesson 05). 매핑에는 실제로
-        담은 청크만 남겨 인용 번호가 어긋나지 않게 한다.
+        담은 청크만 남겨 인용 번호가 어긋나지 않게 하며, 인용 근거 표시용으로 원본 청크 본문을
+        함께 보관한다(잘라 담아도 근거는 전체 본문을 보여준다, search-backend §5).
         """
         blocks: list[str] = []
-        mapping: dict[int, tuple[UUID, UUID]] = {}
+        mapping: dict[int, dict] = {}
         used = 0
         for r in rows:
             i = len(blocks) + 1
@@ -152,7 +201,7 @@ class SearchService:
             tokens = await count_chat_tokens(full)
             if used + tokens <= budget:
                 blocks.append(full)
-                mapping[i] = (r["chunk_id"], r["document_id"])
+                mapping[i] = r
                 used += tokens
                 continue
             # 예산 초과 청크: 남은 예산만큼 잘라 담고 종료(첫 청크면 예산 전체를 허용).
@@ -163,7 +212,7 @@ class SearchService:
             if body_budget >= _MIN_TRUNCATED_TOKENS:
                 body = await fit_text_to_tokens(r["content"], body_budget)
                 blocks.append(header + body + _TRUNCATE_SUFFIX)
-                mapping[i] = (r["chunk_id"], r["document_id"])
+                mapping[i] = r
             break
         return "\n\n".join(blocks), mapping
 
@@ -177,11 +226,34 @@ class SearchService:
         return result.text.strip()
 
     @staticmethod
-    def _citations(answer: str, mapping: dict[int, tuple[UUID, UUID]]) -> list[Citation]:
-        seen = sorted({int(n) for n in _CITATION_RE.findall(answer)})
-        out = []
-        for n in seen:
-            if n in mapping:
-                chunk_id, document_id = mapping[n]
-                out.append(Citation(n=n, chunk_id=chunk_id, document_id=document_id))
-        return out
+    def _finalize_citations(
+        answer: str, mapping: dict[int, dict]
+    ) -> tuple[str, list[Citation]]:
+        """인용 번호를 1부터 다시 매기고 근거 본문을 채운다 (search-backend §5).
+
+        컨텍스트 번호 n은 검색 순위 위치라 모델이 일부만 인용하면 3, 5처럼 보인다. 답변에서 실제
+        인용된 번호를 첫 등장 순서로 모아 1..N으로 remap하고, 답변 텍스트의 `[n]`과 citations의
+        n을 같은 매핑으로 함께 바꾼다. 인용되지 않은 청크는 제외한다.
+        """
+        order: list[int] = []
+        seen: set[int] = set()
+        for m in _CITATION_RE.finditer(answer):
+            n = int(m.group(1))
+            if n not in seen and n in mapping:
+                seen.add(n)
+                order.append(n)
+        remap = {old: new for new, old in enumerate(order, start=1)}
+        new_answer = _CITATION_RE.sub(
+            lambda m: f"[{remap[int(m.group(1))]}]" if int(m.group(1)) in remap else m.group(0),
+            answer,
+        )
+        citations = [
+            Citation(
+                n=remap[old],
+                chunk_id=mapping[old]["chunk_id"],
+                document_id=mapping[old]["document_id"],
+                content=mapping[old]["content"],
+            )
+            for old in order
+        ]
+        return new_answer, citations

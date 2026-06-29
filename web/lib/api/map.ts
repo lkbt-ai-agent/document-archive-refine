@@ -71,6 +71,7 @@ export const mapCitation = (c: CitationDTO): Citation => ({
   n: c.n,
   chunkId: c.chunk_id,
   documentId: c.document_id,
+  content: c.content,
 });
 
 export const mapAskCitations = (res: AskResponseDTO): Citation[] =>

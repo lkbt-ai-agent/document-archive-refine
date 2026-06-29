@@ -4,6 +4,8 @@ MVP는 인터페이스만 정의하고 실구현은 제외한다. `LLM_PROVIDER=
 명시적 NotImplementedError를 던져, 추후 실구현 위치를 못박는다.
 """
 
+from collections.abc import AsyncIterator
+
 from src.ai.provider import LLMClient
 from src.ai.schemas import DecodeParams, LLMResult
 
@@ -17,6 +19,13 @@ class BedrockLLM(LLMClient):
         params: DecodeParams,
         json_schema: dict | None = None,
     ) -> LLMResult:
+        raise NotImplementedError(
+            "BedrockLLM은 MVP 범위 밖(인터페이스만). 실구현은 추후 (backend.md §12)."
+        )
+
+    def generate_stream(
+        self, *, system: str, prompt: str, params: DecodeParams
+    ) -> AsyncIterator[str]:
         raise NotImplementedError(
             "BedrockLLM은 MVP 범위 밖(인터페이스만). 실구현은 추후 (backend.md §12)."
         )

@@ -4,6 +4,7 @@
 (차원 lock-in)이라 llama만 허용한다.
 """
 
+from collections.abc import AsyncIterator
 from typing import Protocol
 
 from src.ai.schemas import DecodeParams, LLMResult
@@ -19,6 +20,12 @@ class LLMClient(Protocol):
         params: DecodeParams,
         json_schema: dict | None = None,
     ) -> LLMResult: ...
+
+    def generate_stream(
+        self, *, system: str, prompt: str, params: DecodeParams
+    ) -> AsyncIterator[str]:
+        """생성 텍스트 델타를 차례로 흘려보낸다(RAG 스트리밍, search-backend §5)."""
+        ...
 
 
 class EmbeddingClient(Protocol):

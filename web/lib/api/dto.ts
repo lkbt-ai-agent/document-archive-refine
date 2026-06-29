@@ -71,6 +71,7 @@ export interface CitationDTO {
   n: number;
   chunk_id: string;
   document_id: string;
+  content: string;
 }
 
 export interface AskResponseDTO {

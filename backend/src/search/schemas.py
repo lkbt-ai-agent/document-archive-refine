@@ -43,6 +43,7 @@ class Citation(BaseModel):
     n: int
     chunk_id: UUID
     document_id: UUID
+    content: str  # 인용 근거 청크 본문(왜 이 문서를 인용했는지, search-backend §5)
 
 
 class AskRequest(BaseModel):

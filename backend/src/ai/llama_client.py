@@ -5,6 +5,9 @@
 - LlamaCppEmbedding: 임베딩 서버(:8081) `/v1/embeddings`. KURE-v1 1024d 고정.
 """
 
+import json
+from collections.abc import AsyncIterator
+
 import httpx
 
 from src.ai.provider import EmbeddingClient, LLMClient
@@ -64,6 +67,41 @@ class LlamaCppLLM(LLMClient):
             model=data.get("model"),
             raw=data,
         )
+
+    async def generate_stream(
+        self, *, system: str, prompt: str, params: DecodeParams
+    ) -> AsyncIterator[str]:
+        """`stream=true`로 SSE 델타를 받아 본문 조각을 차례로 내보낸다(json_schema 미지원)."""
+        payload: dict = {
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": params.temperature,
+            "top_p": params.top_p,
+            "top_k": params.top_k,
+            "max_tokens": params.max_tokens,
+            "stream": True,
+        }
+        if params.seed is not None:
+            payload["seed"] = params.seed
+        if params.extra:
+            payload.update(params.extra)
+
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            async with client.stream(
+                "POST", f"{self.base_url}/v1/chat/completions", json=payload
+            ) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[len("data:") :].strip()
+                    if not data or data == "[DONE]":
+                        continue
+                    delta = json.loads(data)["choices"][0].get("delta", {}).get("content")
+                    if delta:
+                        yield delta
 
 
 class LlamaCppEmbedding(EmbeddingClient):

@@ -79,6 +79,7 @@ export interface Citation {
   n: number;
   chunkId: string;
   documentId: string;
+  content: string; // 인용 근거 청크 본문(search-backend §5)
 }
 
 // 산출물 계보(GET /generations/{id}/lineage) — LineageView 표시용.
