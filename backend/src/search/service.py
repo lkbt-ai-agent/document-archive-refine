@@ -103,8 +103,33 @@ class _StreamingCitationRemapper:
 
 
 class SearchService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        *,
+        query_rewrite: bool = True,
+        title_match: bool = True,
+        rag_temperature: float = 0.2,
+        rag_seed: int | None = None,
+    ) -> None:
+        """평가용 옵션은 키워드 인자로 주입한다. 기본값은 운영 동작과 같다(search-and-rag §4, ablation).
+
+        query_rewrite: 끄면 질의 해석(재작성·기간 추출)을 건너뛰고 원 질의를 그대로 검색한다.
+        title_match: 제목 매칭 토글. 로직 자체는 별도 과제라 지금은 config 기록용 자리다.
+        rag_temperature·rag_seed: 결정적 평가를 위해 온도 0·고정 시드를 주입할 수 있다.
+        """
         self.repo = SearchRepository(session)
+        self._query_rewrite = query_rewrite
+        self._title_match = title_match
+        self._rag_temperature = rag_temperature
+        self._rag_seed = rag_seed
+
+    def _rag_params(self) -> DecodeParams:
+        return DecodeParams(
+            temperature=self._rag_temperature,
+            seed=self._rag_seed,
+            max_tokens=settings.rag_max_tokens,
+        )
 
     async def search(self, owner_id: UUID, req: SearchRequest) -> SearchResponse:
         start = time.monotonic()
@@ -152,7 +177,7 @@ class SearchService:
 
     async def _retrieve(self, owner_id: UUID, req: AskRequest) -> tuple[str, list[dict]]:
         """질의 파싱·임베딩·의미 검색까지 수행해 (검색용 질의, 청크 행)을 돌려준다."""
-        parsed = await self._parse_query(req.q)
+        parsed = await self._parse_query(req.q) if self._query_rewrite else None
         query = parsed.rewritten_query if parsed and parsed.rewritten_query else req.q
         date_from, date_to = req.filters.date_from, req.filters.date_to
         if parsed and parsed.time_ref:
@@ -209,7 +234,7 @@ class SearchService:
         async for delta in get_llm_client().generate_stream(
             system=_RAG_SYSTEM,
             prompt=prompt,
-            params=DecodeParams(temperature=0.2, max_tokens=settings.rag_max_tokens),
+            params=self._rag_params(),
         ):
             parts.append(delta)
             ready = remapper.push(delta)
@@ -270,7 +295,7 @@ class SearchService:
         result = await get_llm_client().generate(
             system=_RAG_SYSTEM,
             prompt=prompt,
-            params=DecodeParams(temperature=0.2, max_tokens=settings.rag_max_tokens),
+            params=self._rag_params(),
         )
         return result.text.strip()
 

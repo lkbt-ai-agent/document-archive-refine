@@ -1,0 +1,1379 @@
+{
+  "run_id": "20260705T165354-2022d1a",
+  "git_sha": "2022d1a",
+  "created_at": "2026-07-05T16:53:54.706280+00:00",
+  "config": {
+    "query_rewrite": true,
+    "title_match": true,
+    "name": "baseline"
+  },
+  "aggregate": {
+    "n_cases": 67,
+    "n_error": 0,
+    "pass_rate": 0.8955,
+    "recall_at_5": 0.9348,
+    "recall_at_20": 0.9783,
+    "mean_rank": 1.6,
+    "retrieval_found": "45/46",
+    "mean_coverage_at_20": 0.971,
+    "citation_rate": 0.8333,
+    "citation_correct_rate": 0.7778,
+    "rejection_rate": 1.0,
+    "by_mode": {
+      "keyword": 0.8889,
+      "semantic": 0.9459,
+      "rag": 0.8095
+    },
+    "by_failure_mode": {
+      "F1": 0.8929,
+      "F2": 1.0,
+      "F3": 0.4,
+      "F4": 1.0,
+      "F5": 0.8,
+      "F6": 1.0,
+      "F7": 1.0
+    }
+  },
+  "cases": [
+    {
+      "id": "F1-selfrely-001",
+      "mode": "keyword",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-gochang-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-jangsu-001",
+      "mode": "keyword",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "easy",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-elderwelfare-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 3,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F2-multichild-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 3,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 0.6666666666666666,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F2-smartfactory-001",
+      "mode": "keyword",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 4,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F2-cbam-001",
+      "mode": "keyword",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F2-eardream-001",
+      "mode": "keyword",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F2-methanol-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F3-daejeon-time-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F3"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "fail",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": false,
+      "citation_correct": false,
+      "rejected": true,
+      "note": ""
+    },
+    {
+      "id": "F3-daejeon-plain-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F3"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "F3-loan-time-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F3"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "fail",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": false,
+      "citation_correct": false,
+      "rejected": true,
+      "note": ""
+    },
+    {
+      "id": "F3-loan-plain-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F3"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "F4-gyeongnam-happy-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F4"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 5,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "F4-yangsan-happy-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F4"
+      ],
+      "difficulty": "easy",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "F4-jeonbuk-yeonggu-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F4"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 4,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "F4-gangwon-gukmin-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F4"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 4,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "F4-gyeongnam-happy-pair-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F4"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "F5-loan-spacing-001",
+      "mode": "keyword",
+      "persona": "사내",
+      "failure_modes": [
+        "F5"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "fail",
+      "answer_rank": null,
+      "hit_at_5": false,
+      "hit_at_20": false,
+      "coverage_at_20": 0.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F5-loan-synonym-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F5"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F5-sogongin-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F5"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F5-smartfactory-spacing-001",
+      "mode": "keyword",
+      "persona": "사내",
+      "failure_modes": [
+        "F5"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 4,
+      "status": "pass",
+      "answer_rank": 4,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F6-semiconductor-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F6"
+      ],
+      "difficulty": "hard",
+      "expected_reject": true,
+      "answer_count": 0,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": false,
+      "citation_correct": null,
+      "rejected": true,
+      "note": ""
+    },
+    {
+      "id": "F6-realestate-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F6"
+      ],
+      "difficulty": "hard",
+      "expected_reject": true,
+      "answer_count": 0,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": false,
+      "citation_correct": null,
+      "rejected": true,
+      "note": ""
+    },
+    {
+      "id": "F6-farming-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F6"
+      ],
+      "difficulty": "medium",
+      "expected_reject": true,
+      "answer_count": 0,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": false,
+      "citation_correct": null,
+      "rejected": true,
+      "note": ""
+    },
+    {
+      "id": "F7-insurance-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F7"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F7-daejeon-happy-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F7"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F7-bizcard-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F7"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F7-baeknyeon-new-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F7"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 2,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-defense-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F2-bio-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 2,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-kbeauty-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-law-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "easy",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-region-commerce-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "easy",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F2-voucher-hire-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-logistics-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-gimpo-bunyang-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F4-chungnam-happy-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F4"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 6,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "F2-elder-buy-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F7-happy-gwangju-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F7"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-ddeun-jeonse-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 4,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F3-happy-time-001",
+      "mode": "rag",
+      "persona": "개인",
+      "failure_modes": [
+        "F3"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "fail",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": false,
+      "citation_correct": false,
+      "rejected": true,
+      "note": ""
+    },
+    {
+      "id": "F5-happy-spacing-001",
+      "mode": "keyword",
+      "persona": "개인",
+      "failure_modes": [
+        "F5"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F2-startup-ai-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "F1-jangsu-life-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 2,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "R-gwangju-happy-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F7"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 6,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "R-daegu-happy-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F7"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 3,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "R-innovation-voucher-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F7"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 3,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-loan-amount-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "fail",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": false,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "BF-loan-term-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-insurance-ratio-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "BF-insurance-grade1-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "BF-bizcard-limit-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "BF-cbam-ratio-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "BF-voucher-hire-ratio-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-elder-convert-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 2,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-insurance-eligible-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "BF-sogongin-eligible-001",
+      "mode": "rag",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": null,
+      "hit_at_5": null,
+      "hit_at_20": null,
+      "coverage_at_20": null,
+      "citation_present": true,
+      "citation_correct": true,
+      "rejected": false,
+      "note": ""
+    },
+    {
+      "id": "BF-daejeon-residency-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "fail",
+      "answer_rank": 11,
+      "hit_at_5": false,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-dajanyeo-eligible-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-yangsan-deadline-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-sogongin-deadline-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 2,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-cbam-deadline-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F2"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-yangsan-announce-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-eardream-reserve-001",
+      "mode": "semantic",
+      "persona": "사내",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "hard",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-daejeon-area-001",
+      "mode": "semantic",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "fail",
+      "answer_rank": 8,
+      "hit_at_5": false,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    },
+    {
+      "id": "BF-sillim-pyeong-001",
+      "mode": "keyword",
+      "persona": "개인",
+      "failure_modes": [
+        "F1"
+      ],
+      "difficulty": "medium",
+      "expected_reject": false,
+      "answer_count": 1,
+      "status": "pass",
+      "answer_rank": 1,
+      "hit_at_5": true,
+      "hit_at_20": true,
+      "coverage_at_20": 1.0,
+      "citation_present": null,
+      "citation_correct": null,
+      "rejected": null,
+      "note": ""
+    }
+  ]
+}
