@@ -63,5 +63,4 @@ class QueryParse(BaseModel):
 
     rewritten_query: str = Field(description="검색에 적합하게 재작성한 질의")
     keywords: list[str] = Field(description="핵심 키워드")
-    time_ref: str | None = Field(default=None, description="기간 표현(예: 작년, 지난달). 없으면 null")
     folder: str | None = Field(default=None, description="폴더명 힌트. 없으면 null")

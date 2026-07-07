@@ -19,7 +19,7 @@ from src.ai.schemas import DecodeParams
 from src.ai.structured import generate_structured
 from src.ai.tokenize import count_chat_tokens, fit_text_to_tokens
 from src.config import settings
-from src.search.dates import resolve_time
+from src.search.dates import extract_time_ref, resolve_time
 from src.search.repository import SearchRepository
 from src.search.schemas import (
     AskRequest,
@@ -34,8 +34,8 @@ from src.search.schemas import (
 logger = logging.getLogger("mechive.search")
 
 _PARSE_SYSTEM = (
-    "너는 한국어 검색 질의 분석기다. 사용자 질문에서 재작성 질의, 키워드, 기간 표현, "
-    "폴더 힌트를 추출해 JSON으로만 출력한다."
+    "너는 한국어 검색 질의 분석기다. 사용자 질문에서 재작성 질의, 키워드, "
+    "폴더 힌트를 추출해 JSON으로만 출력한다. 재작성 질의에 원문에 없는 날짜나 연도를 넣지 않는다."
 )
 # 인용·환각 억제 (search-and-rag §6). 주입 순서: 시스템 → 컨텍스트 → 질문.
 _RAG_SYSTEM = (
@@ -176,13 +176,19 @@ class SearchService:
             return None
 
     async def _retrieve(self, owner_id: UUID, req: AskRequest) -> tuple[str, list[dict]]:
-        """질의 파싱·임베딩·의미 검색까지 수행해 (검색용 질의, 청크 행)을 돌려준다."""
-        parsed = await self._parse_query(req.q) if self._query_rewrite else None
-        query = parsed.rewritten_query if parsed and parsed.rewritten_query else req.q
+        """질의 파싱·임베딩·의미 검색까지 수행해 (검색용 질의, 청크 행)을 돌려준다.
+
+        상대·절대 기간은 코드로 추출·환산하고(plan 15), 그 표현을 뺀 잔여 질의만 재작성·임베딩에 쓴다.
+        LLM은 날짜를 건드리지 않아 연도 환각으로 임베딩과 필터가 오염되지 않는다.
+        """
+        time_expr, base_query = extract_time_ref(req.q)
+        base_query = base_query or req.q  # 질의가 기간 표현뿐이면 원문을 그대로 임베딩한다
         date_from, date_to = req.filters.date_from, req.filters.date_to
-        if parsed and parsed.time_ref:
-            rf, rt = resolve_time(parsed.time_ref)
+        if time_expr:
+            rf, rt = resolve_time(time_expr)
             date_from, date_to = rf or date_from, rt or date_to
+        parsed = await self._parse_query(base_query) if self._query_rewrite else None
+        query = parsed.rewritten_query if parsed and parsed.rewritten_query else base_query
         qv = (await get_embedding_client().embed([query]))[0]
         rows = await self.repo.semantic(
             owner_id, qv, req.k, req.filters.folder_id, date_from, date_to
